@@ -1,0 +1,20 @@
+---
+
+inventory_domain: "hosts._ansible.{{ lan_domain }}"
+
+hosts:
+  - hostname: platform.milco.info
+    groups:
+      - hosts
+      - server
+      - hardware
+  - hostname: router.milco.info
+    groups:
+      - hardware
+      - network
+  - hostname: dev-platform.milco.info
+    groups:
+      - hosts
+      - server
+      - vm
+...
