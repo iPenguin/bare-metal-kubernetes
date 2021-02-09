@@ -67,6 +67,9 @@ lockfile	/var/run/rsnapshot.pid
 # Default rsync args. All rsync commands have at least these options set.
 #rsync_short_args	-a
 #rsync_long_args	--delete --numeric-ids --relative --delete-excluded
+# archive, extended attributes and acls:
+rsync_long_args	-aXA --numeric-ids --relative
+
 
 # ssh has no args passed by default, but you can specify some here.
 #ssh_args	-p 22
