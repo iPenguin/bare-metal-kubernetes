@@ -1,0 +1,40 @@
+---
+
+- name: install and configure rsync to do basic sync backups
+  hosts: hosts
+  tasks:
+    - name: get epel
+      uri:
+        url: https://iad.mirror.rackspace.com/epel/epel-release-latest-8.noarch.rpm
+        dest: /root/epel-8.noarch.rpm
+      when: ansible_distribution == "RedHat"
+    - name: install epel repos
+      yum:
+        name: epel-release
+        state: latest
+      when: ansible_distribution == "CentOS"
+    - name: install rsnapshot & rsync
+      yum:
+        name:
+          - rsync
+          - rsnapshot
+        state: latest
+    - name: configure rsnapshot
+      template:
+        src: rsnapshot.conf.j2
+        dest: /etc/rsnapshot.conf
+    - name: configure daily backups
+      cron:
+        name: daily backups
+        state: present
+        job: rsnapshot daily
+        hour: '1'
+        minute: '30'
+    - name: configure monthly backups
+      cron:
+        name: monthly backups
+        state: present
+        job: rsnapshot monthly
+        day: '1'
+        hour: '1'
+        minute: '0'
