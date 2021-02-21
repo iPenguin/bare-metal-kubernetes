@@ -17,20 +17,23 @@ hosts:
       - hosts
       - server
       - vm
-  - hostname: node0.milco.info
+  - hostname: k8s0.milco.info
     groups:
-      - k8cluster
-      - k8workers
+      - k8scluster
+      - k8sworkers
       - rock64
-  - hostname: node1.milco.info
+  - hostname: k8s1.milco.info
     groups:
-      - k8cluster
-      - k8workers
+      - k8scluster
+      - k8sworkers
       - rock64
-  - hostname: node2.milco.info
+  - hostname: k8s2.milco.info
     groups:
-      - k8cluster
-      - k8workers
+      - k8scluster
+      - k8sworkers
       - rock64
-
+  - hostname: k8sm.milco.info
+    groups:
+      - k8smasters
+      - k8scluster
 ...
