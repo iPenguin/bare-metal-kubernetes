@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# join a node to the k8s cluster on initialization
+#
+
+{% for line in k8s_join_cmd %}
+{{ line }}
+{% endfor %}
