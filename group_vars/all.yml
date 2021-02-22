@@ -2,3 +2,5 @@
 
 lan_domain: milco.info
 
+etcd_servers:
+  - 192.168.1.5
