@@ -1,1 +1,4 @@
 router ansible_user=root ansible_port=2220
+
+[k8smasters]
+dev-platform.milco.info
