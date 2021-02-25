@@ -1,0 +1,10 @@
+apiVersion: purelb.io/v1
+kind: ServiceGroup
+metadata:
+  name: servergroup
+  namespace: purelb
+spec:
+  local:
+    subnet: '{{ network.ipv4.subnet }}'
+    pool: '{{ network.ipv4.server_pool.start }}-{{ network.ipv4.server_pool.start }}'
+    aggregation: default

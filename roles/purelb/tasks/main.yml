@@ -1,0 +1,17 @@
+---
+# tasks file for purelb
+
+- name: get purelb install config
+  fetch:
+    url: https://gitlab.com/purelb/purelb/-/raw/main/deployments/purelb-complete.yaml
+    dest: /tmp/purelb-complete.yaml
+
+- name: create loadbalancer
+  k8s:
+    src: /tmp/purelb-complete.yaml
+    state: present
+
+- name: create ip address pool
+  k8s:
+    src: '{{ lookup( 'template', 'purelb-pool.yml.j2' ) }}'
+    state: present
