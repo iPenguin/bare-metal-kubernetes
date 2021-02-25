@@ -1,0 +1,52 @@
+---
+
+- name: remove podman
+  yum:
+    name:
+      - podman
+      - runc
+      - buildah
+    state: absent
+  when: ansible_distribution == "RedHat"
+
+- name: add docker ce repo
+  uri:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/
+    status_code:
+      - 200
+      - 304
+- name: install docker ce
+  yum:
+    name:
+      - docker-ce-{{ docker_ce_ver }}
+    state: present
+    update_cache: yes
+- name: add {{ ansible_user }} to docker group
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+- name: install docker compose
+  uri:
+    url: https://github.com/docker/compose/releases/download/{{ docker_compose_ver }}/docker-compose-{{ ansible_system }}-{{ ansible_architecture }}
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+- name: create link for docker-compose
+  file:
+    path: /usr/bin/docker-compose
+    src: /usr/local/bin/docker-compose
+    state: link
+
+- name: configure docker with selinux
+  copy:
+    src: daemon.json
+    dest: /etc/docker/
+    owner: root
+    group: root
+    mode: '0600'
+- name: enable docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes

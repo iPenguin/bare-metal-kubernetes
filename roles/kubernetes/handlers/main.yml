@@ -1,0 +1,7 @@
+---
+# handlers file for kubernetes
+
+- name: restart sysctl
+  service:
+    name: sysctl
+    state: restarted

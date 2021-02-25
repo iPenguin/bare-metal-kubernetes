@@ -1,0 +1,4 @@
+---
+# defaults file for kubernetes
+
+kubernetes_version: 1.20.4
