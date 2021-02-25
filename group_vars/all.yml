@@ -4,3 +4,16 @@ lan_domain: milco.info
 
 etcd_servers:
   - 192.168.1.5
+
+network:
+  ipv4:
+    subnet: 192.168.1.0/24
+    router: 192.168.1.1
+    dns: 192.168.1.1
+    server_pool:
+      start: 192.168.1.20
+      end: 192.168.1.70
+
+servers:
+  nfs:
+    ipv4: 192.168.1.20
