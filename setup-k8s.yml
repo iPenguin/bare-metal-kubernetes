@@ -35,6 +35,9 @@
     - name: include calico role
       include_role:
         name: calico
+    - name: include purelb load balancer
+      include_role:
+        name: purelb
 
 # Service.spec.ipFamilyPolicy: SingleStack, PreferDualStack, RequireDualStack
 # ipFamilies:
