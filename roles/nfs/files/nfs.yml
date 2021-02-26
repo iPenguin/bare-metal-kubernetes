@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs
+  labels:
+    app: nfs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs
+  template:
+    metadata:
+      labels:
+        app: nfs
+    spec:
+      containers:
+      - name: nfs
+        image: erichough/nfs-server
+        volumeMounts:
+          - name: shares
+            mountPath: /srv
+          - name: exports
+            mountPath: /etc/exports
+            readOnly: true
+          - name: modules
+            mountPath: /lib/modules
+            readOnly: true
+        securityContext:
+          capabilities:
+            add:
+              - SYS_ADMIN
+              - SYS_MODULE
+      volumes:
+        - name: shares
+          hostPath:
+            path: /srv
+            type: Directory
+        - name: exports
+          hostPath:
+            path: "{{ nfs_config_path }}/exports"
+            type: File
+        - name: modules
+          hostPath:
+            path: /lib/modules
+            type: Directory
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: storagetype
+                operator: In
+                values:
+                  - M2

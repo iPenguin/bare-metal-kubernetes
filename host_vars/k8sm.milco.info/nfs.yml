@@ -1,0 +1,21 @@
+---
+
+nfs_config_path: "{{ pod_config_base_path }}/nfs/"
+
+nfs_exports:
+- share: "/srv/shares"
+  hosts:
+    - name: "*"
+      options:
+        - "rw"
+        - "sync"
+        - "no_root_squash"
+        - "insecure"
+- share: "/srv/archives"
+  hosts:
+    - name: "*"
+      options:
+        - "rw"
+        - "sync"
+        - "no_root_squash"
+        - "insecure"

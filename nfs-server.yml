@@ -1,0 +1,7 @@
+---
+
+- name: deploy nfs server
+  hosts: k8smasters
+  tasks:
+    - include_role:
+        name: nfs

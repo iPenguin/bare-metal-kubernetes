@@ -1,0 +1,23 @@
+---
+# tasks file for nfs
+
+- name: create path for exports
+  file:
+    path: "{{ nfs_config_path }}/"
+    recurse: yes
+    state: directory
+    owner: root
+    group: root
+    mode: '0640'
+- name: generate exports file
+  template:
+    src: exports.j2
+    dest: /exports
+- name: spin up nfs docker
+  k8s:
+    src: "{{ lookup( 'file', 'nfs.yml' ) }}"
+    state: present
+- name: spin up nfs load balancer
+  k8s:
+    src: "{{ lookup( 'template', 'nfs-loadbalancer.yml.j2' ) }}"
+    state: present
