@@ -12,12 +12,24 @@
 - name: generate exports file
   template:
     src: exports.j2
-    dest: /exports
+    dest: "{{ nfs_config_path }}/exports"
+# - name: spin up nfs docker
+#   k8s:
+#     src: "{{ lookup( 'file', 'nfs.yml' ) }}"
+#     state: present
+# - name: spin up nfs load balancer
+#   k8s:
+#     src: "{{ lookup( 'template', 'nfs-loadbalancer.yml.j2' ) }}"
+#     state: present
+- name: copy nfs definition
+  template:
+    src: nfs.yml.j2
+    dest: /home/{{ ansible_user }}/nfs.yml
 - name: spin up nfs docker
-  k8s:
-    src: "{{ lookup( 'file', 'nfs.yml' ) }}"
-    state: present
+  command: kubectl create -f /home/{{ ansible_user }}/nfs.yml
+- name: create load balancer definition
+  template:
+    src: nfs-loadbalancer.yml.j2
+    dest: /home/{{ ansible_user }}/nfs-lb.yml
 - name: spin up nfs load balancer
-  k8s:
-    src: "{{ lookup( 'template', 'nfs-loadbalancer.yml.j2' ) }}"
-    state: present
+  command: kubectl create -f /home/{{ ansible_user }}/nfs-lb.yml

@@ -1,6 +1,6 @@
 ---
 
-nfs_config_path: "{{ pod_config_base_path }}/nfs/"
+nfs_config_path: "{{ pod_config_base_path }}/nfs"
 
 nfs_exports:
 - share: "/srv/shares"
