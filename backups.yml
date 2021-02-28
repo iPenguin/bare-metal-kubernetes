@@ -7,6 +7,9 @@
       uri:
         url: https://iad.mirror.rackspace.com/epel/epel-release-latest-8.noarch.rpm
         dest: /root/epel-8.noarch.rpm
+        status_code:
+          - 200
+          - 304
       when: ansible_distribution == "RedHat"
     - name: install epel repos
       yum:
