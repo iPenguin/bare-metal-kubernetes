@@ -22,6 +22,7 @@
   command: kubectl -n nfs get pods -o jsonpath='{.items[].metadata.name}'
   register: podname
 - name: force nfs to update shares
+  become: no
   tags:
     - never
     - update_exports
@@ -35,6 +36,7 @@
   loop: "{{ nfs_config_files }}"
 
 - name: create nfs deployments and services
+  become: no
   command: kubectl create -f /home/{{ ansible_user }}/{{ item }}.yml
   loop: "{{ nfs_config_files }}"
   register: create_unit
