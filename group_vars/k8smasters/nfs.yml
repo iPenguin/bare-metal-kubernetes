@@ -3,7 +3,7 @@
 nfs_config_path: "{{ pod_config_base_path }}/nfs"
 
 nfs_exports:
-- share: "/srv/shares"
+- share: /srv/shares
   hosts:
     - name: "*"
       options:
@@ -11,9 +11,17 @@ nfs_exports:
         - "sync"
         - "no_root_squash"
         - "insecure"
-- share: "/srv/archives"
+- share: /srv/archives
   hosts:
     - name: "*"
+      options:
+        - "rw"
+        - "sync"
+        - "no_root_squash"
+        - "insecure"
+- share: /srv/git
+  hosts:
+    - name: "10.25.0.0/16"
       options:
         - "rw"
         - "sync"
