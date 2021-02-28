@@ -10,26 +10,34 @@
     group: root
     mode: '0640'
 - name: generate exports file
+  tags:
+    - update_exports
   template:
     src: exports.j2
     dest: "{{ nfs_config_path }}/exports"
-# - name: spin up nfs docker
-#   k8s:
-#     src: "{{ lookup( 'file', 'nfs.yml' ) }}"
-#     state: present
-# - name: spin up nfs load balancer
-#   k8s:
-#     src: "{{ lookup( 'template', 'nfs-loadbalancer.yml.j2' ) }}"
-#     state: present
-- name: copy nfs definition
+- name: get nfs pod name
+  tags:
+    - never
+    - update_exports
+  command: kubectl -n nfs get pods -o jsonpath='{.items[].metadata.name}'
+  register: podname
+- name: force nfs to update shares
+  tags:
+    - never
+    - update_exports
+  command: kubectl -n nfs exec -it {{ podname.stdout }} -- exportfs -ra
+  when: podname.stdout is defined
+
+- name: copy nfs yaml files to server
   template:
-    src: nfs.yml.j2
-    dest: /home/{{ ansible_user }}/nfs.yml
-- name: spin up nfs docker
-  command: kubectl create -f /home/{{ ansible_user }}/nfs.yml
-- name: create load balancer definition
-  template:
-    src: nfs-loadbalancer.yml.j2
-    dest: /home/{{ ansible_user }}/nfs-lb.yml
-- name: spin up nfs load balancer
-  command: kubectl create -f /home/{{ ansible_user }}/nfs-lb.yml
+    src: "{{ item }}.j2"
+    dest: /home/{{ ansible_user }}/{{ item }}.yml
+  loop: "{{ nfs_config_files }}"
+
+- name: create nfs deployments and services
+  command: kubectl create -f /home/{{ ansible_user }}/{{ item }}.yml
+  loop: "{{ nfs_config_files }}"
+  register: create_unit
+  ignore_errors: yes
+  changed_when:
+    - '"AlreadyExists" in create_unit.stdout'

@@ -1,2 +1,7 @@
 ---
 # vars file for nfs
+
+nfs_config_files:
+  - nfs.yml
+  - nfs-lb.yml
+  - nfs-service.yml
