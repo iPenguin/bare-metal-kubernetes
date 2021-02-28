@@ -35,14 +35,15 @@
     - calico_conf
   copy:
     src: calico.yaml
-    dest: /root/calico.yaml
+    dest: /home/{{ ansible_user }}/calico.yaml
 - name: install calicoctl
   uri:
     url: https://github.com/projectcalico/calicoctl/releases/download/v{{ calico_version }}/calicoctl
     dest: /usr/local/bin/calicoctl
     mode: '0750'
 - name: setup calico pod network
-  command: kubectl apply -f /root/calico.yaml
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/calico.yaml
 - name: add calicoctl alias
   lineinfile:
     path: /home/ansible/.bashrc
