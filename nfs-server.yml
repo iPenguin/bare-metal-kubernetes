@@ -3,5 +3,15 @@
 - name: deploy nfs server
   hosts: k8smasters
   tasks:
-    - include_role:
+    - name: label master node
+      become: no
+      tags:
+        - label_nodes
+      command: kubectl label nodes {{ item.node }} {{ item.label }}={{ item.value }}
+      loop: "{{ k8s_labels }}"
+
+    - name: create and update nfs server
+      tags:
+        - update_exports
+      include_role:
         name: nfs
