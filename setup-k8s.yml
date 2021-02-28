@@ -73,4 +73,9 @@
     - check_nodes
   tasks:
     - name: check for nodes
+      become: no
       command: kubectl get nodes
+      register: nodelist
+    - name: show nodes
+      debug:
+        var: nodelist.stdout_lines
