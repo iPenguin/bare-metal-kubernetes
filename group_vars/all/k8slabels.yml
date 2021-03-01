@@ -3,4 +3,4 @@
 k8s_labels:
   - node: k8sm.milco.info
     label: storagetype
-    value: M2
+    value: m2
