@@ -2,6 +2,12 @@
 
 nfs_config_path: "{{ pod_config_base_path }}/nfs"
 
+#
+# --tags update_exports
+# This breaks the file link into the pod and it has to be recreated.
+# For production create a custom image with a soft link to the
+# exports file so it updates automatically.
+#
 nfs_exports:
 - share: /srv/shares
   hosts:
@@ -21,7 +27,15 @@ nfs_exports:
         - "insecure"
 - share: /srv/git
   hosts:
-    - name: "10.25.0.0/16"
+    - name: "*"
+      options:
+        - "rw"
+        - "sync"
+        - "no_root_squash"
+        - "insecure"
+- share: /srv/gitea-db
+  hosts:
+    - name: "*"
       options:
         - "rw"
         - "sync"
