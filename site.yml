@@ -1,0 +1,16 @@
+---
+
+- name: minimum system setup
+  include_taks: init-server.yml
+
+- name: setup kubernetes cluster
+  include_tasks: setup-k8s.yml
+
+- name: setup backups
+  include_tasks: backups.yml
+
+- name: setup nfs server
+  include_tasks: nfs-server.yml
+
+- name: setup git server
+  include_tasks: git-server.yml
