@@ -5,11 +5,11 @@
   tasks:
     - name: mkdir backups
       file:
-        path: /mnt/backups
+        path: "{{ backup_dest }}"
         state: directory
     - name: create fstab entry
       mount:
-        path: /mnt/backups
+        path: "{{ backup_dest }}"
         src: LABEL=backups
         fstype: xfs
         state: mounted
