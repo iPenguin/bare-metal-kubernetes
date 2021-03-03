@@ -1,0 +1,12 @@
+---
+
+- name: move extra file from trusted keys
+  copy:
+    remote_src: yes
+    src: /etc/apt/trusted.gpg.d/ayufan.key.chroot.gpg
+    dest: /root/
+  ignore_errors: yes
+- name: remove src file
+  file:
+    path: /etc/apt/trusted.gpg.d/ayufan.key.chroot.gpg
+    state: absent

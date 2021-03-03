@@ -1,5 +1,11 @@
 ---
 
+- name: configure rock64
+  include_tasks: rock64.yml
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_architecture == "aarch64"
+
 - name: setup red hat subscription
   redhat_subscription:
     username: "{{ redhat_username }}"
