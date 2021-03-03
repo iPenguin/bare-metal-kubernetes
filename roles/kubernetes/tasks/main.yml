@@ -70,11 +70,11 @@
     enabled: yes
 
 - name: create kubeadm init config
-  copy:
-    src: kubeadm.yaml
-    dest: /root/kubeadm.yml
+  template:
+    src: kubeadm.yaml.j2
+    dest: /root/kubeadm.yaml
 - name: kubeadm init
-  command: kubeadm init --config /root/kubeadm.yml
+  command: kubeadm init --config /root/kubeadm.yaml
   register: token_info
 - name: kubectl join command for nodes
   debug:
