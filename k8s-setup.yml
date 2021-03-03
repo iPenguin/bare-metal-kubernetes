@@ -24,7 +24,6 @@
   tags:
     - config_k8s
     - config_k8s_nodes
-  remote_user: rock64
   tasks:
     - name: upload join script
       copy:
