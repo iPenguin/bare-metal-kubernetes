@@ -1,24 +1,4 @@
 ---
-- name: configure master node
-  hosts: k8smasters
-  tags:
-    - config_system
-    - config_k8s_master
-  tasks:
-    - name: configure worker nodes
-      include_role:
-        name: config-base
-
-- name: configure base systems
-  hosts: k8sworkers
-  remote_user: rock64
-  tags:
-    - config_system
-    - config_k8s_nodes
-  tasks:
-    - name: configure base
-      include_role:
-        name: config-base
 
 - name: configure master node
   hosts: k8smasters
@@ -39,12 +19,7 @@
       include_role:
         name: purelb
 
-# Service.spec.ipFamilyPolicy: SingleStack, PreferDualStack, RequireDualStack
-# ipFamilies:
-#   - IPv6
-#   - IPv4
-
-- name: configure worker nodes
+- name: k8s config worker nodes
   hosts: k8sworkers
   tags:
     - config_k8s
