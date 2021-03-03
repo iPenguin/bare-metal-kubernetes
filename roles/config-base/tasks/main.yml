@@ -1,16 +1,13 @@
 ---
 
-#- name: include redhat subscription vars
-#  include_vars:
-#    - vaults/redhat.yml
-# TODO: why isn't the subscription command working from ansible?
-#- name: setup red hat subscription
-#  redhat_subscription:
-#    username: "{{ redhat_username }}"
-#    password: "{{ redhat_password }}"
-#    auto_attach: yes
-#    state: present
-#  when: ansible_distribution == "RedHat"
+- name: setup red hat subscription
+  redhat_subscription:
+    username: "{{ redhat_username }}"
+    password: "{{ redhat_password }}"
+    auto_attach: yes
+    consumer_id: "{{ redhat_system_uuid }}"
+    state: present
+  when: ansible_distribution == "RedHat"
 
 - name: install python
   package:
