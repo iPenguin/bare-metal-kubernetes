@@ -21,17 +21,17 @@
 
 - name: add ansible user
   user:
-    name: "{{ ansible_user }}"
+    name: "{{ preferred_ansible_user }}"
     state: present
 - name: add ssh pub key
   authorized_key:
-    user: "{{ ansible_user }}"
+    user: "{{ preferred_ansible_user }}"
     key: "{{ lookup( 'file', '~/.ssh/id_rsa.pub' ) }}"
     state: present
 - name: configure sudo
   copy:
-    content: "{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL"
-    dest: /etc/sudoers.d/{{ ansible_user }}
+    content: "{{ preferred_ansible_user }} ALL=(ALL) NOPASSWD: ALL"
+    dest: /etc/sudoers.d/{{ preferred_ansible_user }}
     validate: 'visudo -cf %s'
 
 - name: update all packages
