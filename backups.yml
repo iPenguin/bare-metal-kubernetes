@@ -3,15 +3,12 @@
 - name: install and configure rsync to do basic sync backups
   hosts: hosts
   tasks:
-    - name: get epel
-      uri:
-        url: https://iad.mirror.rackspace.com/epel/epel-release-latest-8.noarch.rpm
-        dest: /root/epel-8.noarch.rpm
-        status_code:
-          - 200
-          - 304
+    - name: install epel repos - RedHat
+      yum:
+        name: https://iad.mirror.rackspace.com/epel/epel-release-latest-8.noarch.rpm
+        state: present
       when: ansible_distribution == "RedHat"
-    - name: install epel repos
+    - name: install epel repos - CentOS
       yum:
         name: epel-release
         state: latest
