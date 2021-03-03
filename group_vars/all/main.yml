@@ -2,8 +2,12 @@
 
 lan_domain: milco.info
 
-etcd_servers:
-  - 192.168.1.5
+etcd_endpoints:
+  - http://192.168.1.5:2379
+
+preferred_ansible_user: ansible
+
+k8s_use_ipv6: false
 
 network:
   ipv4:
