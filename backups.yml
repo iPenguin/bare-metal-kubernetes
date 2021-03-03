@@ -1,5 +1,19 @@
 ---
 
+- name: create backup dir and fstab entry
+  hosts: hosts
+  tasks:
+    - name: mkdir backups
+      file:
+        path: /mnt/backups
+        state: directory
+    - name: create fstab entry
+      mount:
+        path: /mnt/backups
+        src: LABEL=backups
+        fstype: xfs
+        state: mounted
+
 - name: install and configure rsync to do basic sync backups
   hosts: hosts
   tasks:
