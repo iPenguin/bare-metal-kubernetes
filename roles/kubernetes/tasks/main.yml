@@ -61,7 +61,6 @@
       - kubectl-{{ kubernetes_version }}
       - kubelet-{{ kubernetes_version }}
     state: present
-    update_cache: yes
     disable_excludes: kubernetes
 - name: enable and use kubelet
   service:
