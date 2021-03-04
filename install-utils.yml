@@ -1,0 +1,21 @@
+---
+
+- name: install useful utils
+  hosts: servers
+  tasks:
+    - name: install pkgs - RedHat family
+      yum:
+        name: "{{ common_utils | union( redhat_utils ) }}"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: install pkgs - Debian family
+      apt:
+        name: "{{ common_utils | union( debian_utils ) }}"
+        state: latest
+      when: ansible_os_family == "Debian"
+
+    - name: install all updates
+      package:
+        name: "*"
+        state: latest

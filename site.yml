@@ -1,7 +1,10 @@
 ---
 
 - name: minimum system setup
-  include_taks: init-server.yml
+  include_tasks: init-server.yml
+
+- name: common utils
+  include_tasks: install-utils.yml
 
 - name: setup kubernetes cluster
   include_tasks: setup-k8s.yml

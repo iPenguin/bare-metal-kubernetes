@@ -1,0 +1,16 @@
+
+common_utils:
+  - vim
+  - smartmontools
+  - tmux
+  - gdisk
+  - rsync
+  - git
+  - htop
+
+redhat_utils:
+  - "@Virtualization Host"
+  - policycoreutils-python-utils
+  - bash-completion
+
+debian_utils: []
