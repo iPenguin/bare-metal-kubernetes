@@ -14,24 +14,22 @@ hosts:
     groups:
       - hardware
       - network
-  - hostname: dev-platform.milco.info
-    groups:
-      - hosts
-      - server
-      - vm
   - hostname: k8s0.milco.info
     groups:
       - k8scluster
       - k8sworkers
+      - server
       - rock64
   - hostname: k8s1.milco.info
     groups:
       - k8scluster
       - k8sworkers
+      - server
       - rock64
   - hostname: k8s2.milco.info
     groups:
       - k8scluster
       - k8sworkers
+      - server
       - rock64
 ...
