@@ -28,6 +28,7 @@
 - name: add ansible user
   user:
     name: "{{ preferred_ansible_user }}"
+    shell: /bin/bash
     state: present
 - name: add ssh pub key
   authorized_key:
