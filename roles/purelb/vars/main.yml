@@ -1,0 +1,5 @@
+---
+
+purelb_config_files:
+  - purelb-pool-ipv4.yml
+  - purelb-pool-ipv6.yml

@@ -1,0 +1,10 @@
+apiVersion: purelb.io/v1
+kind: ServiceGroup
+metadata:
+  name: servergroup-ipv6
+  namespace: purelb
+spec:
+  local:
+    subnet: '{{ network.ipv6.subnet }}'
+    pool: '{{ network.ipv6.server_pool.start }}-{{ network.ipv6.server_pool.end }}'
+    aggregation: default
