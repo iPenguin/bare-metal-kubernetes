@@ -13,4 +13,5 @@ redhat_utils:
   - policycoreutils-python-utils
   - bash-completion
 
-debian_utils: []
+debian_utils:
+  - nfs-common
