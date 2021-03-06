@@ -7,7 +7,7 @@ etcd_endpoints:
 
 preferred_ansible_user: ansible
 
-k8s_use_ipv6: false
+k8s_use_ipv6: true
 
 network:
   ipv4:
