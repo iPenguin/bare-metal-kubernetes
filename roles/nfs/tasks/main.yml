@@ -16,6 +16,7 @@
     src: exports.j2
     dest: "{{ nfs_config_path }}/exports"
 - name: get nfs pod name
+  become: no
   tags:
     - never
     - update_exports
