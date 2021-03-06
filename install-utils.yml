@@ -9,6 +9,15 @@
         state: latest
       when: ansible_os_family == "RedHat"
 
+    # we just installed all the virtualization packages
+    # but we need a user to access it
+    - name: add libvirt group
+      user:
+        name: "{{ ansible_user }}"
+        append: yes
+        groups: libvirt
+      when: ansible_os_family == "RedHat"
+
     - name: install pkgs - Debian family
       apt:
         name: "{{ common_utils | union( debian_utils ) }}"
