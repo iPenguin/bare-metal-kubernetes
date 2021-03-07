@@ -8,7 +8,7 @@
 
 - name: create loadbalancer
   become: no
-  command: kubectl create -f /home/{{ ansible_user }}/purelb-complete.yaml
+  command: kubectl apply -f /home/{{ ansible_user }}/purelb-complete.yaml
   ignore_errors: yes
 
 - name: create ip pool for load balancer
@@ -18,5 +18,5 @@
   loop: "{{ purelb_config_files }}"
 - name: create ip address pool
   become: no
-  command: kubectl create -f /home/{{ ansible_user }}/{{ item }}
+  command: kubectl apply -f /home/{{ ansible_user }}/{{ item }}
   loop: "{{ purelb_config_files }}"
