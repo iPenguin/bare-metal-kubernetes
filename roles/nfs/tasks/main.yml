@@ -9,12 +9,19 @@
     owner: root
     group: root
     mode: '0640'
+
 - name: generate exports file
   tags:
     - update_exports
   template:
     src: exports.j2
     dest: "{{ nfs_config_path }}/exports"
+- name: generate krb5.conf file
+  tags:
+    - update_exports
+  template:
+    src: krb5.conf.j2
+    dest: "{{ nfs_config_path }}/krb5.conf"
 - name: get nfs pod name
   become: no
   tags:

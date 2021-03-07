@@ -23,11 +23,17 @@ spec:
       containers:
       - name: nfs
         image: erichough/nfs-server
+#        env:
+#          - name: NFS_ENABLE_KERBEROS
+#            value: "1"
         volumeMounts:
           - name: shares
             mountPath: /srv
           - name: exports
             mountPath: /etc/exports
+            readOnly: true
+          - name: krb5conf
+            mountPath: /etc/krb5.conf
             readOnly: true
           - name: modules
             mountPath: /lib/modules
@@ -45,6 +51,10 @@ spec:
         - name: exports
           hostPath:
             path: "{{ nfs_config_path }}/exports"
+            type: File
+        - name: krb5conf
+          hostPath:
+            path: "{{ nfs_config_path }}/krb5.conf"
             type: File
         - name: modules
           hostPath:
