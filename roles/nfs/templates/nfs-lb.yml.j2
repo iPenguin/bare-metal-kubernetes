@@ -29,3 +29,7 @@ spec:
   sessionAffinity: None
   type: LoadBalancer
   loadBalancerIP: "{{ servers.nfs.ipv4 }}"
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6

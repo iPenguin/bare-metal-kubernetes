@@ -27,3 +27,7 @@ spec:
     app: nfs
   sessionAffinity: None
   type: ClusterIP
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
