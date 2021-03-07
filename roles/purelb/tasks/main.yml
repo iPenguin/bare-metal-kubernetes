@@ -1,22 +1,16 @@
 ---
 # tasks file for purelb
 
-- name: get purelb install config
-  uri:
-    url: https://gitlab.com/purelb/purelb/-/raw/main/deployments/purelb-complete.yaml
-    dest: /home/{{ ansible_user }}/purelb-complete.yaml
-
 - name: create loadbalancer
   become: no
-  command: kubectl apply -f /home/{{ ansible_user }}/purelb-complete.yaml
+  command: kubectl apply -f https://gitlab.com/purelb/purelb/-/raw/main/deployments/purelb-complete.yaml
+  # there seem to be some errors on initial deployment, due to object creation time:
   ignore_errors: yes
 
 - name: create ip pool for load balancer
   template:
-    src: {{ item }}.j2
-    dest: /home/{{ ansible_user }}/{{ item }}
-  loop: "{{ purelb_config_files }}"
+    src: "purelb-pools.yml.j2"
+    dest: /home/{{ ansible_user }}/purelb-pools.yml
 - name: create ip address pool
   become: no
-  command: kubectl apply -f /home/{{ ansible_user }}/{{ item }}
-  loop: "{{ purelb_config_files }}"
+  command: kubectl apply -f /home/{{ ansible_user }}/purelb-pools.yml
