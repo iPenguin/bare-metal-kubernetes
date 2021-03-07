@@ -9,8 +9,19 @@
 
 - name: create ip pool for load balancer
   template:
-    src: "purelb-pools.yml.j2"
+    src: purelb-pools.yml.j2
     dest: /home/{{ ansible_user }}/purelb-pools.yml
 - name: create ip address pool
   become: no
   command: kubectl apply -f /home/{{ ansible_user }}/purelb-pools.yml
+
+#
+# There seems to be a problem choosing the correct interface for IPv6 addresses.
+# FIXME: Forcing the lbnode agent to use the right interface.
+- name: copy lb node agent config
+  template:
+    src: lbnodeagents.yml.j2
+    dest: /home/{{ ansible_user }}/lbnodeagents.yml
+- name: apply lb node agent config
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/lbnodeagents.yml
