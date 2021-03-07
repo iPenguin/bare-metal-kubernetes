@@ -39,17 +39,11 @@
 
 - name: copy nfs yaml files to server
   template:
-    src: "{{ item }}.j2"
-    dest: /home/{{ ansible_user }}/{{ item }}
+    src: "nfs.yml.j2"
+    dest: /home/{{ ansible_user }}/nfs.yml
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
-  loop: "{{ nfs_config_files }}"
 
 - name: create nfs deployments and services
   become: no
-  command: kubectl apply -f /home/{{ ansible_user }}/{{ item }}
-  loop: "{{ nfs_config_files }}"
-  register: create_unit
-  ignore_errors: yes
-  changed_when:
-    - '"AlreadyExists" in create_unit.stdout'
+  command: kubectl apply -f /home/{{ ansible_user }}/nfs.yml
