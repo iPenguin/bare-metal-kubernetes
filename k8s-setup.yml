@@ -15,9 +15,12 @@
     - name: include calico role
       include_role:
         name: calico
-    - name: include purelb load balancer
+    # - name: include purelb load balancer
+    #   include_role:
+    #     name: purelb
+    - name: include metallb load balancer
       include_role:
-        name: purelb
+        name: metallb
 
 - name: k8s config worker nodes
   hosts: k8sworkers
