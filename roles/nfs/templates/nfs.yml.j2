@@ -6,19 +6,19 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nfs
+  name: nfs-server
   namespace: nfs
   labels:
-    app: nfs
+    app: nfs-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nfs
+      app: nfs-server
   template:
     metadata:
       labels:
-        app: nfs
+        app: nfs-server
     spec:
       containers:
       - name: nfs
@@ -63,22 +63,15 @@ spec:
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: storagetype
-                operator: In
-                values:
-                  - m2
+      nodeSelector:
+        kubernetes.io/hostname: {{ nfs_storage_host }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: nfs
-  name: nfs-internal
+    app: nfs-server
+  name: files
   namespace: nfs
 spec:
   ports:
@@ -99,24 +92,20 @@ spec:
     protocol: TCP
     targetPort: 32767
   selector:
-    app: nfs
+    app: nfs-server
   sessionAffinity: None
   type: ClusterIP
-  ipFamilyPolicy: RequireDualStack
+  clusterIP: {{ servers.nfs.cluster.ipv4 }}
+  ipFamilyPolicy: SingleStack
   ipFamilies:
     - IPv4
-    - IPv6
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: nfs
-  annotations:
-    purelb.io/service-group: servergroup-ipv6
-    purelb.io/announcing-interface: {{ ansible_facts.default_ipv6.interface }}
-    purelb.io/announcing-node: {{ ansible_facts.fqdn }}
-  name: nfs-ipv6
+    app: nfs-server
+  name: nfs-external-ipv6
   namespace: nfs
 spec:
   externalTrafficPolicy: Local
@@ -138,10 +127,10 @@ spec:
     protocol: TCP
     targetPort: 32767
   selector:
-    app: nfs
+    app: nfs-server
   sessionAffinity: None
   type: LoadBalancer
-  #loadBalancerIP: {{ servers.nfs.ipv6 }}
+  loadBalancerIP: {{ servers.nfs.ipv6 }}
   ipFamilyPolicy: SingleStack
   ipFamilies:
     - IPv6
@@ -150,12 +139,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: nfs
-  annotations:
-    purelb.io/service-group: servergroup-ipv4
-    purelb.io/announcing-interface: {{ ansible_facts.default_ipv6.interface }}
-    purelb.io/announcing-node: {{ ansible_facts.fqdn }}
-  name: nfs-ipv4
+    app: nfs-server
+  name: nfs-external-ipv4
   namespace: nfs
 spec:
   externalTrafficPolicy: Local
@@ -177,10 +162,10 @@ spec:
     protocol: TCP
     targetPort: 32767
   selector:
-    app: nfs
+    app: nfs-server
   sessionAffinity: None
   type: LoadBalancer
-  #loadBalancerIP: {{ servers.nfs.ipv4 }}
+  loadBalancerIP: {{ servers.nfs.ipv4 }}
   ipFamilyPolicy: SingleStack
   ipFamilies:
     - IPv4

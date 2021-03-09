@@ -1,3 +1,5 @@
 ---
 
 pod_config_base_path: /docker
+
+pod_data_base_path: /srv

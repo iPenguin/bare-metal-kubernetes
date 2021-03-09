@@ -1,5 +1,7 @@
 ---
 
+nfs_storage_host: k8sm.milco.info
+
 nfs_config_path: "{{ pod_config_base_path }}/nfs"
 
 #
