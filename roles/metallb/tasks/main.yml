@@ -1,0 +1,27 @@
+---
+# tasks file for metallb
+
+- name: install namespace
+  become: no
+  command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
+
+- name: install metal lb objects
+  become: no
+  command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
+
+- name: create randomkey
+  become: no
+  command: openssl rand -base64 128
+  register: key
+
+- name: create secret key
+  become: no
+  command: kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="{{ key.stdout_lines | join('') }}"
+
+- name: create configuration
+  template:
+    src: metallb-config.yml.j2
+    dest: /home/{{ ansible_user }}/metallb-config.yml
+- name: apply metallb config
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/metallb-config.yml

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+      - name: ipv4
+        protocol: layer2
+        addresses:
+          - {{ network.ipv4.server_pool.start }}-{{ network.ipv4.server_pool.end }}
+      - name: ipv6
+        protocol: layer2
+        addresses:
+          - {{ network.ipv6.server_pool.start }}-{{ network.ipv6.server_pool.end }}
