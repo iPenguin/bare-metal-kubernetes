@@ -25,31 +25,18 @@
     create: yes
   notify: restart sysctl
 
-- name: set firewall masquerading on
-  firewalld:
-    masquerade: yes
-    state: enabled
-    permanent: yes
-    immediate: yes
-    zone: public
-- name: open ports in firewall
-  firewalld:
-    port: "{{ item }}"
-    state: enabled
-    immediate: yes
-    permanent: yes
-    zone: public
-  loop:
-    - "6443/tcp"
-    - "2379-2380/tcp"
-    - "10250/tcp"
-    - "10251/tcp"
-    - "10252/tcp"
-    - "10255/tcp"
-    - "30000-32767/tcp"
-    - "2375-2377/tcp"
-    - "7946/udp"
-    - "4789/udp"
+#
+# If the firewall is enabled you may see the following issue:
+# Everything in the cluster looks like it's working, but you cannot
+# connect to services backed by pods, or the pods themselves on the
+# node(s) with the firewall running.
+#
+- name: disable firewall
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
 - name: add kubernetes repo
   copy:
     src: kubernetes.repo
