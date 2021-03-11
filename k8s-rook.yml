@@ -1,0 +1,8 @@
+---
+
+- name: configure rook
+  hosts: k8smasters
+  tasks:
+    - name: include rook role
+      include_role:
+        name: rook

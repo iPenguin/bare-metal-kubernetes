@@ -1,0 +1,4 @@
+---
+# defaults file for rook
+
+local_storage_default_path: /opt/local-path-provisioner

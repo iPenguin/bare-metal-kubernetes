@@ -5,7 +5,14 @@ networking:
 
   serviceSubnet: {{ k8s_service_network.ipv4 }}{% if k8s_use_ipv6 %},{{ k8s_service_network.ipv6 }}{% endif %}
 
-{% if k8s_use_ipv6 %}
 featureGates:
+  # Used for NFS provisioning with Rook, this will be removed if Rook doesn't update code.
+  RemoveSelfLink: false
+
+{% if k8s_use_ipv6 %}
   IPv6DualStack: true
 {% endif %}
+
+apiServer:
+  extraArgs:
+    enable-admission-plugins: NodeRestriction,DefaultStorageClass
