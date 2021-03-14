@@ -1,0 +1,48 @@
+---
+
+- name: remove existing docker packages from base distro
+  apt:
+    name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+
+- name: update all packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: latest
+
+- name: add gpg keys
+  uri:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /root/docker.gpg
+    status_code:
+      - 200
+      - 304
+- name: save gpg keys in key ring
+  command: gpg --yes --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /root/docker.gpg
+
+- name: add docker repo
+  blockinfile:
+    path: /etc/apt/sources.list.d/docker.list
+    block: |
+      deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu bionic stable
+    state: present
+    create: yes
+
+- name: install docker packages
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: latest
+    update_cache: yes
