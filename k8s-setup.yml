@@ -10,6 +10,8 @@
       include_role:
         name: docker
     - name: include kubernetes
+      vars:
+        role_type: master
       include_role:
         name: kubernetes
     - name: include calico role
@@ -21,6 +23,43 @@
     - name: include metallb load balancer
       include_role:
         name: metallb
+
+- name: kubernetes on the workers
+  hosts: k8sworkers
+  tags:
+    - config_k8s_nodes
+  tasks:
+    - name: include docker role
+      include_role:
+        name: docker
+    - name: include kubernetes for clients
+      vars:
+        role_type: worker
+      include_role:
+        name: kubernetes
+
+- name: create new join token and script for clients
+  hosts: k8sworkers
+  tags:
+    - config_k8s_nodes
+  tasks:
+    - name: kubeadm create token
+      command: kubeadm token create --print-join-command
+      register: join_cmd
+      delegate_to: "{{ k8s_command_node }}"
+    - name: kubectl join command for nodes
+      debug:
+        var: join_cmd
+    - name: set join fact
+      set_fact:
+        k8s_join_cmd: "{{ join_cmd.stdout }}"
+      delegate_to: localhost
+
+    - name: create join script
+      template:
+        src: join_node.sh.j2
+        dest: /tmp/join_node.sh
+      delegate_to: localhost
 
 - name: k8s config worker nodes
   hosts: k8sworkers
@@ -44,15 +83,17 @@
         enabled: yes
 
 - name: test nodes joined
-  hosts: k8smasters
+  hosts: k8smasters, k8sworkers
   tags:
     - config_k8s
     - check_nodes
+    - config_k8s_nodes
   tasks:
     - name: check for nodes
       become: no
       command: kubectl get nodes
       register: nodelist
+      delegate_to: localhost
     - name: show nodes
       debug:
         var: nodelist.stdout_lines

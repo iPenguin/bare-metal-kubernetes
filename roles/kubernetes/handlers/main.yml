@@ -5,3 +5,8 @@
   service:
     name: sysctl
     state: restarted
+
+- name: restart ubuntu sysctl
+  service:
+    name: systemd-sysctl
+    service: restarted

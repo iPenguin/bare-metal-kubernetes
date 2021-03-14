@@ -1,95 +1,13 @@
 ---
-# tasks file for kubernetes
-- name: FIXME -- disable selinux for k8s
-  selinux:
-    policy: targeted
-    state: permissive
 
-- name: turn off swap now
-  command: "swapoff -a"
-- name: turn off swap in fstab
-  mount:
-    path: none
-    fstype: 'swap'
-    state: absent
+- name: master node setup
+  import_tasks: server.yml
+  when:
+    - ansible_os_family == "RedHat"
+    - role_type == "master"
 
-- name: configure networking for kubernetes
-  blockinfile:
-    path: /etc/sysctl.d/kubernetes.conf
-    block: |
-      net.bridge.bridge-nf-call-ip6tables=1
-      net.bridge.bridge-nf-call-iptables=1
-      net.ipv6.conf.all.forwarding=1
-      net.ipv4.conf.all.forwarding=1
-    state: present
-    create: yes
-  notify: restart sysctl
-
-#
-# If the firewall is enabled you may see the following issue:
-# Everything in the cluster looks like it's working, but you cannot
-# connect to services backed by pods, or the pods themselves on the
-# node(s) with the firewall running.
-#
-- name: disable firewall
-  service:
-    name: firewalld
-    state: stopped
-    enabled: no
-
-- name: add kubernetes repo
-  copy:
-    src: kubernetes.repo
-    dest: /etc/yum.repos.d/
-- name: install kubectl kubeadm and kubelet
-  yum:
-    name:
-      - kubeadm-{{ kubernetes_version }}
-      - kubectl-{{ kubernetes_version }}
-      - kubelet-{{ kubernetes_version }}
-    state: present
-    disable_excludes: kubernetes
-- name: enable and use kubelet
-  service:
-    name: kubelet
-    state: started
-    enabled: yes
-
-- name: create kubeadm init config
-  template:
-    src: kubeadm.yaml.j2
-    dest: /root/kubeadm.yaml
-- name: kubeadm init
-  command: kubeadm init --config /root/kubeadm.yaml
-  register: token_info
-- name: kubectl join command for nodes
-  debug:
-    var: token_info
-- name: set join fact
-  set_fact:
-    k8s_join_cmd: "{{ token_info.stdout_lines[-3:] }}"
-
-- name: create join script
-  template:
-    src: join_node.sh.j2
-    dest: /root/join_node.sh
-- name: put join script on controller
-  fetch:
-    src: /root/join_node.sh
-    dest: /tmp/join_node.sh
-    flat: yes
-
-- name: create .kube config dir
-  file:
-    path: "/home/{{ ansible_user }}/.kube"
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-
-- name: copy k8 config to user dir
-  copy:
-    remote_src: yes
-    src: /etc/kubernetes/admin.conf
-    dest: "/home/{{ ansible_user }}/.kube/config"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+- name: worker node setup
+  import_tasks: worker.yml
+  when:
+    - ansible_os_family == "Debian"
+    - role_type == "worker"

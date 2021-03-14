@@ -1,0 +1,70 @@
+---
+# tasks file for kubernetes
+
+- name: turn off swap now
+  command: "swapoff -a"
+- name: turn off swap in fstab
+  mount:
+    path: none
+    fstype: 'swap'
+    state: absent
+
+- name: configure networking for kubernetes
+  blockinfile:
+    path: /etc/sysctl.d/kubernetes.conf
+    block: |
+      net.bridge.bridge-nf-call-ip6tables=1
+      net.bridge.bridge-nf-call-iptables=1
+      net.ipv6.conf.all.forwarding=1
+      net.ipv4.conf.all.forwarding=1
+    state: present
+    create: yes
+  notify: restart ubuntu sysctl
+
+#
+# If the firewall is enabled you may see the following issue:
+# Everything in the cluster looks like it's working, but you cannot
+# connect to services backed by pods, or the pods themselves on the
+# node(s) with the firewall running.
+#
+- name: disable firewall
+  service:
+    name: ufw
+    state: stopped
+    enabled: no
+
+- name: install apt packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+    state: present
+
+- name: download google gpg keys
+  uri:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+- name: install google gpg keys
+  blockinfile:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    block: |
+      deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+    create: yes
+    state: present
+
+- name: install kubectl kubeadm and kubelet
+  yum:
+    name:
+      - kubeadm={{ kubernetes_version }}-00
+      - kubectl={{ kubernetes_version }}-00
+      - kubelet={{ kubernetes_version }}-00
+    state: present
+    update_cache: yes
+
+- name: enable and use kubelet
+  service:
+    name: kubelet
+    state: started
+    enabled: yes
