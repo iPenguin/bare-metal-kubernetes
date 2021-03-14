@@ -1,0 +1,12 @@
+
+k8s_node_storage:
+  - name: k8sm.milco.info
+    deviceFilter: "^sda" # 240GB SSD
+  - name: k8st.milco.info
+    deviceFilter: "^sda5" # 157GB partition HDD
+  - name: k8s0.milco.info
+    deviceFilter: "^sda" # 120GB SSD
+  - name: k8s1.milco.info
+    deviceFilter: "^sda" # 64GB USB drive
+  - name: k8s2.milco.info
+    deviceFilter: "^sda" # 64GB USB drive

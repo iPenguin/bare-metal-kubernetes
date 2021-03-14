@@ -31,11 +31,11 @@ spec:
   metadataPool:
     failureDomain: host
     replicated:
-      size: 4
+      size: 3
   dataPools:
     - failureDomain: host
       replicated:
-        size: 4
+        size: 3
         requireSafeReplicaSize: true
   preserveFilesystemOnDelete: true
   metadataServer:
@@ -50,6 +50,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: rook-cephfs
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
 # Change "rook-ceph" provisioner prefix to match the operator namespace if needed
 provisioner: rook-ceph.cephfs.csi.ceph.com
 parameters:
