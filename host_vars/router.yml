@@ -3,6 +3,10 @@
 inventory_domain: "hosts._ansible.{{ lan_domain }}"
 
 hosts:
+  - hostname: router.milco.info
+    groups:
+      - hardware
+      - network
   - hostname: k8sm.milco.info
     groups:
       - hosts
@@ -10,10 +14,12 @@ hosts:
       - hardware
       - k8smasters
       - k8scluster
-  - hostname: router.milco.info
+  - hostname: k8st.milco.info
     groups:
+      - k8scluster
+      - k8sworkers
+      - servers
       - hardware
-      - network
   - hostname: k8s0.milco.info
     groups:
       - k8scluster
