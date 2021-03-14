@@ -38,13 +38,14 @@
       include_role:
         name: kubernetes
 
-- name: create new join token and script for clients
+- name: create new join token for workers
   hosts: k8sworkers
   tags:
     - config_k8s_nodes
   tasks:
     - name: kubeadm create token
-      command: kubeadm token create --print-join-command
+      become: no
+      raw: kubeadm token create --print-join-command
       register: join_cmd
       delegate_to: "{{ k8s_command_node }}"
     - name: kubectl join command for nodes
@@ -52,7 +53,7 @@
         var: join_cmd
     - name: set join fact
       set_fact:
-        k8s_join_cmd: "{{ join_cmd.stdout }}"
+        k8s_join_cmd: "{{ join_cmd.stdout_lines[0] }}"
       delegate_to: localhost
 
     - name: create join script
