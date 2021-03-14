@@ -21,6 +21,9 @@
     create: yes
   notify: restart ubuntu sysctl
 
+- name: populate service facts
+  service_facts:
+
 #
 # If the firewall is enabled you may see the following issue:
 # Everything in the cluster looks like it's working, but you cannot
@@ -32,6 +35,7 @@
     name: ufw
     state: stopped
     enabled: no
+  when: "'ufw' in ansible_facts.services"
 
 - name: install apt packages
   apt:
