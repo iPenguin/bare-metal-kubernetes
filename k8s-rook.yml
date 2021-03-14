@@ -1,8 +1,24 @@
 ---
 
+- name: install tools for clients
+  hosts: k8sworkers
+  tags:
+    - rook_ceph
+  tasks:
+    - name: install lvm2
+      apt:
+        name:
+          - lvm2
+          - xfsprogs
+        state: present
+      when: ansible_os_family == "Debian"
+
 - name: configure rook
   hosts: k8smasters
   tasks:
     - name: include rook role
+      tags:
+        - rook_nfs
+        - rook_ceph
       include_role:
         name: rook

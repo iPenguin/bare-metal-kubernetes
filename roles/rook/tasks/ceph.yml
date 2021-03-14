@@ -1,0 +1,29 @@
+---
+# tasks file for rook
+
+- name: create rook ceph CRDs
+  become: no
+  command: kubectl apply -f https://raw.githubusercontent.com/rook/rook/v1.5.8/cluster/examples/kubernetes/ceph/crds.yaml
+
+- name: create rook ceph commons
+  become: no
+  command: kubectl apply -f https://raw.githubusercontent.com/rook/rook/v1.5.8/cluster/examples/kubernetes/ceph/common.yaml
+
+- name: create rook ceph operator
+  become: no
+  command: kubectl apply -f https://raw.githubusercontent.com/rook/rook/v1.5.8/cluster/examples/kubernetes/ceph/operator.yaml
+
+- name: copy storage claims to server
+  template:
+    src: "{{ item }}"
+    dest: /home/{{ ansible_user }}/{{ item }}
+  loop:
+    - rook-ceph.yml
+    - rook-tools.yml
+
+- name: create rook ceph server & tools
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/{{ item }}
+  loop:
+    - rook-ceph.yml
+    - rook-tools.yml

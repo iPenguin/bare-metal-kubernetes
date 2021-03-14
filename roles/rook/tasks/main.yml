@@ -1,28 +1,11 @@
 ---
-# tasks file for rook
 
-- name: create rook nfs operator
-  become: no
-  command: kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.5/cluster/examples/kubernetes/nfs/common.yaml
+- name: include nfs
+  tags:
+    - rook_nfs
+  import_tasks: nfs.yml
 
-- name: create rook nfs operator
-  become: no
-  command: kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.5/cluster/examples/kubernetes/nfs/operator.yaml
-
-- name: create local path storage class
-  become: no
-  command: kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
-
-- name: create rbac & ns
-  become: no
-  command: kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.5/cluster/examples/kubernetes/nfs/rbac.yaml
-
-- name: copy storage claims to server
-  template:
-    src: rook-nfs.yml
-    dest: /home/{{ ansible_user }}/rook-nfs.yml
-
-  # with modifications: https://raw.githubusercontent.com/rook/rook/release-1.5/cluster/examples/kubernetes/nfs/nfs.yaml
-- name: create rook nfs server
-  become: no
-  command: kubectl apply -f /home/{{ ansible_user }}/rook-nfs.yml
+- name: include ceph
+  tags:
+    - rook_ceph
+  import_tasks: ceph.yml
