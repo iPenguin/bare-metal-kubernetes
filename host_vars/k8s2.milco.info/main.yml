@@ -1,0 +1,6 @@
+---
+
+initial_ansible_user: rock64
+
+ipv4: 192.168.1.12
+ipv6: 2601:200:4101:8d10::12

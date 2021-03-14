@@ -14,7 +14,7 @@
 
 - name: configure base system on workers
   hosts: k8sworkers
-  remote_user: rock64
+  remote_user: "{{ initial_ansible_user }}"
   tags:
     - config_system
     - config_k8s_nodes
