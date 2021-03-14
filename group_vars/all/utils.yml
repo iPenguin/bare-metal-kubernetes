@@ -15,3 +15,5 @@ redhat_utils:
 
 debian_utils:
   - nfs-common
+  - lvm2
+  - xfsprogs
