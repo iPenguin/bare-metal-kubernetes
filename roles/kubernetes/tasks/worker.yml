@@ -1,26 +1,6 @@
 ---
 # tasks file for kubernetes
 
-- name: turn off swap now
-  command: "swapoff -a"
-- name: turn off swap in fstab
-  mount:
-    path: none
-    fstype: 'swap'
-    state: absent
-
-- name: configure networking for kubernetes
-  blockinfile:
-    path: /etc/sysctl.d/kubernetes.conf
-    block: |
-      net.bridge.bridge-nf-call-ip6tables=1
-      net.bridge.bridge-nf-call-iptables=1
-      net.ipv6.conf.all.forwarding=1
-      net.ipv4.conf.all.forwarding=1
-    state: present
-    create: yes
-  notify: restart ubuntu sysctl
-
 - name: populate service facts
   service_facts:
 
