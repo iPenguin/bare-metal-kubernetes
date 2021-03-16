@@ -13,12 +13,10 @@ spec:
     allowMultiplePerNode: false
   storage:
     useAllNodes: true
-    useAllDevices: true
-    deviceFilter: sda
+    useAllDevices: false
     nodes:
-    {% for node in k8s_node_storage %}
-      - name: "{{ node.name }}"
-        deviceFilter: "{{ node.deviceFilter }}" # "^sd[b-n]"
+    {% for host in groups['k8scluster'] %}  - name: "{{ host }}"
+        deviceFilter: "{{ k8s_node_storage[host] }}" #ie. "^sd[b-n]"
     {% endfor %}
 
 ---
