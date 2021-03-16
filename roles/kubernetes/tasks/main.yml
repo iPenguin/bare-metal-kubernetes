@@ -24,14 +24,16 @@
     create: yes
   notify: restart ubuntu sysctl
 
+- name: common k8s setup tasks
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: enable and use kubelet
+  service:
+    name: kubelet
+    state: started
+    enabled: yes
+
 - name: master node setup
   import_tasks: server.yml
   when:
-    - ansible_os_family == "RedHat"
     - role_type == "master"
-
-- name: worker node setup
-  import_tasks: worker.yml
-  when:
-    - ansible_os_family == "Debian"
-    - role_type == "worker"

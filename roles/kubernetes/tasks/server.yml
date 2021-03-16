@@ -1,44 +1,10 @@
 ---
-# tasks file for kubernetes
-- name: FIXME -- disable selinux for k8s
-  selinux:
-    policy: targeted
-    state: permissive
-
-#
-# If the firewall is enabled you may see the following issue:
-# Everything in the cluster looks like it's working, but you cannot
-# connect to services backed by pods, or the pods themselves on the
-# node(s) with the firewall running.
-#
-- name: disable firewall
-  service:
-    name: firewalld
-    state: stopped
-    enabled: no
-
-- name: add kubernetes repo
-  copy:
-    src: kubernetes.repo
-    dest: /etc/yum.repos.d/
-- name: install kubectl kubeadm and kubelet
-  yum:
-    name:
-      - kubeadm-{{ kubernetes_version }}
-      - kubectl-{{ kubernetes_version }}
-      - kubelet-{{ kubernetes_version }}
-    state: present
-    disable_excludes: kubernetes
-- name: enable and use kubelet
-  service:
-    name: kubelet
-    state: started
-    enabled: yes
 
 - name: create kubeadm init config
   template:
     src: kubeadm.yaml.j2
     dest: /root/kubeadm.yaml
+
 - name: kubeadm init
   command: kubeadm init --config /root/kubeadm.yaml
 

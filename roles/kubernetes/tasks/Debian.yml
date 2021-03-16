@@ -1,21 +1,8 @@
 ---
-# tasks file for kubernetes
+# tasks file for kubernetes master
 
 - name: populate service facts
   service_facts:
-
-#
-# If the firewall is enabled you may see the following issue:
-# Everything in the cluster looks like it's working, but you cannot
-# connect to services backed by pods, or the pods themselves on the
-# node(s) with the firewall running.
-#
-- name: disable firewall
-  service:
-    name: ufw
-    state: stopped
-    enabled: no
-  when: "'ufw' in ansible_facts.services"
 
 - name: install apt packages
   apt:
@@ -47,8 +34,15 @@
     state: present
     update_cache: yes
 
-- name: enable and use kubelet
+#
+# If the firewall is enabled you may see the following issue:
+# Everything in the cluster looks like it's working, but you cannot
+# connect to services backed by pods, or the pods themselves on the
+# node(s) with the firewall running.
+#
+- name: disable firewall
   service:
-    name: kubelet
-    state: started
-    enabled: yes
+    name: ufw
+    state: stopped
+    enabled: no
+  when: "'ufw' in ansible_facts.services"

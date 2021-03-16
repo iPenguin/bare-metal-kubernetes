@@ -84,7 +84,7 @@
         enabled: yes
 
 - name: test nodes joined
-  hosts: k8smasters, k8sworkers
+  hosts: k8smasters
   tags:
     - config_k8s
     - check_nodes
@@ -94,7 +94,7 @@
       become: no
       command: kubectl get nodes
       register: nodelist
-      delegate_to: localhost
+      delegate_to: "{{ k8s_command_node }}"
     - name: show nodes
       debug:
         var: nodelist.stdout_lines

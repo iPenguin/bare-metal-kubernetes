@@ -1,18 +1,26 @@
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
+kubernetesVersion: v1.20.0
 networking:
   podSubnet: {{ k8s_pod_network.ipv4 }}{% if k8s_use_ipv6 %},{{ k8s_pod_network.ipv6 }}{% endif %}
 
   serviceSubnet: {{ k8s_service_network.ipv4 }}{% if k8s_use_ipv6 %},{{ k8s_service_network.ipv6 }}{% endif %}
 
-featureGates:
-  # Used for NFS provisioning with Rook, this will be removed if Rook doesn't update code.
-  RemoveSelfLink: false
-
 {% if k8s_use_ipv6 %}
+featureGates:
   IPv6DualStack: true
 {% endif %}
 
+# Used for NFS provisioning with Rook, this will be removed if Rook doesn't update code.
+#RemoveSelfLink: false
 apiServer:
   extraArgs:
-    enable-admission-plugins: NodeRestriction,DefaultStorageClass
+    feature-gates: RemoveSelfLink=true{% if k8s_use_ipv6 %},IPv6DualStack=true{% endif %}
+
+controllerManager:
+  extraArgs:
+    feature-gates: RemoveSelfLink=true{% if k8s_use_ipv6 %},IPv6DualStack=true{% endif %}
+
+scheduler:
+  extraArgs:
+    feature-gates: RemoveSelfLink=true{% if k8s_use_ipv6 %},IPv6DualStack=true{% endif %}
