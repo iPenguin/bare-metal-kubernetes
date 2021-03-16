@@ -1,0 +1,8 @@
+---
+# defaults file for gitea
+
+gitea_version: 1.13.2
+gitea_namespace: gitea
+
+gitea_app_name: "git - Milco.info"
+gitea_run_mode: "prod"

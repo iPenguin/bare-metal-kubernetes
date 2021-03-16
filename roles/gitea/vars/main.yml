@@ -1,0 +1,5 @@
+---
+# vars file for gitea
+
+git_repo_path: /srv/git
+git_database_path: /srv/gitea-db

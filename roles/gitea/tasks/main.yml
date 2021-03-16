@@ -1,0 +1,14 @@
+---
+# tasks file for gitea
+
+- name: deploy yaml files
+  template:
+    src: "gitea.yml"
+    dest: /home/{{ ansible_user }}/gitea.yml
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+
+- name: deploy gitea server and database
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/gitea.yml
