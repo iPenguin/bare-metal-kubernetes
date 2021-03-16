@@ -1,0 +1,17 @@
+---
+# tasks file for jenkins
+#
+
+- name: create folder
+  file:
+    path: "{{ pod_data_path }}/jenkins"
+    state: directory
+
+- name: copy in config file
+  template:
+    src: jenkins.yml
+    dest: /home/{{ ansible_user }}/jenkins.yml
+
+- name: deploy jenkins
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/jenkins.yml

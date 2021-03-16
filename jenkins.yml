@@ -1,0 +1,8 @@
+---
+
+- name: deploy jenkins in k8s
+  hosts: k8smasters
+  tasks:
+    - name: include jenkins role
+      include_role:
+        name: jenkins

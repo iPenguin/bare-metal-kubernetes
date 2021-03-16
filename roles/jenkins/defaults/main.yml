@@ -1,0 +1,6 @@
+---
+# defaults file for jenkins
+
+jenkins_data_path: "{{ pod_data_path }}/jenkins"
+
+k8s_jenkins_namespace: jenkins

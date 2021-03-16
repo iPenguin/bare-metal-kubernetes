@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ k8s_jenkins_namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jenkins
+  name: jenkins
+  namespace: {{ k8s_jenkins_namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - image: jenkins/jenkins:lts
+        name: jenkins
+        volumeMounts:
+          - name: jenkins-data
+            mountPath: /var/jenkins_home
+      volumes:
+        - name: jenkins-data
+          persistentVolumeClaim:
+            claimName: jenkins-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-pvc
+  namespace: {{ k8s_jenkins_namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: jenkins
+  name: jenkins-ipv4
+  namespace: {{ k8s_jenkins_namespace }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ servers.jenkins.ipv4 }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv4
+  externalTrafficPolicy: Local
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: jenkins
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: jenkins
+  name: jenkins-ipv6
+  namespace: {{ k8s_jenkins_namespace }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ servers.jenkins.ipv6 }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv6
+  externalTrafficPolicy: Local
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: jenkins
+  sessionAffinity: None
