@@ -8,6 +8,7 @@ etcd_endpoints:
 initial_ansible_user: ansible
 preferred_ansible_user: ansible
 
+k8s_master_can_run_pods: yes
 k8s_command_node: "{{ groups['k8smasters'] | first }}"
 
 k8s_use_ipv6: true

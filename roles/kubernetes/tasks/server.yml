@@ -22,3 +22,8 @@
     dest: "/home/{{ ansible_user }}/.kube/config"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
+
+- name: untaint master node so it can run pods
+  become: no
+  command: kubectl taint node {{ k8s_command_node }} node-role.kubernetes.io/master:NoSchedule-
+  when: k8s_master_can_run_pods
