@@ -32,10 +32,10 @@ hosts:
       - k8sworkers
       - servers
       - rock64
-  - hostname: k8s2.milco.info
-    groups:
-      - k8scluster
-      - k8sworkers
-      - servers
-      - rock64
+  # - hostname: k8s2.milco.info
+  #   groups:
+  #     - k8scluster
+  #     - k8sworkers
+  #     - servers
+  #     - rock64
 ...
