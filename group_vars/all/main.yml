@@ -1,9 +1,11 @@
 ---
 
 lan_domain: milco.info
+ipv4_network: 192.168.1
+ipv6_network: 2601:200:4101:8d10
 
 etcd_endpoints:
-  - http://192.168.1.5:2379
+  - http://{{ ipv4_network }}.5:2379
 
 initial_ansible_user: ansible
 preferred_ansible_user: ansible
@@ -15,30 +17,30 @@ k8s_use_ipv6: true
 
 network:
   ipv4:
-    subnet: 192.168.1.0/24
-    router: 192.168.1.1
-    dns: 192.168.1.1
+    subnet: "{{ ipv4_network }}.0/24"
+    router: "{{ ipv4_network }}.1"
+    dns: "{{ ipv4_network }}.1"
     server_pool:
-      start: 192.168.1.20
-      end: 192.168.1.70
+      start: "{{ ipv4_network }}.20"
+      end: "{{ ipv4_network }}.70"
   ipv6:
-    subnet: 2601:200:4101:8d10::/64
-    router: 2601:200:4101:8d10::1
-    dns: 2601:200:4101:8d10::1
+    subnet: "{{ ipv6_network }}::/64"
+    router: "{{ ipv6_network }}::1"
+    dns: "{{ ipv6_network }}::1"
     server_pool:
-      start: 2601:200:4101:8d10::20
-      end: 2601:200:4101:8d10::70
+      start: "{{ ipv6_network }}::20"
+      end: "{{ ipv6_network }}::70"
 
 servers:
   nfs:
-    ipv4: 192.168.1.20
-    ipv6: 2601:200:4101:8d10::20
+    ipv4: "{{ ipv4_network }}.20"
+    ipv6: "{{ ipv6_network }}::20"
   git:
-    ipv4: 192.168.1.21
-    ipv6: 2601:200:4101:8d10::21
+    ipv4: "{{ ipv4_network }}.21"
+    ipv6: "{{ ipv6_network }}::21"
   ipa:
-    ipv4: 192.168.1.22
-    ipv6: 2601:200:4101:8d10::22
+    ipv4: "{{ ipv4_network }}.22"
+    ipv6: "{{ ipv6_network }}::22"
   jenkins:
-    ipv4: 192.168.1.23
-    ipv6: 2601:200:4101:8d10::23
+    ipv4: "{{ ipv4_network }}.23"
+    ipv6: "{{ ipv6_network }}::23"
