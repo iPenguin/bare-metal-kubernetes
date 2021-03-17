@@ -1,0 +1,8 @@
+---
+
+- name: create the metrics server
+  hosts: k8smasters
+  tasks:
+    - name: include metrics server yml
+      include_role:
+        name: metrics-server

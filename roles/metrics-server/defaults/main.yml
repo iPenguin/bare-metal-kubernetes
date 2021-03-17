@@ -1,0 +1,4 @@
+---
+# defaults file for metrics-server
+
+metrics_version: 0.4.2
