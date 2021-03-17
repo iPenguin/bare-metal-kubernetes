@@ -3,17 +3,27 @@
 - name: minimum system setup
   include_tasks: init-server.yml
 
-- name: common utils
+- name: common and needed utils
   include_tasks: install-utils.yml
 
+- name: setup rsync backups
+  include_tasks: backups.yml
+
+# docker, kubernetes, calico, metallb
 - name: setup kubernetes cluster
   include_tasks: setup-k8s.yml
 
-- name: setup backups
-  include_tasks: backups.yml
+- name: setup rook-nfs & rook-ceph
+  include_tasks: k8s-rook.yml
+
+- name: setup metrics server
+  include_tasks: metrics-server.yml
 
 - name: setup nfs server
   include_tasks: nfs-server.yml
 
 - name: setup git server
   include_tasks: git-server.yml
+
+- name: setup jenkins server
+  include_tasks: jenkins.yml
