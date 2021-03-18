@@ -1,0 +1,15 @@
+---
+# tasks file for helm
+
+- name: get helm installer
+  uri:
+    url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    dest: /home/{{ ansible_user }}/get_helm.sh
+    mode: '0700'
+
+- name: install helm
+  command: /home/{{ ansible_user }}/get_helm.sh
+
+- name: add default repo
+  become: no
+  command: helm repo add stable https://charts.helm.sh/stable
