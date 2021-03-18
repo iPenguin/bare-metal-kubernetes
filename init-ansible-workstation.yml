@@ -1,0 +1,23 @@
+---
+
+- name: configure the local workstation to run this ansible repo
+  hosts: localhost
+  tasks:
+    - name: update software
+      apt:
+        name: "*"
+        state: latest
+
+    - name: install software common
+      apt:
+        name:
+          - software-properties-common
+        state: present
+    - name: add ansible repo
+      command: apt-add-repository --yes --update ppa:ansible/ansible
+
+    - name: install applications
+      apt:
+        name:
+          - ansible
+        state: latest
