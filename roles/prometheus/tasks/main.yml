@@ -1,0 +1,14 @@
+---
+# tasks file for prometheus
+
+- name: create namespace
+  become: no
+  command: kubectl create ns {{ prometheus_namespace }}
+
+- name: add repo for prometheus community
+  become: no
+  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+- name: install prometheus
+  become: no
+  command: helm install prometheus -n {{ prometheus_namespace }} prometheus-community/kube-prometheus-stack --set grafana.adminPassword="{{ prometheus_grafana_password }}"
