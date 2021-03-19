@@ -1,29 +1,54 @@
 ---
+#
+# Initialize and configure the base systems
+# and fundamentally required features
+#
+- name: configure this workstation to run ansible
+  include_tasks: init-ansible-workstation.yml
+
+- name: configure local dns
+  include_tasks: update-hosts.yml
+
+- name: configure inventory via dns
+  include_tasks: update-inventory.yml
 
 - name: minimum system setup
   include_tasks: init-server.yml
 
-- name: common and needed utils
+- name: common and needed/wanted utils
   include_tasks: install-utils.yml
 
 - name: setup rsync backups
   include_tasks: backups.yml
 
-# docker, kubernetes, calico, metallb
+#
+# Core instruments and tools for running
+# and managing kubernetes
+#
 - name: setup kubernetes cluster
-  include_tasks: setup-k8s.yml
+  # docker, kubernetes, calico, metallb
+  include_tasks: k8s-setup.yml
 
 - name: setup rook-nfs & rook-ceph
   include_tasks: k8s-rook.yml
 
 - name: setup metrics server
-  include_tasks: metrics-server.yml
+  include_tasks: k8s-metrics-server.yml
 
+- name: install helm chart mgmt
+  include_tasks: k8s-helm.yml
+
+- name: include prometheus monitoring
+  include_tasks: k8s-prometheus.yml
+
+#
+# Software deployed on top of kubernetes
+#
 - name: setup nfs server
-  include_tasks: nfs-server.yml
+  include_tasks: k8s-deploy-nfs.yml
 
 - name: setup git server
-  include_tasks: git-server.yml
+  include_tasks: k8s-deploy-gitea.yml
 
 - name: setup jenkins server
-  include_tasks: jenkins.yml
+  include_tasks: k8s-deploy-jenkins.yml
