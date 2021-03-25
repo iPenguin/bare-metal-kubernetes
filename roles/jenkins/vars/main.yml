@@ -1,2 +1,6 @@
 ---
 # vars file for jenkins
+
+k8s_jenkins_config:
+  - jenkins.yml
+  - jenkins-workers.yml

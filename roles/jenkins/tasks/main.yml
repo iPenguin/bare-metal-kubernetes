@@ -8,10 +8,12 @@
     state: directory
 
 - name: copy in config file
-  template:
+  template: "{{ item }}"
     src: jenkins.yml
-    dest: /home/{{ ansible_user }}/jenkins.yml
+    dest: /home/{{ ansible_user }}/{{ item }}
+  loop: "{{ k8s_jenkins_config }}"
 
 - name: deploy jenkins
   become: no
-  command: kubectl apply -f /home/{{ ansible_user }}/jenkins.yml
+  command: kubectl apply -f /home/{{ ansible_user }}/{{ item }}
+  loop: "{{ k8s_jenkins_config }}"
