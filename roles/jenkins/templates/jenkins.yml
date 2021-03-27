@@ -26,10 +26,17 @@ spec:
         volumeMounts:
           - name: jenkins-data
             mountPath: /var/jenkins_home
+          - name: timezone
+            mountPath: /etc/timezone
+            readOnly: yes
       volumes:
         - name: jenkins-data
           persistentVolumeClaim:
             claimName: jenkins-pvc
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+            type: File
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
