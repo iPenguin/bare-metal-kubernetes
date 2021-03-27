@@ -41,6 +41,10 @@
     dest: /etc/sudoers.d/{{ preferred_ansible_user }}
     validate: 'visudo -cf %s'
 
+- name: set the timezone
+  timezone:
+    name: "America/Los_Angeles"
+
 - name: update all packages
   package:
     name: "*"
