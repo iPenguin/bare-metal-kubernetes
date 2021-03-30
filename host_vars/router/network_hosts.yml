@@ -55,9 +55,9 @@ lan_domains:
   - domain: ipa.milco.info
     ip_address: "{{ ipv6_network }}::22"
 
-  - domain: jenkins.milco.info
+  - domain: ci.milco.info
     ip_address: "{{ ipv4_network }}.23"
-  - domain: jenkins.milco.info
+  - domain: ci.milco.info
     ip_address: "{{ ipv6_network }}::23"
 
   - domain: k8st.milco.info

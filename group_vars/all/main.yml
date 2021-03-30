@@ -41,6 +41,6 @@ servers:
   ipa:
     ipv4: "{{ ipv4_network }}.22"
     ipv6: "{{ ipv6_network }}::22"
-  jenkins:
+  ci:
     ipv4: "{{ ipv4_network }}.23"
     ipv6: "{{ ipv6_network }}::23"

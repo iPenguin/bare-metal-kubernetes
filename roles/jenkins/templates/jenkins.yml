@@ -60,7 +60,7 @@ metadata:
   namespace: {{ k8s_jenkins_namespace }}
 spec:
   type: LoadBalancer
-  loadBalancerIP: {{ servers.jenkins.ipv4 }}
+  loadBalancerIP: {{ servers.ci.ipv4 }}
   ipFamilyPolicy: SingleStack
   ipFamilies:
     - IPv4
@@ -83,7 +83,7 @@ metadata:
   namespace: {{ k8s_jenkins_namespace }}
 spec:
   type: LoadBalancer
-  loadBalancerIP: {{ servers.jenkins.ipv6 }}
+  loadBalancerIP: {{ servers.ci.ipv6 }}
   ipFamilyPolicy: SingleStack
   ipFamilies:
     - IPv6
