@@ -12,6 +12,7 @@
       apt:
         name:
           - software-properties-common
+          - python3-pip
         state: present
     - name: add ansible repo
       command: apt-add-repository --yes --update ppa:ansible/ansible
@@ -21,3 +22,7 @@
         name:
           - ansible
         state: latest
+
+    - name: install jenkins job builder
+      pip:
+        name: jenkins-job-builder
