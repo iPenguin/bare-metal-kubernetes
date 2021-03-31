@@ -1,7 +1,12 @@
+---
 apiVersion: v1
-kind: Namespace
+kind: Secret
 metadata:
-  name: {{ k8s_jenkins_namespace }}
+  name: jenkins-admin
+  namespace: {{ k8s_jenkins_namespace }}
+data:
+  JENKINS_USER: "{{ vault_jenkins_username | b64encode }}"
+  JENKINS_PASS: "{{ vault_jenkins_password | b64encode }}"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -21,14 +26,30 @@ spec:
         app: jenkins
     spec:
       containers:
-      - image: jenkins/jenkins:lts
+      - image: ipenguin/jenkins-server
         name: jenkins
+        env:
+          - name: JENKINS_USER
+            valueFrom:
+              secretKeyRef:
+                name: jenkins-admin
+                key: JENKINS_USER
+          - name: JENKINS_PASS
+            valueFrom:
+              secretKeyRef:
+                name: jenkins-admin
+                key: JENKINS_PASS
+          - name: JENKINS_PLUGINS
+            value: "{% for plugin in jenkins_plugins %}{{ plugin }} {% endfor %}"
         volumeMounts:
           - name: jenkins-data
             mountPath: /var/jenkins_home
           - name: timezone
             mountPath: /etc/timezone
             readOnly: yes
+          - name: jenkins-casc
+            readOnly: yes
+            mountPath: "{{ jenkins_casc_path }}"
       volumes:
         - name: jenkins-data
           persistentVolumeClaim:
@@ -37,6 +58,9 @@ spec:
           hostPath:
             path: /etc/timezone
             type: File
+        - name: jenkins-casc
+          configMap:
+            name: jenkins-casc
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

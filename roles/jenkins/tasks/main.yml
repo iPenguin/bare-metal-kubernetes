@@ -2,6 +2,22 @@
 # tasks file for jenkins
 #
 
+- name: create path for CasC files
+  file:
+    path: "{{ jenkins_config_path }}/"
+    recurse: yes
+    state: directory
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: generate exports file
+  tags:
+    - update_casc
+  template:
+    src: casc.yml
+    dest: "{{ jenkins_config_path }}/casc.yml"
+
 - name: create folder
   file:
     path: "{{ pod_data_path }}/jenkins"
