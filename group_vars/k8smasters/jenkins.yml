@@ -33,9 +33,19 @@ jenkins_plugins:
   - ldap:2.4
   - nodejs:1.4.0
   - configuration-as-code:1.47
+  - build-monitor-plugin:1.12+build.201809061734
+  - audit-trail:3.8
+  - prometheus:2.0.9
+  - kubernetes-credentials-provider:0.18-1
 
 jenkins_nodejs_installations:
   - name: node-14.x
     version: 14.16.0
 
 jenkins_config_path: "{{ pod_config_base_path }}/jenkins"
+
+prometheus_scrape_config:
+  - job_name: 'jenkins'
+    metrics_path: /prometheus
+    static_configs:
+      - targets: ['ci.milco.info:8080']
