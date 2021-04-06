@@ -24,3 +24,9 @@ controllerManager:
 scheduler:
   extraArgs:
     feature-gates: RemoveSelfLink=true{% if k8s_use_ipv6 %},IPv6DualStack=true{% endif %}
+
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+allowedUnsafeSysctls:
+  - net.ipv6.conf.all.disable_ipv6
