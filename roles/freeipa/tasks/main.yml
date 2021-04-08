@@ -15,6 +15,7 @@
     image: freeipa/freeipa-server:centos-8
     state: started
     restart: yes
+    restart_policy: always
     hostname: ipa.{{ lan_domain }}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
