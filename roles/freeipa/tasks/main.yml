@@ -1,0 +1,36 @@
+---
+# tasks file for freeipa
+
+- name: create storage space
+  file:
+    path: "{{ ipa_storage_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Create freeipa container
+  docker_container:
+    name: freeipa
+    image: freeipa/freeipa-server:centos-8
+    state: started
+    restart: yes
+    hostname: ipa.{{ lan_domain }}
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - "{{ ipa_storage_dir }}:/data:Z"
+    env:
+      IPA_SERVER_HOSTNAME: ipa.{{ lan_domain }}
+      DEBUG_TRACE: "1"
+      DEBUG_NO_EXIT: "1"
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: "0"
+    ports:
+     #- "53:53"  #dns
+     - "80:80"  #http
+     - "443:443" #https
+     - "389:389" #ldap
+     - "636:636" #ldaps
+     - "88:88"  #kerberos
+     - "464:464" #kpasswd
+     - "123:123" #ntp

@@ -1,0 +1,40 @@
+---
+
+- name: create ipa server
+  hosts: k8smasters
+  vars_files:
+    - vaults/ipa.yml
+  vars:
+    ipa_config_path: "{{ pod_data_path }}/ipa"
+    ipa_directory_password: "{{ vault_ipa_directory_password }}"
+    ipa_admin_password: "{{ vault_ipa_admin_password }}"
+  tasks:
+    - name: configure selinux for this container
+      seboolean:
+        name: container_manage_cgroup
+        state: yes
+        persistent: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: create ipa path
+      file:
+        path: "{{ ipa_config_path }}"
+        state: directory
+        recurse: yes
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: create freeipa config file
+      template:
+        src: ipa-server-install-options
+        dest: "{{ ipa_config_path }}/ipa-server-install-options"
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: include ipa role
+      include_role:
+        name: freeipa
+      vars:
+        ipa_storage_dir: "{{ ipa_config_path }}"
