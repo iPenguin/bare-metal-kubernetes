@@ -21,8 +21,6 @@
       - "{{ ipa_storage_dir }}:/data:Z"
     env:
       IPA_SERVER_HOSTNAME: ipa.{{ lan_domain }}
-      DEBUG_TRACE: "1"
-      DEBUG_NO_EXIT: "1"
     sysctls:
       net.ipv6.conf.all.disable_ipv6: "0"
     ports:
