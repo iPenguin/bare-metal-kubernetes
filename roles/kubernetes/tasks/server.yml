@@ -2,7 +2,7 @@
 
 - name: create kubeadm init config
   template:
-    src: kubeadm.yaml.j2
+    src: kubeadm.yaml
     dest: /root/kubeadm.yaml
 
 - name: kubeadm init
