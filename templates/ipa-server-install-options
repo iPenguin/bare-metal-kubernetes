@@ -1,0 +1,5 @@
+-U
+-r {{ lan_domain | upper }}
+--no-ntp
+-p {{ ipa_directory_password }}
+-a {{ ipa_admin_password }}
