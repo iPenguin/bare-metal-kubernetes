@@ -35,7 +35,7 @@
     update_cache: yes
 
 - name: mark hold updates on k8s packages
-  command: apt-mark hold kubeadm kubelet
+  command: apt-mark hold kubeadm kubelet kubectl
 
 #
 # If the firewall is enabled you may see the following issue:
