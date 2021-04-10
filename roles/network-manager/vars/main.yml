@@ -3,4 +3,4 @@
 
 nm_default_interface:
   ipv4: "{{ ansible_facts.default_ipv4.interface }}"
-  ipv6: "{{ ansible_facts.default_ipv6.interface }}"
+  ipv6: "{{ ansible_facts.default_ipv6.interface | default( ansible_facts.default_ipv4.interface ) }}"
