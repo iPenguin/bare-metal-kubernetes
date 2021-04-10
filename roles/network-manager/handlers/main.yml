@@ -1,0 +1,5 @@
+---
+# handlers file for networking
+
+- name: Restart Networking
+  command: nmcli c up {{ ansible_facts['default_ipv4']['interface'] }}
