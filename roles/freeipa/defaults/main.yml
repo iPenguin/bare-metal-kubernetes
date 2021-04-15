@@ -2,3 +2,6 @@
 # defaults file for freeipa
 
 ipa_storage_dir: "{{ pod_data_path }}/ipa"
+
+ipa_ipv4: ""
+ipa_ipv6: ""

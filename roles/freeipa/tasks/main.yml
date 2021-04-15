@@ -1,7 +1,27 @@
 ---
 # tasks file for freeipa
 
+- name: install RedHat pip files
+  yum:
+    name:
+      - python3-pip
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: install Ubuntu pip files
+  apt:
+    name:
+      - python-pip
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: install docker pip
+  pip:
+    name: docker
+
 - name: create storage space
+  tags:
+    - container_only
   file:
     path: "{{ ipa_storage_dir }}"
     state: directory
@@ -10,26 +30,28 @@
     mode: '0750'
 
 - name: Create freeipa container
+  tags:
+    - container_only
   docker_container:
     name: freeipa
-    image: freeipa/freeipa-server:centos-8
+    image: ipenguin/freeipa-server:centos-8-latest
     state: started
     restart: yes
     restart_policy: always
-    hostname: ipa.{{ lan_domain }}
+    hostname: "{{ ipa_server_hostname }}"
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - "{{ ipa_storage_dir }}:/data:Z"
     env:
-      IPA_SERVER_HOSTNAME: ipa.{{ lan_domain }}
+      IPA_SERVER_HOSTNAME: "{{ ipa_server_hostname }}"
     sysctls:
       net.ipv6.conf.all.disable_ipv6: "0"
     ports:
-     #- "53:53"  #dns
-     - "80:80"  #http
-     - "443:443" #https
-     - "389:389" #ldap
-     - "636:636" #ldaps
-     - "88:88"  #kerberos
-     - "464:464" #kpasswd
-     - "123:123" #ntp
+     - "{{ ipa_ipv4 }}:53:53"   #dns
+     - "{{ ipa_ipv4 }}:80:80"   #http
+     - "{{ ipa_ipv4 }}:443:443" #https
+     - "{{ ipa_ipv4 }}:389:389" #ldap
+     - "{{ ipa_ipv4 }}:636:636" #ldaps
+     - "{{ ipa_ipv4 }}:88:88"   #kerberos
+     - "{{ ipa_ipv4 }}:464:464" #kpasswd
+     - "{{ ipa_ipv4 }}:123:123" #ntp

@@ -5,9 +5,11 @@
   vars_files:
     - vaults/ipa.yml
   vars:
-    ipa_config_path: "{{ pod_data_path }}/ipa"
+    ipa_storage_path: "/srv/ipa"
     ipa_directory_password: "{{ vault_ipa_directory_password }}"
     ipa_admin_password: "{{ vault_ipa_admin_password }}"
+    ipa_ipv4: "{{ servers.ipa.ipv4 }}"
+    ipa_ipv6: "{{ servers.ipa.ipv6 }}"
   tasks:
     - name: configure selinux for this container
       seboolean:
@@ -17,24 +19,58 @@
       when: ansible_os_family == "RedHat"
 
     - name: create ipa path
+      tags:
+        - container_only
       file:
-        path: "{{ ipa_config_path }}"
+        path: "{{ ipa_storage_path }}"
         state: directory
-        recurse: yes
         owner: root
         group: root
         mode: '0700'
 
     - name: create freeipa config file
+      tags:
+        - container_only
       template:
         src: ipa-server-install-options
-        dest: "{{ ipa_config_path }}/ipa-server-install-options"
+        dest: "{{ ipa_storage_path }}/ipa-server-install-options"
         owner: root
         group: root
         mode: '0600'
 
+    - name: setup ip addresses
+      tags:
+        - never
+        - ip_address
+      vars:
+        server:
+          ipv4: "{{ ipa_ipv4 }}"
+          ipv6: "{{ ipa_ipv6 }}"
+      include_role:
+        name: network-manager
+
+    - name: create passwd file
+      tags:
+        - container_only
+      copy:
+        content: "{{ vault_ipa_directory_password | b64encode }}"
+        dest: "{{ ipa_storage_path }}/passwd"
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: create email file
+      tags:
+        - container_only
+      copy:
+        content: "{{ ipa_server_admin_email }}"
+        dest: "{{ ipa_storage_path }}/email"
+
+
     - name: include ipa role
+      tags:
+        - container_only
       include_role:
         name: freeipa
       vars:
-        ipa_storage_dir: "{{ ipa_config_path }}"
+        ipa_storage_dir: "{{ ipa_storage_path }}"

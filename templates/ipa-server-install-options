@@ -3,3 +3,4 @@
 --no-ntp
 -p {{ ipa_directory_password }}
 -a {{ ipa_admin_password }}
+--no-host-dns
