@@ -1,0 +1,112 @@
+---
+
+ipa_groups:
+  - k8s_admins
+  - developers
+  - users
+
+ipa_users:
+  - name: brianmilco
+    givenname: Brian
+    surname: Milco
+    email:
+      - brian@milco.info
+      - bcmilco@gmail.com
+    sshkeys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDD2LgGJ9phE2R9zosHKQO9UuNgK9NnC1lJMER7VVWgo90ESs73PZL70Ia8cj43Rl/u50Va0ZDVfFudVDB1dPMlSwh8JFhgCI3LNNhjUDoJZ+UYGsiZ5gXGoXMVlPL2dHkCG2KE6arxtkk2F7dJytBgqTap4iI0q5sOM8e1N+ejy5Hs6xmt/bgQhGf03MdEFue5fStXCWPMYg+WaxXGzvG7P+x01nnyXuu88v2pXgC6b522kx2s+7HO/f+PJr8AJ9XOwJqr26NeJ4qWAFXkeOCDpmUMB7P3ZY/XRWJp2isQSFh0dxe2iV7tHxTMEnd7dBJqbOmTL2zpMUy/M24o2nyaMyj4RxhjPCrm8xIklgrIWnd7TK/5bwxJFACqPowO3ha8w0iLVyuTPs00/bIy70+UOzowcwnFdygNbUhbvBJuDhRQo9L6k189QoVM3A1oY+VD4Et6bocFgp8ZYWf/aNfNhL965pRqAErrF5zqLl8qhroxK7wWao+clAi6JAOcNWM= brian@laptop.milco.info
+    loginshell: zsh
+    password: "{{ ipa_new_user_password }}"
+
+  - name: jilljohnson
+    givenname: Jill
+    surname: Johnson
+    email:
+      - jill.johnson@milco.info
+    sshkeys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDD2LgGJ9phE2R9zosHKQO9UuNgK9NnC1lJMER7VVWgo90ESs73PZL70Ia8cj43Rl/u50Va0ZDVfFudVDB1dPMlSwh8JFhgCI3LNNhjUDoJZ+UYGsiZ5gXGoXMVlPL2dHkCG2KE6arxtkk2F7dJytBgqTap4iI0q5sOM8e1N+ejy5Hs6xmt/bgQhGf03MdEFue5fStXCWPMYg+WaxXGzvG7P+x01nnyXuu88v2pXgC6b522kx2s+7HO/f+PJr8AJ9XOwJqr26NeJ4qWAFXkeOCDpmUMB7P3ZY/XRWJp2isQSFh0dxe2iV7tHxTMEnd7dBJqbOmTL2zpMUy/M24o2nyaMyj4RxhjPCrm8xIklgrIWnd7TK/5bwxJFACqPowO3ha8w0iLVyuTPs00/bIy70+UOzowcwnFdygNbUhbvBJuDhRQo9L6k189QoVM3A1oY+VD4Et6bocFgp8ZYWf/aNfNhL965pRqAErrF5zqLl8qhroxK7wWao+clAi6JAOcNWM= brian@laptop.milco.info
+    password: "{{ ipa_new_user_password }}"
+
+  - name: johnsmith
+    givenname: John
+    surname: Smith
+    email:
+      - johnsmith@milco.info
+    sshkeys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDD2LgGJ9phE2R9zosHKQO9UuNgK9NnC1lJMER7VVWgo90ESs73PZL70Ia8cj43Rl/u50Va0ZDVfFudVDB1dPMlSwh8JFhgCI3LNNhjUDoJZ+UYGsiZ5gXGoXMVlPL2dHkCG2KE6arxtkk2F7dJytBgqTap4iI0q5sOM8e1N+ejy5Hs6xmt/bgQhGf03MdEFue5fStXCWPMYg+WaxXGzvG7P+x01nnyXuu88v2pXgC6b522kx2s+7HO/f+PJr8AJ9XOwJqr26NeJ4qWAFXkeOCDpmUMB7P3ZY/XRWJp2isQSFh0dxe2iV7tHxTMEnd7dBJqbOmTL2zpMUy/M24o2nyaMyj4RxhjPCrm8xIklgrIWnd7TK/5bwxJFACqPowO3ha8w0iLVyuTPs00/bIy70+UOzowcwnFdygNbUhbvBJuDhRQo9L6k189QoVM3A1oY+VD4Et6bocFgp8ZYWf/aNfNhL965pRqAErrF5zqLl8qhroxK7wWao+clAi6JAOcNWM= brian@laptop.milco.info
+    password: "{{ ipa_new_user_password }}"
+
+ipa_hosts:
+  - name: k8sm.milco.info
+    description: primary server
+    ip_address: 192.168.1.5
+    ns_os_version: RHEL8
+    mac_address:
+      - "98:fa:9b:0a:ff:11"
+
+  - name: desktop.milco.info
+    description: desktop workstation
+    ip_address: 192.168.1.76
+    ns_os_version: Kubuntu 20.04
+    mac_address:
+      - ""
+  - name: laptop.milco.info
+    description: personal laptop
+    ip_address: 192.168.1.75
+    ns_os_version: Kubuntu 20.04
+    mac_address:
+      - "54:26:96:e0:51:53"
+
+  - name: node0.milco.info
+    description: k8s vm 1
+    ip_address: 192.168.1.245
+    ns_os_version: Ubuntu 18.04
+    mac_address:
+      - "52:54:00:d0:ae:2d"
+  - name: node1.milco.info
+    description: k8s vm 2
+    ip_address: 192.168.1.230
+    ns_os_version: Ubuntu 18.04
+    mac_address:
+      - "52:54:00:32:9e:68"
+  - name: node2.milco.info
+    description: k8s vm 3
+    ip_address: 192.168.1.201
+    ns_os_version: Ubuntu 18.04
+    mac_address:
+      - "52:54:00:48:e8:59"
+
+ipa_hostgroups:
+  - name: k8s_vms
+    hostgroups: []
+    hosts:
+      - node0.milco.info
+      - node1.milco.info
+      - node2.milco.info
+  - name: k8s_platforms
+    hostgroups: []
+    hosts:
+      - k8sm.milco.info
+      - k8st.milco.info
+  - name: k8s_servers
+    hostgroups:
+      - k8s_platforms
+      - k8s_vms
+    hosts: []
+  - name: workstations
+    hostgroups: []
+    hosts:
+      - laptop.milco.info
+      - desktop.milco.info
+
+ipa_sudorules:
+  - name: k8s_admins
+    description: Allow k8s admins to sudo on k8s servers
+    cmdcategory: all
+    hosts:
+    hostgroup:
+      - k8s_servers
+
+ipa_dnsrecords: []
+  # - name: 'k8sm'
+  #   type: 'AAAA'
+  #   value: '{{  }}'
