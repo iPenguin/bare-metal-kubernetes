@@ -105,6 +105,8 @@ ipa_sudorules:
     hosts:
     hostgroup:
       - k8s_servers
+    usergroup: []
+    sudoopt: []
 
 ipa_dnsrecords: []
   # - name: 'k8sm'

@@ -70,12 +70,9 @@
         description: Allow developers to run every command with sudo on all database server
         cmdcategory: all
         host: "{{ item.hosts }}"
-        hostgroup:
-        - db-server
-        sudoopt:
-        - '!authenticate'
-        usergroup:
-        - developers
+        hostgroup: "{{ item.hostgroup }}"
+        sudoopt: "{{ item.sudoopt }}"
+        usergroup: "{{ item.usergroup }}"
         ipa_host: "{{ ipa_server_hostname }}"
         ipa_user: "{{ ipa_admin_username }}"
         ipa_pass: "{{ ipa_admin_password }}"
