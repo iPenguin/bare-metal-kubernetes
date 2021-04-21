@@ -25,8 +25,8 @@ jenkins_plugins:
   - authorize-project:1.4.0
   - pam-auth:1.6
   - gradle:1.36
-  - git:4.7.0
-  - git-client:3.7.0
+  - git:4.7.1
+  - git-client:3.7.1
   - git-server:1.9
   - gitea:1.2.1
   - github:1.33.1
