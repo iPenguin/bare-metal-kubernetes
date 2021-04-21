@@ -10,6 +10,15 @@
     ipa_admin_password: "{{ vault_ipa_admin_password }}"
     ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
   tasks:
+    - name: config ipa server
+      ipa_config:
+        ipadefaultemaildomain: "{{ lan_domain }}"
+        ipadefaultloginshell: "bash"
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+
     - name: create ipa groups
       ipa_group:
         name: "{{ item }}"
@@ -52,7 +61,7 @@
       register: host_create
       changed_when: "'no modifications' in host_create.msg"
 
-    - name:
+    - name: create host groups
       ipa_hostgroup:
         name: "{{ item.name }}"
         state: present
