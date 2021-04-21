@@ -1,0 +1,5 @@
+grafana:
+  adminPassword: "{{ prometheus_grafana_password }}"
+prometheus:
+  additionalScrapeConfigs:
+    - "{{ prometheus_scrape_config }}"
