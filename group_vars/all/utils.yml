@@ -7,13 +7,17 @@ common_utils:
   - rsync
   - git
   - htop
+  - zsh
+  - sysstat
 
 redhat_utils:
   - "@Virtualization Host"
   - policycoreutils-python-utils
   - bash-completion
+  - ipa-client
 
 debian_utils:
   - nfs-common
   - lvm2
   - xfsprogs
+  - freeipa-client
