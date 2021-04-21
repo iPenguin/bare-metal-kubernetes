@@ -23,6 +23,8 @@
           - ansible
         state: latest
 
-    - name: install jenkins job builder
+    - name: install ansible plugins via pip
       pip:
-        name: jenkins-job-builder
+        name:
+          - jenkins-job-builder
+          - docker
