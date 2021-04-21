@@ -1,6 +1,13 @@
--U
--r {{ lan_domain | upper }}
---no-ntp
--p {{ ipa_directory_password }}
--a {{ ipa_admin_password }}
+--unattended
+--realm={{ ipa_domain | upper }}
+--domain={{ ipa_domain }}
+--ds-password={{ ipa_directory_password }}
+--admin-password={{ ipa_admin_password }}
+--ntp-pool=us.pool.ntp.org
 --no-host-dns
+--setup-kra
+--setup-dns
+--zonemgr="{{ ipa_server_admin_email }}"
+--forwarder="{{ network.ipv4.dns }}"
+--external-ca
+--ca-subject "CN={{ ipa_domain }}"

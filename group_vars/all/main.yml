@@ -4,6 +4,7 @@ lan_domain: milco.info
 ipv4_network: 192.168.1
 ipv6_network: 2601:200:4101:8d10
 
+ipa_domain: "n.{{ lan_domain }}"
 ipa_server_hostname: ipa.{{ lan_domain }}
 ipa_server_admin_email: bcmilco@gmail.com
 
