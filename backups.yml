@@ -44,11 +44,11 @@
         job: rsnapshot daily
         hour: '1'
         minute: '30'
-    - name: configure monthly backups
-      cron:
-        name: monthly backups
-        state: present
-        job: rsnapshot monthly
-        day: '1'
-        hour: '1'
-        minute: '0'
+    # - name: configure monthly backups
+    #   cron:
+    #     name: monthly backups
+    #     state: present
+    #     job: rsnapshot monthly
+    #     day: '1'
+    #     hour: '1'
+    #     minute: '0'
