@@ -14,28 +14,16 @@ hosts:
       - hardware
       - k8smasters
       - k8scluster
-  - hostname: k8st.milco.info
-    groups:
-      - k8scluster
-      - k8sworkers
-      - servers
-      - hardware
-  - hostname: k8s0.milco.info
-    groups:
-      - k8scluster
-      - k8sworkers
-      - servers
-      - rock64
   - hostname: k8s1.milco.info
     groups:
       - k8scluster
       - k8sworkers
       - servers
-      - rock64
-  # - hostname: k8s2.milco.info
-  #   groups:
-  #     - k8scluster
-  #     - k8sworkers
-  #     - servers
-  #     - rock64
+      - hardware
+  - hostname: k8s2.milco.info
+    groups:
+      - k8scluster
+      - k8sworkers
+      - servers
+      - hardware
 ...

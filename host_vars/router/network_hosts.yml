@@ -7,12 +7,6 @@ lan_hosts:
     duid: 0004646284e3f9e486521a87eace716092a7
     hostid: fade
 
-  - hostname: desktop
-    mac: 6C:4B:90:E2:89:09
-    ipv4: "{{ ipv4_network }}.76"
-    duid: 0004088ffc7274bc0362b48813c52326343a
-    hostid: 76
-
   - hostname: printer
     mac: f4:ce:46:3e:f0:40
     ipv4: "{{ ipv4_network }}.9"
@@ -23,21 +17,18 @@ lan_hosts:
     duid: 0004fb377c5125717fbd9685f4ae6dcd3e3c
     hostid: 5
 
-  - hostname: k8s0
-    mac: 1e:a3:bf:4d:2b:c4
-    ipv4: "{{ ipv4_network }}.10"
-    duid: 00020000ab1121156d8bc6be9ada
-    hostid: 10
   - hostname: k8s1
-    mac: ca:a0:14:a4:6f:03
+    mac: 6C:4B:90:E2:89:09
     ipv4: "{{ ipv4_network }}.11"
-    duid: 00020000ab11462c53826f4097de
+    duid: 0004088ffc7274bc0362b48813c52326343a
     hostid: 11
+
   - hostname: k8s2
-    mac: 96:57:45:ca:06:39
+    mac: 98:FA:9B:F4:49:44
     ipv4: "{{ ipv4_network }}.12"
-    duid: 00020000ab11d121d570cea8219f
+    duid: 00020000ab11e78df5aa81c65baa
     hostid: 12
+
 
 lan_domains:
   - domain: nfs.milco.info
@@ -59,6 +50,3 @@ lan_domains:
     ip_address: "{{ ipv4_network }}.23"
   - domain: ci.milco.info
     ip_address: "{{ ipv6_network }}::23"
-
-  - domain: k8st.milco.info
-    ip_address: "{{ ipv4_network }}.76"
