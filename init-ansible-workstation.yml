@@ -20,7 +20,7 @@
     - name: install applications
       apt:
         name:
-          - ansible
+          - ansible-base
         state: latest
 
     - name: install ansible plugins via pip
