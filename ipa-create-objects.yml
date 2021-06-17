@@ -4,8 +4,13 @@
   hosts: k8smasters
   vars_files:
     - vaults/ipa.yml
+  vars_prompt:
+    - name: validate_certs_ans
+      prompt: "Validate TLS certificates before connecting? (Y/n)"
+      default: "Y"
+      private: no
   vars:
-    validate_certs: yes
+    validate_certs: "{{ validate_certs_ans | upper == 'Y' }}"
     ipa_admin_username: admin
     ipa_admin_password: "{{ vault_ipa_admin_password }}"
     ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
