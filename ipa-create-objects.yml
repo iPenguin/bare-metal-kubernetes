@@ -51,10 +51,35 @@
         validate_certs: "{{ validate_certs }}"
       loop: "{{ ipa_users }}"
 
+    - name: create dns zones
+      ipa_dnszone:
+        zone_name: "{{ lan_domain }}"
+        state: present
+        # dynamicupdate: true
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+
+    - name: create dns records
+      ipa_dnsrecord:
+        zone_name: "{{ lan_domain }}"
+        record_name: "{{ item.name }}"
+        record_type: "{{ item.type }}"
+        record_value: "{{ item.value }}"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_dnsrecords }}"
+
+
     - name: create hosts
       ignore_errors: yes
       ipa_host:
         name: "{{ item.name }}.{{ lan_domain }}"
+        description: "{{ item.description }}"
         ip_address: "{{ item.ip_address }}"
         mac_address: "{{ item.mac_address }}"
         state: present
@@ -92,26 +117,3 @@
         ipa_pass: "{{ ipa_admin_password }}"
         validate_certs: "{{ validate_certs }}"
       loop: "{{ ipa_sudorules }}"
-
-    # - name: create dns zones
-    #   ipa_dnszone:
-    #     zone_name: "{{ lan_domain }}"
-    #     state: present
-    #     # dynamicupdate: true
-    #     ipa_host: "{{ ipa_server_hostname }}"
-    #     ipa_user: "{{ ipa_admin_username }}"
-    #     ipa_pass: "{{ ipa_admin_password }}"
-    #     validate_certs: "{{ validate_certs }}"
-
-    # - name: create dns records
-    #   ipa_dnsrecord:
-    #     zone_name: "{{ lan_domain }}"
-    #     record_name: "{{ item.name }}"
-    #     record_type: "{{ item.type }}"
-    #     record_value: "{{ item.value }}"
-    #     state: present
-    #     ipa_host: "{{ ipa_server_hostname }}"
-    #     ipa_user: "{{ ipa_admin_username }}"
-    #     ipa_pass: "{{ ipa_admin_password }}"
-    #     validate_certs: "{{ validate_certs }}"
-    #   loop: "{{ ipa_dnsrecords }}"
