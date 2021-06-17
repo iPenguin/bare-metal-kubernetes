@@ -18,6 +18,8 @@
   tags:
     - config_system
     - config_k8s_nodes
+  vars_files:
+    - vaults/redhat.yml
   tasks:
     - name: config base on workers
       include_role:
