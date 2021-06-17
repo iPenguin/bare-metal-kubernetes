@@ -15,7 +15,7 @@
     state: present
   when: ansible_os_family == "Debian"
 
-- name: install docker pip
+- name: install docker library pip
   pip:
     name: docker
 
@@ -34,11 +34,12 @@
     - container_only
   docker_container:
     name: freeipa
-    image: ipenguin/freeipa-server:centos-8-latest
+    image: "freeipa/freeipa-server:{{ ipa_docker_version }}"
+    container_default_behavior: no_defaults
+    hostname: "{{ ipa_server_hostname }}"
     state: started
     restart: yes
     restart_policy: always
-    hostname: "{{ ipa_server_hostname }}"
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - "{{ ipa_storage_dir }}:/data:Z"
@@ -47,11 +48,11 @@
     sysctls:
       net.ipv6.conf.all.disable_ipv6: "0"
     ports:
-     - "{{ ipa_ipv4 }}:53:53"   #dns
-     - "{{ ipa_ipv4 }}:80:80"   #http
-     - "{{ ipa_ipv4 }}:443:443" #https
-     - "{{ ipa_ipv4 }}:389:389" #ldap
-     - "{{ ipa_ipv4 }}:636:636" #ldaps
-     - "{{ ipa_ipv4 }}:88:88"   #kerberos
-     - "{{ ipa_ipv4 }}:464:464" #kpasswd
-     - "{{ ipa_ipv4 }}:123:123" #ntp
+      - "{{ ipa_ipv4 }}:53:53"   #dns
+      - "{{ ipa_ipv4 }}:80:80"   #http
+      - "{{ ipa_ipv4 }}:443:443" #https
+      - "{{ ipa_ipv4 }}:389:389" #ldap
+      - "{{ ipa_ipv4 }}:636:636" #ldaps
+      - "{{ ipa_ipv4 }}:88:88"   #kerberos
+      - "{{ ipa_ipv4 }}:464:464" #kpasswd
+      - "{{ ipa_ipv4 }}:123:123" #ntp
