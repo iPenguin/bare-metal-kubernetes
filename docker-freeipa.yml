@@ -4,6 +4,11 @@
   hosts: k8smasters
   vars_files:
     - vaults/ipa.yml
+  vars_prompt:
+    - name: ipa_add_ip_address
+      prompt: "Do you want to add the IP address (y/N)"
+      default: "N"
+      private: no
   vars:
     ipa_storage_path: "/srv/ipa"
     ipa_directory_password: "{{ vault_ipa_directory_password }}"
@@ -40,14 +45,14 @@
 
     - name: setup ip addresses
       tags:
-        - never
-        - ip_address
+        - container_only
       vars:
         server:
           ipv4: "{{ ipa_ipv4 }}"
           ipv6: "{{ ipa_ipv6 }}"
-      include_role:
+      import_role:
         name: network-manager
+      when: ipa_add_ip_address | upper == 'Y'
 
     - name: create passwd file
       tags:
