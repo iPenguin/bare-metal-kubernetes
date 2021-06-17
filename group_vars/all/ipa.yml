@@ -36,27 +36,27 @@ ipa_users:
     password: "{{ ipa_new_user_password }}"
 
 ipa_hosts:
-  - name: k8sm.milco.info
+  - name: k8sm
     description: k8s primary master
     ip_address: 192.168.1.5
     ns_os_version: RHEL8
     mac_address:
       - "98:fa:9b:0a:ff:11"
 
-  - name: k8s1.milco.info
+  - name: k8s1
     description: k8s worker
     ip_address: 192.168.1.11
     ns_os_version: RHEL8
     mac_address:
       - "6c:4b:90:e2:89:09"
-  - name: k8s2.milco.info
+  - name: k8s2
     description: k8s worker
     ip_address: 192.168.1.12
     ns_os_version: RHEL8
     mac_address:
       - "98:fa:9b:f4:49:44"
 
-  - name: laptop.milco.info
+  - name: laptop
     description: personal laptop
     ip_address: 192.168.1.75
     ns_os_version: Kubuntu 20.04
