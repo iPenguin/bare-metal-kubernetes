@@ -37,18 +37,25 @@ ipa_users:
 
 ipa_hosts:
   - name: k8sm.milco.info
-    description: primary server
+    description: k8s primary master
     ip_address: 192.168.1.5
     ns_os_version: RHEL8
     mac_address:
       - "98:fa:9b:0a:ff:11"
 
-  - name: desktop.milco.info
-    description: desktop workstation
-    ip_address: 192.168.1.76
-    ns_os_version: Kubuntu 20.04
+  - name: k8s1.milco.info
+    description: k8s worker
+    ip_address: 192.168.1.11
+    ns_os_version: RHEL8
     mac_address:
-      - ""
+      - "6c:4b:90:e2:89:09"
+  - name: k8s2.milco.info
+    description: k8s worker
+    ip_address: 192.168.1.12
+    ns_os_version: RHEL8
+    mac_address:
+      - "98:fa:9b:f4:49:44"
+
   - name: laptop.milco.info
     description: personal laptop
     ip_address: 192.168.1.75
@@ -56,47 +63,21 @@ ipa_hosts:
     mac_address:
       - "54:26:96:e0:51:53"
 
-  - name: node0.milco.info
-    description: k8s vm 1
-    ip_address: 192.168.1.245
-    ns_os_version: Ubuntu 18.04
-    mac_address:
-      - "52:54:00:d0:ae:2d"
-  - name: node1.milco.info
-    description: k8s vm 2
-    ip_address: 192.168.1.230
-    ns_os_version: Ubuntu 18.04
-    mac_address:
-      - "52:54:00:32:9e:68"
-  - name: node2.milco.info
-    description: k8s vm 3
-    ip_address: 192.168.1.201
-    ns_os_version: Ubuntu 18.04
-    mac_address:
-      - "52:54:00:48:e8:59"
-
 ipa_hostgroups:
-  - name: k8s_vms
-    hostgroups: []
-    hosts:
-      - node0.milco.info
-      - node1.milco.info
-      - node2.milco.info
   - name: k8s_platforms
     hostgroups: []
     hosts:
       - k8sm.milco.info
-      - k8st.milco.info
+      - k8s1.milco.info
+      - k8s2.milco.info
   - name: k8s_servers
     hostgroups:
       - k8s_platforms
-      - k8s_vms
     hosts: []
   - name: workstations
     hostgroups: []
     hosts:
       - laptop.milco.info
-      - desktop.milco.info
 
 ipa_sudorules:
   - name: k8s_admins
