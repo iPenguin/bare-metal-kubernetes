@@ -23,7 +23,7 @@
 
 - name: set hostname
   hostname:
-    name: "{{ inventory_hostname }}"
+    name: "{{ inventory_hostname }}.{{ lan_domain }}"
 
 - name: add ansible user
   user:
