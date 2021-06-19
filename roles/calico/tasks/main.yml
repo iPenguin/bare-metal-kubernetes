@@ -16,6 +16,9 @@
     url: https://github.com/projectcalico/calicoctl/releases/download/v{{ calico_version }}/calicoctl
     dest: /usr/local/bin/calicoctl
     mode: '0750'
+    status_code:
+      - 200
+      - 304
 - name: setup calico pod network
   become: no
   command: kubectl apply -f /home/{{ ansible_user }}/calico.yaml

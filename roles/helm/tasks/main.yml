@@ -6,6 +6,9 @@
     url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
     dest: /home/{{ ansible_user }}/get_helm.sh
     mode: '0700'
+    status_code:
+      - 200
+      - 304
 
 - name: install helm
   command: /home/{{ ansible_user }}/get_helm.sh

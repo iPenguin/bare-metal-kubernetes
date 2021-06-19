@@ -21,14 +21,18 @@
     url: https://github.com/docker/compose/releases/download/{{ docker_compose_ver }}/docker-compose-{{ ansible_system }}-{{ ansible_architecture }}
     dest: /usr/local/bin/docker-compose
     mode: '0755'
+    status_code:
+      - 200
+      - 304
   when: ansible_architecture == "x86_64"
+
 - name: create link for docker-compose
   file:
     path: /usr/bin/docker-compose
     src: /usr/local/bin/docker-compose
     state: link
   when: ansible_architecture == "x86_64"
-  
+
 - name: enable docker service
   service:
     name: docker
