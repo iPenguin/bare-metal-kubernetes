@@ -5,31 +5,6 @@
   copy:
     src: calico.conf
     dest: /etc/NetworkManager/conf.d/
-# - name: install patch
-#   tags:
-#     - calico_conf
-#   yum:
-#     name:
-#       - patch
-#     state: present
-# - name: update setup before continuing
-#   setup:
-# - name: get calico config file
-#   tags:
-#     - calico_conf
-#   uri:
-#     url: https://docs.projectcalico.org/v3.17/manifests/calico.yaml
-#     dest: /root
-#     status_code:
-#       - 200
-#       - 304
-# - name: patch calico config for dual stack ipv4/ipv6
-#   tags:
-#     - calico_conf
-#   patch:
-#     src: calico.diff
-#     dest: /root/calico.yaml
-#     state: present
 - name: calico config file
   tags:
     - calico_conf
