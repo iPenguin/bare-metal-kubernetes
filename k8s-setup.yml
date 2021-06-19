@@ -29,7 +29,7 @@
   tags:
     - config_k8s_nodes
   tasks:
-    - name: include docker role
+    - name: workers - include docker role
       include_role:
         name: docker
     - name: include kubernetes for clients
@@ -94,7 +94,7 @@
       become: no
       command: kubectl taint node {{ k8s_command_node }} node-role.kubernetes.io/master:NoSchedule-
       when: k8s_master_can_run_pods
-      
+
     - name: check for nodes
       become: no
       command: kubectl get nodes
