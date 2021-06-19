@@ -3,6 +3,23 @@
 - name: install useful utils
   hosts: servers
   tasks:
+    - name: add EPEL 8 GPG Key
+      ansible.builtin.rpm_key:
+        key: http://download.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8
+        state: present
+      when: ansible_distribution == "RedHat"
+
+    - name: install epel repos - RedHat
+      yum:
+        name: http://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+        state: present
+      when: ansible_distribution == "RedHat"
+    - name: install epel repos - CentOS
+      yum:
+        name: epel-release
+        state: latest
+      when: ansible_distribution == "CentOS"
+
     - name: install pkgs - RedHat family
       yum:
         name: "{{ common_utils | union( redhat_utils ) }}"
