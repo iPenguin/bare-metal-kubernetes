@@ -1,7 +1,7 @@
 ---
 # defaults file for kubernetes
 
-kubernetes_version: 1.20.4
+kubernetes_version: 1.21.1
 
 k8s_master_can_run_pods: no
 

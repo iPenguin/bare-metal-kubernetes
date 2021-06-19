@@ -9,7 +9,7 @@ Description
 Role Variables
 --------------
 
-kubernetes_version: which version of kubernets you want installed, by default 1.20.4
+kubernetes_version: which version of kubernets you want installed
 
 Example Playbook
 ----------------
