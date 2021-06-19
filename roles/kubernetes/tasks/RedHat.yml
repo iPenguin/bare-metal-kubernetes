@@ -22,6 +22,12 @@
     src: kubernetes.repo
     dest: /etc/yum.repos.d/
 
+- name: install required packages above RHEL8 min install
+  yum:
+    name:
+      - iproute-tc
+    state: present
+
 - name: install kubectl kubeadm and kubelet
   yum:
     name:
