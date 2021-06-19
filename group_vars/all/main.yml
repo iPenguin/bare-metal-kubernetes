@@ -17,7 +17,7 @@ preferred_ansible_user: ansible
 kubernetes_version: 1.21.1
 
 k8s_master_can_run_pods: yes
-k8s_command_node: "{{ groups['k8smasters'] | first }}"
+k8s_command_node: "{{ groups['k8smasters'] | first }}.{{ lan_domain }}"
 
 k8s_use_ipv6: true
 
