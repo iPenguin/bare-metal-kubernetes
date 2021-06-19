@@ -35,6 +35,12 @@
         groups: libvirt
       when: ansible_os_family == "RedHat"
 
+    - name: start/enable libvirtd
+      service:
+        name: libvirtd
+        state: started
+        enabled: yes
+
     - name: install pkgs - Debian family
       apt:
         name: "{{ common_utils | union( debian_utils ) }}"
