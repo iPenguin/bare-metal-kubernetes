@@ -1,5 +1,5 @@
 
 k8s_node_storage:
-  k8sm.milco.info: "^sdc" # 250GB SSD
-  k8s0.milco.info: "^sda" # 256GB SSD
-  k8s1.milco.info: "^sda" # 240GB SSD
+  k8sm: "^sdc" # 250GB SSD
+  k8s1: "^sda" # 256GB SSD
+  k8s2: "^sda" # 240GB SSD
