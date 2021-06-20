@@ -57,11 +57,11 @@ parameters:
   clusterID: rook-ceph
 
   # CephFS filesystem name into which the volume shall be created
-  fsName: milco-data
+  fsName: "{{ ceph_storage }}"
 
   # Ceph pool into which the volume shall be created
   # Required for provisionVolume: "true"
-  pool: milco-data-data0
+  pool: "{{ ceph_storage }}-pool"
 
   # The secrets contain Ceph admin credentials. These are generated automatically by the operator
   # in the same namespace as the cluster.
