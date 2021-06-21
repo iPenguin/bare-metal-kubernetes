@@ -23,7 +23,7 @@ spec:
 apiVersion: ceph.rook.io/v1
 kind: CephFilesystem
 metadata:
-  name: milco-data
+  name: "{{ ceph_storage }}"
   namespace: rook-ceph
 spec:
   metadataPool:
