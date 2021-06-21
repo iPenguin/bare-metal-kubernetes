@@ -12,6 +12,8 @@
 
 - name: install helm
   command: /home/{{ ansible_user }}/get_helm.sh
+  environment:
+        PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
 
 - name: add default repo
   become: no
