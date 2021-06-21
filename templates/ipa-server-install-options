@@ -9,5 +9,4 @@
 --setup-dns
 --zonemgr="{{ ipa_server_admin_email }}"
 --forwarder="{{ network.ipv4.dns }}"
---external-ca
 --ca-subject "CN={{ ipa_domain }}"
