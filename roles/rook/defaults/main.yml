@@ -3,4 +3,6 @@
 
 local_storage_default_path: /opt/local-path-provisioner
 
+rook_ceph_version: 1.6.5
+
 ceph_storage: "bare-metal"
