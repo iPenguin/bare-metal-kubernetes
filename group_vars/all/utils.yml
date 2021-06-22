@@ -21,3 +21,6 @@ debian_utils:
   - lvm2
   - xfsprogs
   - freeipa-client
+
+ansible_pips:
+  - kubernetes

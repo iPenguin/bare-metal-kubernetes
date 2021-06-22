@@ -24,3 +24,14 @@
     - name: config base on workers
       include_role:
         name: config-base
+
+- name: install needed pip packages
+  hosts: servers
+  remote_user: "{{ initial_ansible_user }}"
+  tags:
+    - ansible_pips
+  tasks:
+    - name: install pips
+      ansible.builtin.pip:
+        name: "{{ ansible_pips }}"
+        state: present
