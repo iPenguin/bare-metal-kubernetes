@@ -58,7 +58,7 @@ parameters:
 
   # Ceph pool into which the volume shall be created
   # Required for provisionVolume: "true"
-  pool: "{{ ceph_storage }}-pool"
+  pool: "{{ ceph_storage }}-data0"
 
   # The secrets contain Ceph admin credentials. These are generated automatically by the operator
   # in the same namespace as the cluster.
@@ -70,3 +70,4 @@ parameters:
   csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
 
 reclaimPolicy: Retain
+allowVolumeExpansion: true
