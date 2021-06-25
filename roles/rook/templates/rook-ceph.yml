@@ -14,10 +14,7 @@ spec:
   storage:
     useAllNodes: true
     useAllDevices: false
-    nodes:
-    {% for host in groups['k8scluster'] %}  - name: "{{ host }}"
-        deviceFilter: "{{ k8s_node_storage[host] }}" #ie. "^sd[b-n]"
-    {% endfor %}
+    deviceFilter: "{{ ceph_device_filter }}"
 
 ---
 apiVersion: ceph.rook.io/v1
