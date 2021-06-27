@@ -3,7 +3,10 @@
   - name: create a git server
     hosts: k8smasters
     vars_files:
+      - vaults/general.yml
       - vaults/git.yml
     tasks:
       - include_role:
           name: gitea
+    environment:
+      PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
