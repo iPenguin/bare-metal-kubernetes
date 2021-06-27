@@ -1,6 +1,6 @@
 # Bare Metal Kubernetes Cluster
 
-This repository contains the needed elements to setup a bare metal repository.
+This repository contains the needed elements to setup a bare metal repository. It's currently in transition to Ansible 2.10+
 
 NOTE: This is not a production ready cluster as it does not configure multiple masters, nor does it configure an etcd cluster.
 
