@@ -6,7 +6,7 @@ ipv6_network: 2601:200:4101:8d10
 
 ipa_domain: "n.{{ lan_domain }}"
 ipa_server_hostname: ipa.{{ lan_domain }}
-ipa_server_admin_email: bcmilco@gmail.com
+ipa_server_admin_email: "{{ vault_site_admin_email }}"
 
 etcd_endpoints:
   - http://{{ ipv4_network }}.5:2379
