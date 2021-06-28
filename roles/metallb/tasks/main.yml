@@ -1,27 +1,36 @@
 ---
 # tasks file for metallb
 
+- name: Download metallb namespace
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/metallb/metallb/v{{ metallb_version }}/manifests/namespace.yaml
+    dest: ~/namespace.yaml
+    mode: '0644'
+
+- name: Download metallb objects
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/metallb/metallb/v{{ metallb_version }}/manifests/metallb.yaml
+    dest: ~/metallb.yaml
+    mode: '0644'
+
 - name: install namespace
-  become: no
-  command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
+  kubernetes.core.k8s:
+    state: present
+    src: ~/namespace.yaml
 
-- name: install metal lb objects
-  become: no
-  command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
+- name: install metallb objects
+  kubernetes.core.k8s:
+    state: present
+    src: ~/metallb.yaml
 
-- name: create randomkey
-  become: no
+- name: create random key
   command: openssl rand -base64 128
   register: key
 
 - name: create secret key
-  become: no
   command: kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="{{ key.stdout_lines | join('') }}"
 
-- name: create configuration
-  template:
-    src: metallb-config.yml.j2
-    dest: /home/{{ ansible_user }}/metallb-config.yml
 - name: apply metallb config
-  become: no
-  command: kubectl apply -f /home/{{ ansible_user }}/metallb-config.yml
+  kubernetes.core.k8s:
+    state: present
+    template: 'metallb-config.yml'

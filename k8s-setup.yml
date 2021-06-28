@@ -15,12 +15,11 @@
       include_role:
         name: kubernetes
     - name: include calico role
+      become: no
       include_role:
         name: calico
-    # - name: include purelb load balancer
-    #   include_role:
-    #     name: purelb
     - name: include metallb load balancer
+      become: no
       include_role:
         name: metallb
 

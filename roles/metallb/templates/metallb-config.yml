@@ -6,11 +6,8 @@ metadata:
 data:
   config: |
     address-pools:
-      - name: ipv4
+      - name: external-ips
         protocol: layer2
         addresses:
           - {{ network.ipv4.server_pool.start }}-{{ network.ipv4.server_pool.end }}
-      - name: ipv6
-        protocol: layer2
-        addresses:
           - {{ network.ipv6.server_pool.start }}-{{ network.ipv6.server_pool.end }}
