@@ -45,23 +45,17 @@ securityContext:
 ## Default Gitea service ports (default web and ssh port)
 services:
   http:
-    type: LoadBalancer
+    type: ClusterIP
     port: 80
-    ## The node port (only relevant for type LoadBalancer or NodePort)
     nodePort:
-    ## The cluster ip address (only relevant for type LoadBalancer or NodePort)
     clusterIP:
-    ## The loadbalancer ip address (only relevant for type LoadBalancer)
-    loadBalancerIP: "{{ servers.git.ipv4 }}"
+    loadBalancerIP:
   ssh:
-    type: LoadBalancer
+    type: ClusterIP
     port: 22
-    ## The node port (only relevant for type LoadBalancer or NodePort)
     nodePort:
-    ## The cluster ip address (only relevant for type LoadBalancer or NodePort)
     clusterIP:
-    ## The loadbalancer ip address (only relevant for type LoadBalancer)
-    loadBalancerIP: "{{ servers.git.ipv4 }}"
+    loadBalancerIP:
 
 ## Ingress configuration
 ingress:

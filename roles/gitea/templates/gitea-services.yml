@@ -22,30 +22,32 @@ spec:
       storage: 1Gi
   accessModes:
     - ReadWriteOnce
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   labels:
-#     app: gitea
-#   name: gitea-lb
-#   namespace: {{ gitea_namespace }}
-# spec:
-#   type: LoadBalancer
-#   loadBalancerIP: {{ servers.git.ipv4 }}
-#   ipFamilyPolicy: SingleStack
-#   ipFamilies:
-#     - IPv4
-#   externalTrafficPolicy: Local
-#   ports:
-#   - name: ssh
-#     port: 22
-#     protocol: TCP
-#     targetPort: 22
-#   - name: http
-#     port: 80
-#     protocol: TCP
-#     targetPort: 3000
-#   selector:
-#     app: gitea
-#   sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: gitea
+  name: gitea-dual-svc
+  annotations:
+    metallb.universe.tf/address-pool: production-ips
+    metallb.universe.tf/load-balancer-ips: "{{ servers.git.ipv4 }}"
+  namespace: {{ gitea_namespace }}
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv4
+  externalTrafficPolicy: Local
+  ports:
+  - name: ssh
+    port: 22
+    protocol: TCP
+    targetPort: 8022
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app.kubernetes.io/name: gitea
+  sessionAffinity: None
