@@ -164,6 +164,12 @@ gitea:
     server:
       ROOT_URL: ""
       PROTOCOL: http
+      ENABLE_LETSENCRYPT: "false"
+      LETSENCRYPT_ACCEPTTOS: "true"
+      LETSENCRYPT_DIRECTORY: "/data/etc/pki/"
+      LETSENCRYPT_EMAIL: "{{ site_admin_email }}"
+      CERT_FILE: ""
+      KEY_FILE: ""
       DISABLE_SSH: "false"
       START_SSH_SERVER: "true"
       LFS_START_SERVER: "true"
