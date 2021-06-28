@@ -6,7 +6,7 @@ metadata:
 data:
   config: |
     address-pools:
-      - name: external-ips
+      - name: production-ips
         protocol: layer2
         addresses:
           - {{ network.ipv4.server_pool.start }}-{{ network.ipv4.server_pool.end }}
