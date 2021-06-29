@@ -42,6 +42,13 @@
   include_tasks: k8s-prometheus.yml
 
 #
+# Other useful services
+#
+
+- name: setup ipa server
+  include_tasks: ipa-server.yml
+
+#
 # Software deployed on top of kubernetes
 #
 - name: setup nfs server
@@ -50,5 +57,10 @@
 - name: setup git server
   include_tasks: k8s-deploy-gitea.yml
 
-- name: setup jenkins server
+- name: setup jenkins CI/CD server
   include_tasks: k8s-deploy-jenkins.yml
+
+- name: setup concourse CI/CD server
+  include_tasks: k8s-deploy-concourse.yml
+
+- name: setup
