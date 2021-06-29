@@ -4,7 +4,7 @@
 gitea_version: 1.14.3
 gitea_namespace: gitea
 
-gitea_app_name: "git - Milco.info"
+gitea_app_name: "git @ {{ lan_domain }}"
 gitea_run_mode: "prod"
 
-gitea_helm_chart_version: 0.3.19
+gitea_helm_chart_version: 3.1.4

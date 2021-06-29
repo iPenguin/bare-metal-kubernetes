@@ -28,16 +28,48 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: gitea
-  name: gitea-dual-svc
+  name: gitea-dual-ipv4
   annotations:
     metallb.universe.tf/address-pool: production-ips
     metallb.universe.tf/load-balancer-ips: "{{ servers.git.ipv4 }}"
+    metallb.universe.tf/allow-shared-ip: git.{{ lan_domain }}
+  namespace: {{ gitea_namespace }}
+spec:
+  type: LoadBalancer
+  
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv4
+  externalTrafficPolicy: Local
+  ports:
+  - name: ssh
+    port: 22
+    protocol: TCP
+    targetPort: 8022
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app.kubernetes.io/name: gitea
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: gitea
+  name: gitea-dual-ipv6
+  annotations:
+    metallb.universe.tf/address-pool: production-ips
+    metallb.universe.tf/load-balancer-ips: "{{ servers.git.ipv6 }}"
+    metallb.universe.tf/allow-shared-ip: git.{{ lan_domain }}
   namespace: {{ gitea_namespace }}
 spec:
   type: LoadBalancer
   ipFamilyPolicy: SingleStack
   ipFamilies:
-    - IPv4
+    - IPv6
   externalTrafficPolicy: Local
   ports:
   - name: ssh

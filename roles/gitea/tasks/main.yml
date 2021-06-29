@@ -13,8 +13,8 @@
 - name: add gitea helm chart repo
   become: no
   kubernetes.core.helm_repository:
-    name: groundhog2k
-    repo_url: https://groundhog2k.github.io/helm-charts/
+    name: gitea-charts
+    repo_url: https://dl.gitea.io/charts/
 
 - name: setup git-repos PVC
   become: no
@@ -27,7 +27,7 @@
   kubernetes.core.helm:
     name: gitea
     chart_version: "{{ gitea_helm_chart_version }}"
-    chart_ref: groundhog2k/gitea
+    chart_ref: gitea-charts/gitea
     release_namespace: "{{ gitea_namespace }}"
     create_namespace: false
     values: "{{ lookup('template', 'values.yml') | from_yaml }}"
