@@ -1,0 +1,15 @@
+---
+
+- name: add concourse repo
+  kubernetes.core.helm_repository:
+    name: concourse
+    repo_url: https://concourse-charts.storage.googleapis.com/
+
+- name: install concourse chart
+  kubernetes.core.helm:
+    name: concourse
+    chart_version: "{{ concourse_chart_version }}"
+    chart_ref: concourse/concourse
+    release_namespace: "{{ concourse_namespace }}"
+    create_namespace: true
+    #values: "{{ lookup('template', 'values.yml') | from_yaml }}"

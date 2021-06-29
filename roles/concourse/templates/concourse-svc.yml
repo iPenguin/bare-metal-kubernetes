@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: concourse-svc-ipv4
+spec:
+  selector:
+    app: concourse
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+  loadBalancerIP: "{{ servers.ci.ipv4 }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: concourse-svc-ipv6
+spec:
+  selector:
+    app: concourse
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+  loadBalancerIP: "{{ servers.ci.ipv6 }}"

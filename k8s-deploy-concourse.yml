@@ -1,22 +1,28 @@
 ---
 
+- name: Setup IP address
+  hosts: k8smasters
+  vars_prompt:
+    - name: ipa_add_ip_address
+      prompt: "Do you want to add the IP address (y/N)"
+      default: "N"
+      private: no
+  tasks:
+    - name: setup ip addresses
+      tags:
+        - container_only
+      vars:
+        server:
+          ipv4: "{{ servers.ci.ipv4 }}"
+          ipv6: "{{ servers.ci.ipv6 }}"
+      import_role:
+        name: network-manager
+      when: ipa_add_ip_address | upper == 'Y'
+
 - name: install concourse
   hosts: k8smasters
-  vars:
-    concourse_chart_version: 15.5.0
-    concourse_namespace: concourse
   become: no
   tasks:
-    - name: add concourse repo
-      kubernetes.core.helm_repository:
+    - name: Setup Concourse CI
+      include_role:
         name: concourse
-        repo_url: https://concourse-charts.storage.googleapis.com/
-
-    - name: install gitea chart
-      kubernetes.core.helm:
-        name: concourse
-        chart_version: "{{ concourse_chart_version }}"
-        chart_ref: concourse/concourse
-        release_namespace: "{{ concourse_namespace }}"
-        create_namespace: true
-        #values: "{{ lookup('template', 'values.yml') | from_yaml }}"
