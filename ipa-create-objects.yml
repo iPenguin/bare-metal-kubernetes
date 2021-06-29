@@ -51,7 +51,7 @@
         validate_certs: "{{ validate_certs }}"
       loop: "{{ ipa_users }}"
 
-    - name: create dns zones
+    - name: create primary dns zones
       ipa_dnszone:
         zone_name: "{{ lan_domain }}"
         state: present
@@ -60,6 +60,28 @@
         ipa_user: "{{ ipa_admin_username }}"
         ipa_pass: "{{ ipa_admin_password }}"
         validate_certs: "{{ validate_certs }}"
+
+    - name: create reverse dns zones
+      ipa_dnszone:
+        zone_name: "1.168.192.in-addr.arpa"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+
+    - name: create reverse dns records
+      ipa_dnsrecord:
+        zone_name: "1.168.192.in-addr.arpa"
+        record_name: "{{ item.name }}"
+        record_type: "{{ item.type }}"
+        record_value: "{{ item.value }}"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_reverse_dns }}"
 
     - name: create dns records
       ipa_dnsrecord:

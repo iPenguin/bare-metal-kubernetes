@@ -89,7 +89,18 @@ ipa_sudorules:
     usergroup: []
     sudoopt: []
 
-ipa_dnsrecords: []
-  # - name: 'k8sm'
-  #   type: 'AAAA'
-  #   value: '{{  }}'
+ipa_reverse_dns:
+  - name: '22'
+    type: 'PTR'
+    value: 'ipa'
+  - name: '237'
+    type: 'PTR'
+    value: 'rhel8'
+
+ipa_dnsrecords:
+  - name: 'ipa'
+    type: 'A'
+    value: '{{ servers.ipa.ipv4 }}'
+  - name: 'ipa'
+    type: 'AAAA'
+    value: '{{ servers.ipa.ipv6 }}'
