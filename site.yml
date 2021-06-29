@@ -45,8 +45,8 @@
 # Other useful services
 #
 
-- name: setup ipa server
-  include_tasks: ipa-server.yml
+- name: setup IPA server
+  include_tasks: ipa-setup.yml
 
 #
 # Software deployed on top of kubernetes
