@@ -48,11 +48,14 @@
     sysctls:
       net.ipv6.conf.all.disable_ipv6: "0"
     ports:
-      - "{{ ipa_ipv4 }}:53:53"   #dns
-      - "{{ ipa_ipv4 }}:80:80"   #http
-      - "{{ ipa_ipv4 }}:443:443" #https
-      - "{{ ipa_ipv4 }}:389:389" #ldap
-      - "{{ ipa_ipv4 }}:636:636" #ldaps
-      - "{{ ipa_ipv4 }}:88:88"   #kerberos
-      - "{{ ipa_ipv4 }}:464:464" #kpasswd
-      - "{{ ipa_ipv4 }}:123:123" #ntp
+      - "{{ ipa_ipv4 }}:53:53"       #dns
+      - "{{ ipa_ipv4 }}:53:53/udp"   #dns
+      - "{{ ipa_ipv4 }}:80:80"       #http
+      - "{{ ipa_ipv4 }}:443:443"     #https
+      - "{{ ipa_ipv4 }}:389:389"     #ldap
+      - "{{ ipa_ipv4 }}:636:636"     #ldaps
+      - "{{ ipa_ipv4 }}:88:88"       #kerberos
+      - "{{ ipa_ipv4 }}:88:88/udp"   #kerberos
+      - "{{ ipa_ipv4 }}:464:464"     #kpasswd
+      - "{{ ipa_ipv4 }}:464:464/udp" #kpasswd
+      - "{{ ipa_ipv4 }}:123:123/udp" #ntp
