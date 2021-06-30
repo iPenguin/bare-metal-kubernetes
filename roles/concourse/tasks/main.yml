@@ -1,5 +1,10 @@
 ---
 
+- name: create concourse svc
+  kubernetes.core.k8s:
+    state: present
+    template: 'concourse-svc.yml'
+
 - name: add concourse repo
   kubernetes.core.helm_repository:
     name: concourse
