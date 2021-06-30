@@ -140,9 +140,9 @@ settings:
   postInstallDelay: 60
   ## Defines the default administrator (first user) - Password must be changed after first login!
   defaultAdmin:
-    user: "{{ vault_site_admin_username }}"
+    user: "{{ site_admin_username }}"
     password: admin
-    email: "{{ vault_site_admin_email }}"
+    email: "{{ site_admin_email }}"
 
 ## Gitea specific configuration as described in https://docs.gitea.io/en-us/config-cheat-sheet/
 ## More values and sections can be added
@@ -242,16 +242,16 @@ mariadb:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     ## The root user password (default: a 10 char. alpahnumerical random password will be generated)
-    rootPassword: "{{ vault_MYSQL_ROOT_PASSWORD }}"
+    rootPassword: "{{ MYSQL_ROOT_PASSWORD }}"
 
   ## Optional user database which is created during first startup with user and password
   userDatabase:
     ## Name of the user database
-    name: "{{ vault_MYSQL_DATABASE }}"
+    name: "{{ MYSQL_DATABASE }}"
     ## Database user with full access rights
-    user: "{{ vault_MYSQL_USER }}"
+    user: "{{ MYSQL_USER }}"
     ## Password of the database user (default: a 10 char. alpahnumerical random password will be generated)
-    password: "{{ vault_MYSQL_PASSWORD }}"
+    password: "{{ MYSQL_PASSWORD }}"
 
   # Storage parameters
   storage:

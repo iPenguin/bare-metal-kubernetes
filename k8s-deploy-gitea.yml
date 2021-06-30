@@ -5,6 +5,11 @@
     vars_files:
       - vaults/general.yml
       - vaults/git.yml
+    vars:
+      MYSQL_ROOT_PASSWORD: "{{ vault_MYSQL_ROOT_PASSWORD }}"
+      MYSQL_DATABASE: "{{ vault_MYSQL_DATABASE }}"
+      MYSQL_USER: "{{ vault_MYSQL_USER }}"
+      MYSQL_PASSWORD: "{{ vault_MYSQL_PASSWORD }}"
     tasks:
       - include_role:
           name: gitea
