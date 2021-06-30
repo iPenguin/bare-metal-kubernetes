@@ -3,6 +3,7 @@
 - name: create ipa server
   hosts: k8smasters
   vars_files:
+    - vaults/general.yml
     - vaults/ipa.yml
   vars_prompt:
     - name: ipa_add_ip_address
