@@ -6,7 +6,7 @@ ipa_groups:
   - users
 
 ipa_users:
-  - name: brianmilco
+  - name: brian.milco
     givenname: Brian
     surname: Milco
     email:
@@ -17,16 +17,14 @@ ipa_users:
     loginshell: zsh
     password: "{{ ipa_new_user_password }}"
 
-  - name: jilljohnson
-    givenname: Jill
-    surname: Johnson
+  - name: "{{ ipa_lookup_user }}"
+    givenname: LDAP
+    surname: Lookup
     email:
-      - jill.johnson@milco.info
-    sshkeys:
-      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDD2LgGJ9phE2R9zosHKQO9UuNgK9NnC1lJMER7VVWgo90ESs73PZL70Ia8cj43Rl/u50Va0ZDVfFudVDB1dPMlSwh8JFhgCI3LNNhjUDoJZ+UYGsiZ5gXGoXMVlPL2dHkCG2KE6arxtkk2F7dJytBgqTap4iI0q5sOM8e1N+ejy5Hs6xmt/bgQhGf03MdEFue5fStXCWPMYg+WaxXGzvG7P+x01nnyXuu88v2pXgC6b522kx2s+7HO/f+PJr8AJ9XOwJqr26NeJ4qWAFXkeOCDpmUMB7P3ZY/XRWJp2isQSFh0dxe2iV7tHxTMEnd7dBJqbOmTL2zpMUy/M24o2nyaMyj4RxhjPCrm8xIklgrIWnd7TK/5bwxJFACqPowO3ha8w0iLVyuTPs00/bIy70+UOzowcwnFdygNbUhbvBJuDhRQo9L6k189QoVM3A1oY+VD4Et6bocFgp8ZYWf/aNfNhL965pRqAErrF5zqLl8qhroxK7wWao+clAi6JAOcNWM= brian@laptop.milco.info
-    password: "{{ ipa_new_user_password }}"
+      - admin@milco.info
+    password: "{{ ipa_lookup_password }}"
 
-  - name: johnsmith
+  - name: john.smith
     givenname: John
     surname: Smith
     email:
