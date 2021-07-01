@@ -13,6 +13,10 @@
     validate_certs: "{{ validate_certs_ans | upper == 'Y' }}"
     ipa_admin_username: admin
     ipa_admin_password: "{{ vault_ipa_admin_password }}"
+    
+    ipa_lookup_user: "{{ vault_ipa_lookup_user }}"
+    ipa_lookup_password: "{{ vault_ipa_lookup_password }}"
+
     ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
   tasks:
     - name: config ipa server
@@ -41,7 +45,7 @@
         givenname: "{{ item.givenname }}"
         sn: "{{ item.surname }}"
         mail: "{{ item.email }}"
-        sshpubkey: "{{ item.sshkeys }}"
+        sshpubkey: "{{ item.sshkeys | default('') }}"
         loginshell: "{{ item.loginshell | default( 'bash' ) }}"
         password: "{{ item.password }}"
         update_password: on_create
