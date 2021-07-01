@@ -1,6 +1,9 @@
 ---
 
-lan_domain: milco.info
+lan_tld: info
+lan_subdomain: milco
+
+lan_domain: "{{ lan_subdomain }}.{{ lan_tld }}"
 ipv4_network: 192.168.1
 ipv6_network: 2601:200:4101:8d10
 
