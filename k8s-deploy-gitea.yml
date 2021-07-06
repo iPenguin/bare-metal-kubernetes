@@ -1,7 +1,12 @@
 ---
 
   - name: create a git server
-    hosts: k8smasters
+    hosts: "{{ node_k8s_client }}"
+    vars_prompt:
+      - name: node_k8s_client
+        prompt: "Supply the hosts list:"
+        private: no
+        default: 'k8sm'
     vars_files:
       - vaults/general.yml
       - vaults/git.yml
