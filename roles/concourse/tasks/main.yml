@@ -1,5 +1,11 @@
 ---
 
+- name: create concourse namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: "{{ concourse_namespace }}"
+    state: present
+
 - name: create concourse svc
   kubernetes.core.k8s:
     state: present
@@ -16,5 +22,59 @@
     chart_version: "{{ concourse_chart_version }}"
     chart_ref: concourse/concourse
     release_namespace: "{{ concourse_namespace }}"
-    create_namespace: true
-    #values: "{{ lookup('template', 'values.yml') | from_yaml }}"
+    create_namespace: false
+    values:
+      web:
+        env:
+          - name: CONCOURSE_EXTERNAL_URL
+            value: "https://ci.{{ lan_domain }}"
+          - name: CONCOURSE_CLUSTER_NAME
+            value: "ci-primary"
+          - name: CONCOURSE_TLS_BIND_PORT
+            value: "8443"
+          - name: CONCOURSE_TLS_CERT
+            value: "/concourse-web-tls/tls.crt"
+          - name: CONCOURSE_TLS_KEY
+            value: "/concourse-web-tls/tls.key"
+
+          # - name: CONCOURSE_ENABLE_LETS_ENCRYPT
+          #   value: true
+          # - name: CONCOURSE_LETS_ENCRYPT_ACME_URL
+          #   value: "https://acme.example.com/directory"
+
+          - name: CONCOURSE_MAX_BUILD_LOGS_TO_RETAIN
+            value: "250"
+          - name: CONCOURSE_MAX_DAYS_TO_RETAIN_BUILD_LOGS
+            value: "90"
+
+          # - name: CONCOURSE_DEFAULT_BUILD_LOGS_TO_RETAIN
+          #   value: 50
+          # - name: CONCOURSE_DEFAULT_DAYS_TO_RETAIN_BUILD_LOGS
+          #   value: 14
+
+          # - name: CONCOURSE_LDAP_CA_CERT
+          #   value: /path/to/ca_cert
+
+          - name: CONCOURSE_LDAP_DISPLAY_NAME
+            value: "{{ lan_domain }}"
+          - name: CONCOURSE_LDAP_HOST
+            value: "{{ ipa_server_hostname }}"
+          - name: CONCOURSE_LDAP_BIND_DN
+            value: 'cn={{ ipa_lookup_user }},dc={{ lan_subdomain }},dc={{ lan_tld }}'
+          - name: CONCOURSE_LDAP_BIND_PW
+            value: "{{ ipa_lookup_password }}"
+          - name: CONCOURSE_LDAP_USER_SEARCH_BASE_DN
+            value: 'cn=users,dc={{ lan_subdomain }},dc={{ lan_tld }}'
+          - name: CONCOURSE_LDAP_USER_SEARCH_USERNAME
+            value: "uid"
+
+          # - name: CONCOURSE_LDAP_GROUP_SEARCH_BASE_DN
+          #   value: 'cn=groups,dc={{ lan_subdomain }},dc={{ lan_tld }}'
+          # - name: CONCOURSE_LDAP_GROUP_SEARCH_NAME_ATTR
+          #   value: ou
+          # - name: CONCOURSE_LDAP_GROUP_SEARCH_USER_ATTR
+          #   value: uid
+          # - name: CONCOURSE_LDAP_GROUP_SEARCH_GROUP_ATTR
+          #   value: members
+          # - name: CONCOURSE_LDAP_GROUP_SEARCH_FILTER
+          #   value: '(objectClass=posixGroup)'

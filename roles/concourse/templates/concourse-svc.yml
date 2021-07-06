@@ -9,9 +9,14 @@ spec:
     app: concourse-web
   type: LoadBalancer
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 8080
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 8443
   loadBalancerIP: "{{ servers.ci.ipv4 }}"
 ---
 apiVersion: v1
@@ -24,7 +29,12 @@ spec:
     app: concourse-web
   type: LoadBalancer
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 8080
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 8443
   loadBalancerIP: "{{ servers.ci.ipv6 }}"
