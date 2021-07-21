@@ -1,0 +1,87 @@
+---
+
+- name: configure a workstation for personal use
+  hosts: "{{ workstation }}"
+  vars_prompt:
+    - name: workstation
+      prompt: "Workstation to configure?"
+      default: "localhost"
+      private: no
+  tasks:
+    - name: install VS Code
+      apt:
+        deb: https://go.microsoft.com/fwlink/?LinkID=760868
+        state: present
+        
+    - name: install Manuskript
+      apt:
+        deb: https://github.com/olivierkes/manuskript/releases/download/0.12.0/manuskript-0.12.0-1.deb
+        state: present
+
+    - name: install MongoDB Compass
+      apt:
+        deb: https://downloads.mongodb.com/compass/mongodb-compass_1.28.1_amd64.deb
+        state: present
+        
+    - name: Add an Apt signing key to a specific keyring file
+      apt_key:
+        url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+        keyring: /etc/apt/trusted.gpg.d/brave-browser.gpg
+        state: present
+    - name: create repo for brave
+      copy:
+        content: "deb [signed-by=/etc/apt/trusted.gpg.d/brave-browser.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"
+        dest: /etc/apt/sources.list.d/brave-browser-release.list
+  
+    - name: add kubuntu backports repo
+      command: apt-add-repository --yes --update ppa:kubuntu-ppa/backports
+  
+    - name: install software common
+      apt:
+        name:
+          - autofs
+          - brave-browser
+          - chromium-browser
+          - firefox
+          - gimp
+          - inkscape
+          - krita
+          - mplayer
+          - virtualbox
+          - virt-manager
+          - vlc
+          - yakuake
+        state: present
+        
+    - name: Install snaps
+      community.general.snap:
+        name:
+          - atom
+          - spotify
+        classic: yes
+      
+    - name: update kubuntu
+      apt:
+        name: "*"
+        state: latest
+        
+    - name: enable auto.misc
+      lineinfile:
+        path: /etc/auto.master
+        regexp: '#/misc'
+        line: '/misc        /etc/auto.misc'
+        
+    - name: add shares
+      template:
+        src: auto.misc
+        dest: /etc/auto.misc
+        owner: root
+        group: root
+        mode: '0644'
+        
+    - name: restart autofs
+      service:
+        name: autofs
+        state: restarted
+        enabled: true
+        
