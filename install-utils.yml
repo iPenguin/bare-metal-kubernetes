@@ -1,7 +1,12 @@
 ---
 
 - name: install useful utils
-  hosts: servers
+  hosts: "{{ servers }}"
+  vars_prompt:
+    - name: servers
+      prompt: "Name of systems to apply this playbook to?"
+      private: no
+      default: "servers"
   tasks:
     - name: add EPEL 8 GPG Key
       ansible.builtin.rpm_key:
