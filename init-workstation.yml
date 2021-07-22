@@ -12,7 +12,7 @@
       apt:
         deb: https://go.microsoft.com/fwlink/?LinkID=760868
         state: present
-        
+
     - name: install Manuskript
       apt:
         deb: https://github.com/olivierkes/manuskript/releases/download/0.12.0/manuskript-0.12.0-1.deb
@@ -22,7 +22,23 @@
       apt:
         deb: https://downloads.mongodb.com/compass/mongodb-compass_1.28.1_amd64.deb
         state: present
-        
+
+    - name: add 32bit arch for adding wine pkgs
+      lineinfile:
+        dest: /var/lib/dpkg/arch
+        line: "i386"
+        create: yes
+      register: add_i386
+    - name: Add wine key to apt
+      apt_key:
+        url: https://dl.winehq.org/wine-builds/winehq.key
+        keyring: /etc/apt/trusted.gpg.d/wine.gpg
+        state: present
+    - name: Add wine repo
+      ansible.builtin.apt_repository:
+        repo: deb https://dl.winehq.org/wine-builds/ubuntu/ hirsute main
+        state: present
+
     - name: Add an Apt signing key to a specific keyring file
       apt_key:
         url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
@@ -32,10 +48,10 @@
       copy:
         content: "deb [signed-by=/etc/apt/trusted.gpg.d/brave-browser.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"
         dest: /etc/apt/sources.list.d/brave-browser-release.list
-  
+
     - name: add kubuntu backports repo
       command: apt-add-repository --yes --update ppa:kubuntu-ppa/backports
-  
+
     - name: install software common
       apt:
         name:
@@ -51,26 +67,29 @@
           - virt-manager
           - vlc
           - yakuake
+          - winehq-stable
+          - winbind
         state: present
-        
+
     - name: Install snaps
       community.general.snap:
         name:
           - atom
           - spotify
         classic: yes
-      
+
     - name: update kubuntu
       apt:
         name: "*"
+        update_cache: "{{ add_i386.changed }}"
         state: latest
-        
+
     - name: enable auto.misc
       lineinfile:
         path: /etc/auto.master
         regexp: '#/misc'
         line: '/misc        /etc/auto.misc'
-        
+
     - name: add shares
       template:
         src: auto.misc
@@ -78,10 +97,9 @@
         owner: root
         group: root
         mode: '0644'
-        
+
     - name: restart autofs
       service:
         name: autofs
         state: restarted
         enabled: true
-        
