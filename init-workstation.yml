@@ -23,6 +23,11 @@
         deb: https://downloads.mongodb.com/compass/mongodb-compass_1.28.1_amd64.deb
         state: present
 
+    - name: install SpiderOakOne
+      apt:
+        deb: https://spideroak.com/release/spideroak/deb_x64
+        state: present
+
     - name: add 32bit arch for adding wine pkgs
       lineinfile:
         dest: /var/lib/dpkg/arch
@@ -37,6 +42,26 @@
     - name: Add wine repo
       ansible.builtin.apt_repository:
         repo: deb https://dl.winehq.org/wine-builds/ubuntu/ hirsute main
+        state: present
+
+    - name: Add signal apt key
+      apt_key:
+        url: https://updates.signal.org/desktop/apt/keys.asc
+        keyring: /etc/apt/trusted.gpg.d/signal.gpg
+        state: present
+    - name: Add signal repo
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/signal.gpg] https://updates.signal.org/desktop/apt xenial main
+        state: present
+
+    - name: Add k8s key to apt
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        keyring: /etc/apt/trusted.gpg.d/google-k8s.gpg
+        state: present
+    - name: Add k8s repo
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/etc/apt/trusted.gpg.d/google-k8s.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
         state: present
 
     - name: Add an Apt signing key to a specific keyring file
@@ -55,6 +80,7 @@
     - name: install software common
       apt:
         name:
+          - apt-transport-https
           - autofs
           - brave-browser
           - chromium-browser
@@ -62,13 +88,16 @@
           - gimp
           - inkscape
           - krita
+          - kubectl
           - mplayer
+          - retext
+          - signal-desktop
           - virtualbox
           - virt-manager
           - vlc
           - yakuake
-          - winehq-stable
           - winbind
+          - winehq-stable
         state: present
 
     - name: Install snaps
