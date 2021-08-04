@@ -4,6 +4,8 @@
   hosts: router
   gather_facts: no
   tasks:
+    - name: update package list
+      raw: opkg update
     - name: install python
       raw: opkg install python
     - name: install sftp
