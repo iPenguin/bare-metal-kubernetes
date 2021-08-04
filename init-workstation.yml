@@ -47,11 +47,11 @@
     - name: Add signal apt key
       apt_key:
         url: https://updates.signal.org/desktop/apt/keys.asc
-        keyring: /etc/apt/trusted.gpg.d/signal.gpg
+        keyring: /usr/share/keyrings/signal-desktop-keyring.gpg
         state: present
     - name: Add signal repo
       ansible.builtin.apt_repository:
-        repo: deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/signal.gpg] https://updates.signal.org/desktop/apt xenial main
+        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
         state: present
 
     - name: Add k8s key to apt
@@ -82,22 +82,33 @@
         name:
           - apt-transport-https
           - autofs
+          - basket
           - brave-browser
           - chromium-browser
+          - duplicati
+          - duplicity
           - firefox
+          - giggle
           - gimp
           - inkscape
+          - kdenlive
+          - kompare
           - krita
           - kubectl
+          - mkvtoolnix-gui
           - mplayer
+          - ohcount
           - retext
           - signal-desktop
+          - sloccount
+          - tldr
           - virtualbox
           - virt-manager
           - vlc
           - yakuake
           - winbind
-          - winehq-stable
+#          - winehq-stable
+
         state: present
 
     - name: Install snaps
