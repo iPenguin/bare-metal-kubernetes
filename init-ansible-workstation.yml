@@ -23,6 +23,10 @@
           - ansible-base
         state: latest
 
+    - name: configure base system for ansible
+      include_role:
+        name: config-base
+
     - name: install ansible plugins via pip
       pip:
         name:
