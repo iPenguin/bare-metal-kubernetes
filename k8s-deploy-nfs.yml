@@ -15,3 +15,21 @@
         - update_exports
       include_role:
         name: nfs
+
+- name: configure mount points for k8s servers
+  hosts: "{{ share_clients }}"
+  tags:
+    - client_mounts
+  vars_prompt:
+    - name: share_clients
+      prompt: "Clients that need use the installers share"
+      default: 'servers'
+      private: no
+  tasks:
+    - name:
+      ansible.posix.mount:
+        src: "{{ servers.nfs.ipv4 }}:/srv/_installers"
+        path: /srv/installers
+        opts: rw,sync
+        state: mounted
+        fstype: nfs
