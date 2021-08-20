@@ -23,11 +23,6 @@
         deb: https://downloads.mongodb.com/compass/mongodb-compass_1.28.1_amd64.deb
         state: present
 
-    - name: install SpiderOakOne
-      apt:
-        deb: https://spideroak.com/release/spideroak/deb_x64
-        state: present
-
     - name: add 32bit arch for adding wine pkgs
       lineinfile:
         dest: /var/lib/dpkg/arch
