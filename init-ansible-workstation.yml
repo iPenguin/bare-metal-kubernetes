@@ -21,6 +21,7 @@
       apt:
         name:
           - ansible-base
+          - sshpass
         state: latest
 
     - name: configure base system for ansible
