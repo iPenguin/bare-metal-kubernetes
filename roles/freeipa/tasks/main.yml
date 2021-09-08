@@ -59,3 +59,14 @@
       - "{{ ipa_ipv4 }}:464:464"     #kpasswd
       - "{{ ipa_ipv4 }}:464:464/udp" #kpasswd
       - "{{ ipa_ipv4 }}:123:123/udp" #ntp
+      - "[{{ ipa_ipv6 }}]:53:53"       #dns
+      - "[{{ ipa_ipv6 }}]:53:53/udp"   #dns
+      - "[{{ ipa_ipv6 }}]:80:80"       #http
+      - "[{{ ipa_ipv6 }}]:443:443"     #https
+      - "[{{ ipa_ipv6 }}]:389:389"     #ldap
+      - "[{{ ipa_ipv6 }}]:636:636"     #ldaps
+      - "[{{ ipa_ipv6 }}]:88:88"       #kerberos
+      - "[{{ ipa_ipv6 }}]:88:88/udp"   #kerberos
+      - "[{{ ipa_ipv6 }}]:464:464"     #kpasswd
+      - "[{{ ipa_ipv6 }}]:464:464/udp" #kpasswd
+      - "[{{ ipa_ipv6 }}]:123:123/udp" #ntp
