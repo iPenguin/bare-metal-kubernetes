@@ -22,6 +22,14 @@
 - name: install concourse
   hosts: k8smasters
   become: no
+  vars_files:
+    - vaults/ipa.yml
+    - vaults/tls.yml
+  vars:
+    ipa_lookup_user: "{{ vault_ipa_lookup_user }}"
+    ipa_lookup_password: "{{ vault_ipa_lookup_password }}"
+    tls_cert: "{{ vault_ci_tls_public_cert }}"
+    tls_key: "{{ vault_ci_tls_private_key }}"
   tasks:
     - name: Setup Concourse CI
       include_role:
