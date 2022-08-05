@@ -71,18 +71,43 @@
 
     - name: add kubuntu backports repo
       command: apt-add-repository --yes --update ppa:kubuntu-ppa/backports
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: add ansible repo
+      command: sudo add-apt-repository --yes --update ppa:ansible/ansible
+      when: ansible_distribution == 'Ubuntu'
+
+
+    - name: install ProtonVPN repo
+      ansible.builtin.apt:
+        deb: https://protonvpn.com/download/protonvpn-stable-release_1.0.1-1_all.deb
+
+    - name: install zoom
+      ansible.builtin.apt:
+        deb: https://zoom.us/client/latest/zoom_amd64.deb
+
+    - name: install balena
+      ansible.builtin.apt:
+        deb: https://github.com/balena-io/etcher/releases/download/v1.7.9/balena-etcher-electron_1.7.9_amd64.deb
+
+    - name: install oh-my-zsh
+      ansible.builtin.command: sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
     - name: install software common
       apt:
         name:
+          - ansible
           - apt-transport-https
+          - atom
           - autofs
           - basket
           - brave-browser
           - chromium-browser
-          - duplicati
+          - code #vscode
+          #- duplicati
           - duplicity
           - firefox
+          - fzf
           - giggle
           - gimp
           - inkscape
@@ -93,23 +118,28 @@
           - mkvtoolnix-gui
           - mplayer
           - ohcount
+          - protonvpn
           - retext
           - signal-desktop
           - sloccount
           - tldr
+          - tmux
+          - vim
           - virtualbox
           - virt-manager
           - vlc
-          - yakuake
           - winbind
 #          - winehq-stable
-
+          - yakuake
+          - zsh
+          - zsh-autosuggestions
+          - zsh-syntax-highlighting
+          
         state: present
 
     - name: Install snaps
       community.general.snap:
         name:
-          - atom
           - spotify
         classic: yes
 
