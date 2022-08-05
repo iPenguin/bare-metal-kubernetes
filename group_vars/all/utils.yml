@@ -15,6 +15,7 @@ redhat_utils:
   - policycoreutils-python-utils
   - bash-completion
   - ipa-client
+  - virt-install
 
 debian_utils:
   - nfs-common
