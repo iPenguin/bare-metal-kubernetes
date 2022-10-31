@@ -15,7 +15,7 @@
 
     - name: install Manuskript
       apt:
-        deb: https://github.com/olivierkes/manuskript/releases/download/0.12.0/manuskript-0.12.0-1.deb
+        deb: https://github.com/olivierkes/manuskript/releases/download/0.14.0/manuskript-0.14.0-1.deb
         state: present
 
     - name: install MongoDB Compass
@@ -77,10 +77,9 @@
       command: sudo add-apt-repository --yes --update ppa:ansible/ansible
       when: ansible_distribution == 'Ubuntu'
 
-
     - name: install ProtonVPN repo
       ansible.builtin.apt:
-        deb: https://protonvpn.com/download/protonvpn-stable-release_1.0.1-1_all.deb
+        deb: https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3_all.deb
 
     - name: install zoom
       ansible.builtin.apt:
@@ -90,15 +89,15 @@
       ansible.builtin.apt:
         deb: https://github.com/balena-io/etcher/releases/download/v1.7.9/balena-etcher-electron_1.7.9_amd64.deb
 
-    - name: install oh-my-zsh
-      ansible.builtin.command: sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    - name: install goodix fingerprint drivers
+      ansible.builtin.apt:
+        deb: http://dell.archive.canonical.com/updates/pool/public/libf/libfprint-2-tod1-goodix/libfprint-2-tod1-goodix_0.0.6-0ubuntu1~somerville1_amd64.deb
 
     - name: install software common
       apt:
         name:
           - ansible
           - apt-transport-https
-          - atom
           - autofs
           - basket
           - brave-browser
@@ -107,6 +106,7 @@
           #- duplicati
           - duplicity
           - firefox
+          - fprintd
           - fzf
           - giggle
           - gimp
@@ -115,6 +115,9 @@
           - kompare
           - krita
           - kubectl
+          - libfprint-2-tod1
+          - libfprint-2-2
+          - libpam-fprintd
           - mkvtoolnix-gui
           - mplayer
           - ohcount
@@ -134,8 +137,21 @@
           - zsh
           - zsh-autosuggestions
           - zsh-syntax-highlighting
-          
         state: present
+
+    - name: configure PAM to use the figerprint reader
+      ansible.builtin.template:
+        src: "{{ item }}"
+        dest: /etc/pam.d/
+        owner: root
+        group: root
+        mode: 0644
+      loop:
+        - "kde.j2"
+        - "sddm.j2"
+
+    - name: install oh-my-zsh
+      ansible.builtin.command: sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
     - name: Install snaps
       community.general.snap:
