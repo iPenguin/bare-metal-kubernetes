@@ -7,7 +7,7 @@
     - name: update package list
       raw: opkg update
     - name: install python
-      raw: opkg install python
+      raw: opkg install python3-base
     - name: install sftp
       opkg:
         name: openssh-sftp-server
