@@ -1,0 +1,20 @@
+---
+
+- name: Deploy cert-manager for TLS certificates
+  hosts: "{{ nodes_k8s_masters }}"
+  vars_prompt:
+    - name: nodes_k8s_masters
+      prompt: "Specify a node with access to the cluster:"
+      private: no
+      default: 'k8sm'
+  vars_files:
+    - vaults/tls.yml
+  vars:
+    tls_cert: "{{ vault_ci_tls_public_cert }}"
+    tls_key: "{{ vault_ci_tls_private_key }}"
+  become: no
+  tasks:
+    - name: include cert-manager role
+      include_role:
+        name: cert-manager
+`

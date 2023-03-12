@@ -1,0 +1,14 @@
+---
+
+- name: configure base system on masters
+  hosts: metal
+  remote_user: "{{ initial_ansible_user }}"
+  strategy: free
+  tags:
+    - config_bare_metal
+  vars_files:
+    - vaults/redhat.yml
+  tasks:
+    - name: config base on masters
+      include_role:
+        name: config-metal

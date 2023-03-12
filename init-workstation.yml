@@ -118,6 +118,7 @@
           - libfprint-2-tod1
           - libfprint-2-2
           - libpam-fprintd
+          - libreoffice
           - mkvtoolnix-gui
           - mplayer
           - ohcount
@@ -152,6 +153,36 @@
 
     - name: install oh-my-zsh
       ansible.builtin.command: sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+    - name: create destination directory for displaylink drivers
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/DisplayLink-{{ displaylink_version }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_group }}"
+        mode: "0755"
+        state: directory
+
+    - name: install dev packages for displaylink setup
+      ansible.builtin.apt:
+        name:
+          - libdrm-dev
+          - libpciaccess-dev
+          - libpciaccess-dev
+        state: present
+
+    - name: Download & extract DisplayLink Drivers for docking station
+      ansible.builtin.unarchive:
+        url: https://synaptics.com/sites/default/files/exe_files/2022-08/DisplayLink%20USB%20Graphics%20Software%20for%20Ubuntu{{ displaylink_version }}-EXE.zip
+        dest: "{{ ansible_env.HOME }}/DisplayLink-{{ displaylink_version }}"
+
+    - name: run the binary
+      ansible.builtin.shell:
+        cmd: sh {{ ansible_env.HOME }}/DisplayLink-{{ displaylink_version }}/displaylink-{{ displaylink_version }}-*.run --accept
+      become: yes
+
+    #
+    # Script above requests a password be entered if using Secure Boot, reboot required.
+    #
 
     - name: Install snaps
       community.general.snap:
