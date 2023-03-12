@@ -1,8 +1,0 @@
----
-
-- name: setup kubernetes only
-  hosts: k8smasters
-  tasks:
-    - name: run k8s role
-      include_role:
-        name: kubernetes

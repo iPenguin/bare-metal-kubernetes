@@ -1,7 +1,0 @@
-#
-# {{ ansible_managed }}
-#
-
-{% for share in user_shares %}
-{{ share.name }}     {{ share.server }}:{{ share.path }}
-{% endfor %}

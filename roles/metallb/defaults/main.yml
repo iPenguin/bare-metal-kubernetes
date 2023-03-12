@@ -1,5 +1,0 @@
----
-# defaults file for metallb
-#
-
-metallb_version: 0.10.2

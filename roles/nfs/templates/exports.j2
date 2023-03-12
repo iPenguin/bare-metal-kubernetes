@@ -1,7 +1,0 @@
-#
-# {{ ansible_managed }}
-#
-{% for entry in nfs_exports %}
-{{ entry.share }}    {% for host in entry.hosts %}{{ host.name }}({{ host.options | join(',') }})
-{% endfor %}
-{% endfor %}
