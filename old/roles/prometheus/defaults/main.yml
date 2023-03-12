@@ -1,0 +1,7 @@
+---
+# defaults file for prometheus
+
+prometheus_version: 14.1.2
+prometheus_namespace: monitoring
+
+prometheus_grafana_password: "{{ vault_prometheus_grafana_password }}"

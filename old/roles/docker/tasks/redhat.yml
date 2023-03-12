@@ -1,0 +1,32 @@
+---
+
+- name: remove podman
+  yum:
+    name:
+      - podman
+      - runc
+      - buildah
+    state: absent
+  when: ansible_distribution == "RedHat"
+
+- name: add docker ce repo
+  uri:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/
+    status_code:
+      - 200
+      - 304
+- name: install docker ce
+  yum:
+    name:
+      - docker-ce-{{ docker_ce_ver }}
+    state: present
+    update_cache: yes
+
+- name: configure docker with selinux
+  copy:
+    src: daemon.json
+    dest: /etc/docker/
+    owner: root
+    group: root
+    mode: '0600'

@@ -1,0 +1,58 @@
+---
+
+- name: install useful utils
+  hosts: "{{ servers }}"
+  vars_prompt:
+    - name: servers
+      prompt: "Name of systems to apply this playbook to?"
+      private: no
+      default: "servers"
+  tasks:
+    - name: add EPEL 8 GPG Key
+      ansible.builtin.rpm_key:
+        key: http://download.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8
+        state: present
+      when: ansible_distribution == "RedHat"
+
+    - name: install epel repos - RedHat
+      yum:
+        name: http://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+        state: present
+      when: ansible_distribution == "RedHat"
+    - name: install epel repos - CentOS
+      yum:
+        name: epel-release
+        state: latest
+      when: ansible_distribution == "CentOS"
+
+    - name: install pkgs - RedHat family
+      yum:
+        name: "{{ common_utils | union( redhat_utils ) }}"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    # we just installed all the virtualization packages
+    # but we need a user to access it
+    - name: add libvirt group
+      user:
+        name: "{{ ansible_user }}"
+        append: yes
+        groups: libvirt
+      when: ansible_os_family == "RedHat"
+
+    - name: install pkgs - Debian family
+      apt:
+        name: "{{ common_utils | union( debian_utils ) }}"
+        state: latest
+      when: ansible_os_family == "Debian"
+      
+    - name: start/enable libvirtd
+      service:
+        name: libvirtd
+        state: started
+        enabled: yes
+
+    - name: install all updates
+      package:
+        name: "*"
+        state: latest

@@ -1,0 +1,51 @@
+---
+
+jenkins_users:
+  - username: brian
+    name: "Brian Milco"
+    email: "bcmilco@gmail.com"
+
+jenkins_admin_email: "bcmilco@gmail.com"
+
+jenkins_plugins:
+  - antisamy-markup-formatter:2.1
+  - build-timeout:1.20
+  - cloudbees-folder:6.15
+  - timestamper:1.12
+  - workflow-aggregator:2.6
+  - pipeline-stage-view:2.19
+  - ws-cleanup:0.39
+  - github-branch-source:2.10.2
+  - ssh-slaves:1.31.5
+  - email-ext:2.82
+  - credentials-binding:1.24
+  - mailer:1.34
+  - blueocean:1.24.5
+  - kubernetes:1.29.2
+  - authorize-project:1.4.0
+  - pam-auth:1.6
+  - gradle:1.36
+  - git:4.7.1
+  - git-client:3.7.1
+  - git-server:1.9
+  - gitea:1.2.1
+  - github:1.33.1
+  - ldap:2.4
+  - nodejs:1.4.0
+  - configuration-as-code:1.47
+  - build-monitor-plugin:1.12+build.201809061734
+  - audit-trail:3.8
+  - prometheus:2.0.9
+  - kubernetes-credentials-provider:0.18-1
+
+jenkins_nodejs_installations:
+  - name: node-14.x
+    version: 14.16.0
+
+jenkins_config_path: "{{ pod_config_base_path }}/jenkins"
+
+prometheus_scrape_config:
+  - job_name: 'jenkins'
+    metrics_path: /prometheus
+    static_configs:
+      - targets: ['ci.milco.info:8080']

@@ -1,0 +1,15 @@
+---
+# defaults file for kubernetes
+
+kubernetes_version: 1.21.1
+
+k8s_master_can_run_pods: no
+
+k8s_use_ipv6: true
+
+k8s_pod_network:
+  ipv4: 10.0.0.0/8
+  ipv6: fd01:2:3:4::/64
+k8s_service_network:
+  ipv4: 172.16.0.0/12
+  ipv6: 2601:200:4101:8d11:1:1:1::/112

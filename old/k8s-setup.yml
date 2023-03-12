@@ -1,0 +1,104 @@
+---
+
+- name: configure master node
+  hosts: k8smasters
+  tags:
+    - config_k8s
+    - config_k8s_master
+  tasks:
+    - name: include docker role
+      include_role:
+        name: docker
+    - name: include kubernetes
+      vars:
+        role_type: master
+      include_role:
+        name: kubernetes
+    - name: include calico role
+      become: no
+      include_role:
+        name: calico
+    - name: include metallb load balancer
+      become: no
+      include_role:
+        name: metallb
+
+- name: kubernetes on the workers
+  hosts: k8sworkers
+  tags:
+    - config_k8s_nodes
+  tasks:
+    - name: workers - include docker role
+      include_role:
+        name: docker
+    - name: include kubernetes for clients
+      vars:
+        role_type: worker
+      include_role:
+        name: kubernetes
+
+- name: create new join token for workers
+  hosts: k8sworkers
+  tags:
+    - config_k8s_nodes
+  tasks:
+    - name: kubeadm create token
+      become: no
+      raw: kubeadm token create --print-join-command
+      register: join_cmd
+      delegate_to: "{{ k8s_command_node }}"
+    - name: kubectl join command for nodes
+      debug:
+        var: join_cmd
+    - name: set join fact
+      set_fact:
+        k8s_join_cmd: "{{ join_cmd.stdout_lines[0] }}"
+      delegate_to: localhost
+
+    - name: create join script
+      template:
+        src: join_node.sh.j2
+        dest: /tmp/join_node.sh
+      delegate_to: localhost
+
+- name: k8s config worker nodes
+  hosts: k8sworkers
+  tags:
+    - config_k8s
+    - config_k8s_nodes
+  tasks:
+    - name: upload join script
+      copy:
+        src: /tmp/join_node.sh
+        dest: /root/join_node.sh
+        owner: root
+        group: root
+        mode: '0755'
+    - name: join cluster
+      command: /root/join_node.sh
+    - name: enable start kubelet
+      service:
+        name: kubelet
+        state: started
+        enabled: yes
+
+- name: test nodes joined
+  hosts: k8smasters
+  tags:
+    - config_k8s
+    - check_nodes
+    - config_k8s_nodes
+  tasks:
+    - name: untaint master node so it can run pods
+      become: no
+      command: kubectl taint node {{ k8s_command_node }} node-role.kubernetes.io/master:NoSchedule-
+      when: k8s_master_can_run_pods
+
+    - name: check for nodes
+      become: no
+      command: kubectl get nodes
+      register: nodelist
+      delegate_to: "{{ k8s_command_node }}"
+    - name: show nodes
+      debug:
+        var: nodelist.stdout_lines

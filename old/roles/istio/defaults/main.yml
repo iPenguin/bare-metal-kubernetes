@@ -1,0 +1,5 @@
+---
+# defaults file for istio
+
+istio_version: 1.9.1
+istio_namespace: istio-system

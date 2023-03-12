@@ -1,0 +1,13 @@
+[libdefaults]
+  default_realm = {{ lan_domain | upper }}
+
+[realms]
+  {{ lan_domain | upper }} = {
+    kdc = krb.{{ lan_domain }}
+    admin_server = krb.{{ lan_domain }}
+  }
+
+[logging]
+  kdc = FILE:/var/log/krb5kdc.log
+  admin_server = FILE:/var/log/kadmin.log
+  default = FILE:/var/log/krb5lib.log

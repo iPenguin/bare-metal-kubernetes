@@ -1,0 +1,225 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ k8s_jenkins_namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-casc
+  namespace: {{ k8s_jenkins_namespace }}
+data:
+  casc.yaml: |
+    credentials:
+      system:
+        domainCredentials:
+        - credentials:
+          - string:
+              id: "Jenkins-Robot"
+              scope: GLOBAL
+              secret: "{AQAAABAAAAOgi/qDnaVSVMy8ATr3xSUn74lHtBiQozh0ZpNh8NPRSJyVjHA5jwoMLrp7qV2tHBK9VNim4T+gpv9kkJH4XMaVbeRlQ8x8O9kdz++ugGBE9ZTI1BmBgT1ngBcb8JylxtacP+99ZLK5sVWIoD7UUSRxl/lUj/Fqbzay7vvN32SyRI9B3h4h5CYofUdkX+twO2FnGircupwr7uuAMKufav7zu2NF0zR/2xExVox71iivPIfb0n1/hjBFw3HT6Bsk0q22jNI7TqpuSa1PpVPLZOXN2BCqTNCQbKmR5O1UeYsF4ghZIM06AHktgBRj/MVIYbx71DCNcpcWHgZPx11j9lmRI6GkyRORyYECS8YzMuR8i2YlPsA7spoGM5DCWmPdZYvDkuhFZEstQwqYcZY49erKVzPtH8gJHLWAsX4ivskttBjvLO12IKcBHs0tHqhBmuX8Hff+BOl+NcxzXPq3YdUkWjxzQvItti1ms2MmooXB6elk4BLCRI1PEowJEs3nkD6Hu+SmYCPYrAmszVF6e1b+bfz2pn4teK/3cqejLdimainowSMYc8teohxkg5o5nxUBm+HYESuRTqSDR0HWhuZjhXR2/LR/HqOrVZm99suLZmydI8xQn7xKH12MAdWcbbTmy7xrwkvjvOIR6nZ/m300dC6gkj9inT25UhxB8n8DnN1AGOP/+ngkYhuMU4pClylznHb8st8DFMruuHlcEYTTCO0Aovhe0n2bOdJl9zOSFwIKvXevnfiSDB7mu4vtaNH983BJYYbf8DeOt11Nzonam5Mf4OBPjp4bYqvdFH394PtYP1AIwijhmlZY4Av7bjScUnSn0wtqifCSf8g465qWWW/BAgpnw1brjUT9KDpt3sdxTuJ90vlFdz+B8+vFKMbLbv7pWGAq5fC71etnRNachWU0iLRBV63VcrTpegzPgcGisgWWkGHk50qkfuUARsF0wzJO2PMTlVLDwDSDB2vS2ptrUVB4ywWd5IdCSD6pWhYsdim2dRwbaDrqeMck6Xdzk6oKT8fkZiBJVuG/jDDy6ZGo2ntNvULxWv/7npcpSLZSLORCsTCLzRsa01xYGckdhOIrRWtNFkHZqLWIhWBTyfpk+/T8e01thkmSXNidDnNE4R1BBW9ZRF6Bl5CJlFnRmngAgawRn9q2mAcRtr6CIvKZdvAuyALCR/UYo+Kk1ti1qwf7dbGHuzjdzxKS1tVMK47b5BMqUw2PMxTgqDIMmS0G+O+37OKzobWt51OsFdU=}"
+          - string:
+              id: "Jenkins-Robot-Global"
+              scope: GLOBAL
+              secret: "{AQAAABAAAAPA0N71oE28hypTHCD3fDa+Nu3ti8mXu2xLb637ixb+GJ/gj3N0nY3mlOx0dLxqe71NKymsRftq81g4v39HfQ4JN0a07tglFsVLwnkHytSjEEAfHIEQrH83XDscjMeXJNgO48OL9plIx19gh9HJsBe2Q3bArDoSmqQS7XaK+7UW07Jjps8VAanlnaF1C1E5MRBODxrWMiSMJeT+TVxoc/xFQAhgcu0ILeAGqY+LvETShWnUw2VMEpFaU/PB6LLlRNbPP+Wt2MN1NdxYvDpG0BWZPebFS6lY4ZBtVhFY1m0NshBi8wagAuBlKoosKev5+YkHtm6LKCUWRKI11b2rf4cICEZ2Ao/ctmmke6pbyHfkhWQrsV41GmDrr1EAvcTtzpL9S6fAjqlsz06RrHk0g4yQIJpce/mpugMTjARS1a2SIAXS4b/dfAo7V6dPJjyPSQhIo0/m9z8rlFZq0VmNTZWppRdL3mCjhVPVb7bwl8B8ot5XKmQpspIn/D9AYLwZv+ANFngwIcm7y84TgjRXDPOfKAgdhuYNm8q/x+zo/NaeB4l4mdLdR/k/qc0fDWglZcuyjZpcgOIkBDLRWVYAhxi5V3lGlJrNVTeRnn566oPamrRDkYtN+SgpkdeSdhsIGHlXWeYm9paRRTCvvs4MBSiFS/F+qpt6mAkV6dhP4Ve/a5k9bUIp+qrekyzFycUtXmjmqkqXpgJ+xVB0c47+evJcib+djwTVtU4XeE7G66DnzlYDfdBH2aiZgY8JZ/jorcplAXqDcL0vW6bcTOZzNr3sBoFipMYoYCZ3WFHIGbiLUNBVZz31ohPWAurSjE6h1KsxtscQeFWkHxp7Ar0GQNUrqXemPms9DrHSWEI11UL+ro1EM2AAj//Md7H6OhxDbmruehJ8QebNBfTgMBwAtJaLJOrfg3yyj8RpF0YR0T3C0ufDvB1VyJIzFPK8pFtr5IkzAkkO36xl+LxnEVvsbvSasuia+XT/aCQvfF8uQJ14k/W3Eg+tpsXRZPK2P85REFlJWaMfdj1SSrv38X0nCCesE7OVSKyl6KIi2iDJeULYfqxJ01Afp/wMpYJDqkF8x6Juo6ICYA9bXusw9or25GcPFFbMde9XtiK9rDqIWH1gdbWBXU+tfWI5Y4kf6cEI/VT9KYuJwRJDStc+BHdr4CfyAoQtey43pQl1Iz+TATIRUBg4nI1oP7hc804BhURmuByTyPtyeacLb1noyUlIZHji7+PLaZFAesqsOoUYVNiUl6Tdpegrh1iz2ffwx5THGy/gfB8dGdc4kvg/QfeS3AiWmQ==}"
+          - personalAccessTokenImpl:
+              description: "Local Gitea server"
+              id: "f52bd7c9-829e-4b8f-ac4d-3bddcca8e012"
+              scope: GLOBAL
+              token: "{AQAAABAAAAAw0xGb0+3yBbVZ96yGo6yoI1ZT46dEQTf1JzmRBu0lK1WuVhxDbl7WmlJv/VlbLlfO3M4xndgo22npeauzzExIhw==}"
+          - personalAccessTokenImpl:
+              description: "Gitea local repo"
+              id: "brians-gitea-account"
+              scope: GLOBAL
+              token: "{AQAAABAAAAAwiUFbK4lRZq90/ssWKDQb6hu2i2H3+vgn3U34uQ6hcehJ0cnES+AeV2YJBwulT8PcdZHRnDGrdl41TkDayo3+UA==}"
+          - basicSSHUserPrivateKey:
+            description: "New Gitea creds"
+            id: "brian-gitea"
+            privateKeySource:
+              directEntry:
+                privateKey: "{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}"
+            scope: GLOBAL
+            username: "git"
+    jenkins:
+      agentProtocols:
+      - "JNLP4-connect"
+      - "Ping"
+      authorizationStrategy:
+        loggedInUsersCanDoAnything:
+          allowAnonymousRead: false
+      clouds:
+      - kubernetes:
+          containerCap: 10
+          containerCapStr: "10"
+          credentialsId: "Jenkins-Robot"
+          jenkinsTunnel: "jenkins-jnlp.{{ k8s_jenkins_namespace }}.svc:{{ jenkins_agent_slave_port }}"
+          name: "Local Cluster"
+          namespace: "{{ k8s_jenkins_namespace }}"
+          serverUrl: "{{ k8s_command_node }}:6443"
+          skipTlsVerify: true
+          templates:
+          - containers:
+            - alwaysPullImage: true
+              image: "{{ jenkins_agent_default_image }}"
+              livenessProbe:
+                failureThreshold: 0
+                initialDelaySeconds: 0
+                periodSeconds: 0
+                successThreshold: 0
+                timeoutSeconds: 0
+              name: "jnlp"
+              workingDir: "{{ jenkins_agent_workdir }}"
+            id: "28d71048-a9b4-46be-954c-a7b42e586855"
+            idleMinutes: 5
+            idleMinutesStr: "5"
+            instanceCap: 6
+            instanceCapStr: "6"
+            label: "{{ jenkins_agent_labels }}"
+            name: "{{ jenkins_agent_basename }}"
+            namespace: "{{ k8s_jenkins_namespace }}"
+            nodeUsageMode: "NORMAL"
+            volumes:
+            - emptyDirVolume:
+                memory: false
+                mountPath: "{{ jenkins_agent_workdir }}"
+            - hostPathVolume:
+                hostPath: "/var/run/docker.sock"
+                mountPath: "/var/run/docker.sock"
+            yamlMergeStrategy: "override"
+      crumbIssuer:
+        standard:
+          excludeClientIPFromCrumb: false
+      disableRememberMe: false
+      labelAtoms:
+      - name: "docker"
+      - name: "master"
+      markupFormatter: "plainText"
+      mode: EXCLUSIVE
+      myViewsTabBar: "standard"
+      numExecutors: 0
+      primaryView:
+        all:
+          name: "all"
+      projectNamingStrategy: "standard"
+      quietPeriod: 5
+      remotingSecurity:
+        enabled: true
+      scmCheckoutRetryCount: 0
+      securityRealm:
+        local:
+          allowsSignup: false
+          enableCaptcha: false
+          users:
+          {% for user in jenkins_users %}- id: "{{ user.username }}"
+            name: "{{ user.name }}"
+            properties:
+            - mailer:
+                emailAddress: "{{ user.email }}"
+          {% endfor %}
+
+      slaveAgentPort: {{ jenkins_agent_slave_port }}
+      views:
+      - list:
+          columns:
+          - "status"
+          - "weather"
+          - "jobName"
+          - "lastSuccess"
+          - "lastFailure"
+          - "lastDuration"
+          - "buildButton"
+          jobNames:
+          - "my-folder"
+          - "my-folder/my-test-job"
+          name: "Freestyle"
+      - all:
+          name: "all"
+      viewsTabBar: "standard"
+    security:
+      apiToken:
+        creationOfLegacyTokenEnabled: false
+        tokenGenerationOnCreationEnabled: false
+        usageStatisticsEnabled: true
+      sSHD:
+        port: -1
+    unclassified:
+      bitbucketEndpointConfiguration:
+        endpoints:
+        - bitbucketCloudEndpoint:
+            enableCache: false
+            manageHooks: false
+            repositoriesCacheDuration: 0
+            teamCacheDuration: 0
+      buildDiscarders:
+        configuredBuildDiscarders:
+        - "jobBuildDiscarder"
+      buildStepOperation:
+        enabled: false
+      email-ext:
+        adminRequiredForTemplateTesting: false
+        allowUnregisteredEnabled: false
+        charset: "UTF-8"
+        debugMode: false
+        defaultBody: |-
+          $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+
+          Check console output at $BUILD_URL to view the results.
+        defaultContentType: "text/plain"
+        defaultSubject: "$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!"
+        defaultTriggerIds:
+        - "hudson.plugins.emailext.plugins.trigger.FailureTrigger"
+        mailAccount:
+          smtpPassword: "{AQAAABAAAAAQUvHn+62bko+IQJtGBglSojFPSGJDnfPEnQ9mfLGdFSU=}"
+        maxAttachmentSize: -1
+        maxAttachmentSizeMb: -1
+        precedenceBulk: false
+        watchingEnabled: false
+      fingerprints:
+        fingerprintCleanupDisabled: false
+        storage: "file"
+      gitHubConfiguration:
+        apiRateLimitChecker: ThrottleForNormalize
+      gitHubPluginConfig:
+        hookUrl: "{{ jenkins_base_url }}/github-webhook/"
+      gitSCM:
+        addGitTagAction: false
+        allowSecondFetch: false
+        createAccountBasedOnEmail: false
+        disableGitToolChooser: false
+        hideCredentials: false
+        showEntireCommitSummaryInChanges: false
+        useExistingAccountWithSameEmail: false
+      junitTestResultStorage:
+        storage: "file"
+      location:
+        adminAddress: "{{ jenkins_admin_email }}"
+        url: "{{ jenkins_base_url }}"
+      mailer:
+        charset: "UTF-8"
+        useSsl: false
+        useTls: false
+      pollSCM:
+        pollingThreadCount: 10
+      timestamper:
+        allPipelines: false
+        elapsedTimeFormat: "'<b>'HH:mm:ss.S'</b> '"
+        systemTimeFormat: "'<b>'HH:mm:ss'</b> '"
+    tool:
+      git:
+        installations:
+        - home: "git"
+          name: "Default"
+      mavenGlobalConfig:
+        globalSettingsProvider: "standard"
+        settingsProvider: "standard"
+      nodejs:
+        installations:
+        {% for node in jenkins_nodejs_installations %}- name: "{{ node.name }}"
+          properties:
+          - installSource:
+              installers:
+              - nodeJSInstaller:
+                  id: "{{ node.version }}"
+                  npmPackagesRefreshHours: 72
+        {% endfor %}

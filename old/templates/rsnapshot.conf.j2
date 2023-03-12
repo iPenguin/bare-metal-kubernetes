@@ -1,0 +1,82 @@
+# {{ ansible_managed }}
+#################################################
+# PLEASE BE AWARE OF THE FOLLOWING RULE:        #
+# This file requires tabs between elements      #
+#################################################
+
+config_version	1.2
+
+###########################
+# SNAPSHOT ROOT DIRECTORY #
+###########################
+snapshot_root	{{ backup_dest }}/
+
+# If no_create_root is enabled, rsnapshot will not automatically create the
+# snapshot_root directory. This is particularly useful if you are backing
+# up to removable media, such as a FireWire or USB drive.
+#
+#no_create_root	1
+
+#################################
+# EXTERNAL PROGRAM DEPENDENCIES #
+#################################
+cmd_cp		/usr/bin/cp
+cmd_rm		/usr/bin/rm
+cmd_rsync	/usr/bin/rsync
+
+# Uncomment this to enable remote ssh backups over rsync.
+#cmd_ssh	/usr/bin/ssh
+
+# Comment this out to disable syslog support.
+cmd_logger	/usr/bin/logger
+
+#########################################
+#     BACKUP LEVELS / INTERVALS         #
+# Must be unique and in ascending order #
+# e.g. alpha, beta, gamma, etc.         #
+#########################################
+retain	daily	30
+#retain	monthly	12
+
+############################################
+#              GLOBAL OPTIONS              #
+# All are optional, with sensible defaults #
+############################################
+
+# Verbose level, 1 through 5.
+# 1     Quiet           Print fatal errors only
+# 2     Default         Print errors and warnings only
+# 3     Verbose         Show equivalent shell commands being executed
+# 4     Extra Verbose   Show extra verbose information
+# 5     Debug mode      Everything
+#
+verbose		2
+loglevel	3
+
+# If you enable this, data will be written to the file you specify. The
+# amount of data written is controlled by the "loglevel" parameter.
+#
+#logfile	/var/log/rsnapshot
+
+# If enabled, rsnapshot will write a lockfile to prevent two instances
+# from running simultaneously (and messing up the snapshot_root).
+# If you enable this, make sure the lockfile directory is not world
+# writable. Otherwise anyone can prevent the program from running.
+lockfile	/var/run/rsnapshot.pid
+
+# Default rsync args. All rsync commands have at least these options set.
+#rsync_short_args	-a
+#rsync_long_args	--delete --numeric-ids --relative --delete-excluded
+# archive, extended attributes and acls:
+rsync_long_args	-aXA --numeric-ids --relative --delete --delete-excluded
+
+
+# ssh has no args passed by default, but you can specify some here.
+#ssh_args	-p 22
+
+###############################
+### BACKUP POINTS / SCRIPTS ###
+###############################
+{% for backup_path in backup_paths %}
+backup	{{ backup_path }}		localhost/
+{% endfor %}

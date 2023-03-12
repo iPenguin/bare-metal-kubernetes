@@ -1,0 +1,55 @@
+---
+
+- name: configure rock64
+  include_tasks: rock64.yml
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_architecture == "aarch64"
+
+- name: setup red hat subscription
+  redhat_subscription:
+    username: "{{ redhat_username }}"
+    password: "{{ redhat_password }}"
+    auto_attach: yes
+    consumer_id: "{{ redhat_system_uuid }}"
+    state: present
+  when: ansible_distribution == "RedHat"
+
+- name: install python
+  package:
+    name: python3
+    state: latest
+#  raw: "yum install -y python3"
+
+- name: set hostname
+  hostname:
+    name: "{{ inventory_hostname }}.{{ lan_domain }}"
+  when: inventory_hostname != "localhost"
+
+- name: add ansible user
+  user:
+    name: "{{ preferred_ansible_user }}"
+    shell: /bin/bash
+    state: present
+- name: add ssh pub key
+  authorized_key:
+    user: "{{ preferred_ansible_user }}"
+    key: "{{ lookup( 'file', '~/.ssh/id_rsa.pub' ) }}"
+    state: present
+- name: configure sudo
+  copy:
+    content: "{{ preferred_ansible_user }} ALL=(ALL) NOPASSWD: ALL"
+    dest: /etc/sudoers.d/{{ preferred_ansible_user }}
+    validate: 'visudo -cf %s'
+
+- name: set the timezone
+  timezone:
+    name: "America/Los_Angeles"
+
+- name: update all packages
+  package:
+    name: "*"
+    state: latest
+
+- name: test ansible configuration
+  ping:

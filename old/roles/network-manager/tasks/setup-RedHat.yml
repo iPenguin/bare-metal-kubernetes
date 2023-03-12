@@ -1,0 +1,25 @@
+---
+
+- name: install network manager
+  yum:
+    name:
+      - NetworkManager
+    state: present
+
+- name: start/enable nm
+  service:
+    name: NetworkManager
+    state: started
+    enabled: yes
+
+# don't completely remove the network connection
+- name: enable dhcp for ifaces in nm
+  command: nmcli device modify {{ nm_default_interface[ item ] }} {{ item }}.method auto
+  loop:
+    - ipv4
+    - ipv6
+
+- name: restart network to make sure changes work
+  service:
+    name: NetworkManager
+    state: restarted

@@ -1,0 +1,36 @@
+---
+
+- name: Setup IP address
+  hosts: k8smasters
+  vars_prompt:
+    - name: ipa_add_ip_address
+      prompt: "Do you want to add the IP address (y/N)"
+      default: "N"
+      private: no
+  tasks:
+    - name: setup ip addresses
+      tags:
+        - container_only
+      vars:
+        server:
+          ipv4: "{{ servers.ci.ipv4 }}"
+          ipv6: "{{ servers.ci.ipv6 }}"
+      import_role:
+        name: network-manager
+      when: ipa_add_ip_address | upper == 'Y'
+
+- name: install concourse
+  hosts: k8smasters
+  become: no
+  vars_files:
+    - vaults/ipa.yml
+    - vaults/tls.yml
+  vars:
+    ipa_lookup_user: "{{ vault_ipa_lookup_user }}"
+    ipa_lookup_password: "{{ vault_ipa_lookup_password }}"
+    tls_cert: "{{ vault_ci_tls_public_cert }}"
+    tls_key: "{{ vault_ci_tls_private_key }}"
+  tasks:
+    - name: Setup Concourse CI
+      include_role:
+        name: concourse

@@ -1,0 +1,25 @@
+---
+
+# - name: create cert-manager namespace
+#   kubernetes.core.k8s:
+#     kind: Namespace
+#     name: "{{ cert_manager_namespace }}"
+#     state: present
+#
+# - name: add helm chart repo
+#   kubernetes.core.helm_repository:
+#     name: jetstack
+#     repo_url: https://charts.jetstack.io
+#
+# - name: install cert-manager in cluster
+#   kubernetes.core.helm:
+#     name: "cert-manager"
+#     chart_ref: jetstack/cert-manager
+#     release_namespace: "{{ cert_manager_namespace }}"
+#     create_namespace: false
+#     chart_version: "{{ cert_manager_version }}"
+
+- name: create tls secrets
+  kubernetes.core.k8s:
+    state: present
+    template: 'secret.yml'

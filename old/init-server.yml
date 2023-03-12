@@ -1,0 +1,37 @@
+---
+
+- name: configure base system on masters
+  hosts: k8smasters
+  tags:
+    - config_system
+    - config_k8s_master
+  vars_files:
+    - vaults/redhat.yml
+  tasks:
+    - name: config base on masters
+      include_role:
+        name: config-base
+
+- name: configure base system on workers
+  hosts: k8sworkers
+  remote_user: "{{ initial_ansible_user }}"
+  tags:
+    - config_system
+    - config_k8s_nodes
+  vars_files:
+    - vaults/redhat.yml
+  tasks:
+    - name: config base on workers
+      include_role:
+        name: config-base
+
+- name: install needed pip packages
+  hosts: servers
+  remote_user: "{{ initial_ansible_user }}"
+  tags:
+    - ansible_pips
+  tasks:
+    - name: install pips
+      ansible.builtin.pip:
+        name: "{{ ansible_pips }}"
+        state: present

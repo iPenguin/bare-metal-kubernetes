@@ -1,0 +1,16 @@
+---
+# tasks file for networking
+
+- name: setup network manager
+  include_tasks: setup-{{ ansible_os_family }}.yml
+
+#
+# Expecting the following structure:
+#
+# server:
+#   ipv4:
+#   ipv6:
+#
+- name: add ips
+  include_tasks: add-ips.yml
+  when: "server is defined"

@@ -1,0 +1,9 @@
+---
+
+- name: test the metal lb role
+  hosts: k8smasters
+  become: no
+  tasks:
+    - name: include metal lb role
+      include_role:
+        name: metallb

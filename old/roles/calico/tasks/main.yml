@@ -1,0 +1,29 @@
+---
+# tasks file for calico
+
+- name: exclude calico ifaces from network manager
+  copy:
+    src: calico.conf
+    dest: /etc/NetworkManager/conf.d/
+- name: calico config file
+  tags:
+    - calico_conf
+  template:
+    src: calico.yaml.j2
+    dest: /home/{{ ansible_user }}/calico.yaml
+- name: install calicoctl
+  uri:
+    url: https://github.com/projectcalico/calicoctl/releases/download/v{{ calico_version }}/calicoctl
+    dest: /usr/local/bin/calicoctl
+    mode: '0750'
+    status_code:
+      - 200
+      - 304
+- name: setup calico pod network
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/calico.yaml
+- name: add calicoctl alias
+  lineinfile:
+    path: /home/ansible/.bashrc
+    regexp: "alias calicoctl"
+    line: "alias calicoctl=\"kubectl exec -i -n kube-system calicoctl -- /calicoctl\""

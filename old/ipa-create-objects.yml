@@ -1,0 +1,145 @@
+---
+
+- name: create ipa objects
+  hosts: k8smasters
+  vars_files:
+    - vaults/ipa.yml
+  vars_prompt:
+    - name: validate_certs_ans
+      prompt: "Validate TLS certificates before connecting? (Y/n)"
+      default: "Y"
+      private: no
+  vars:
+    validate_certs: "{{ validate_certs_ans | upper == 'Y' }}"
+    ipa_admin_username: admin
+    ipa_admin_password: "{{ vault_ipa_admin_password }}"
+    
+    ipa_lookup_user: "{{ vault_ipa_lookup_user }}"
+    ipa_lookup_password: "{{ vault_ipa_lookup_password }}"
+
+    ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
+  tasks:
+    - name: config ipa server
+      ipa_config:
+        ipadefaultemaildomain: "{{ lan_domain }}"
+        ipadefaultloginshell: "bash"
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+
+    - name: create ipa groups
+      ipa_group:
+        name: "{{ item }}"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_groups }}"
+
+    - name: create ipa users
+      ipa_user:
+        name: "{{ item.name }}"
+        state: present
+        givenname: "{{ item.givenname }}"
+        sn: "{{ item.surname }}"
+        mail: "{{ item.email }}"
+        sshpubkey: "{{ item.sshkeys | default('') }}"
+        loginshell: "{{ item.loginshell | default( 'bash' ) }}"
+        password: "{{ item.password }}"
+        update_password: on_create
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_users }}"
+
+    - name: create primary dns zones
+      ipa_dnszone:
+        zone_name: "{{ lan_domain }}"
+        state: present
+        # dynamicupdate: true
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+
+    - name: create reverse dns zones
+      ipa_dnszone:
+        zone_name: "1.168.192.in-addr.arpa"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+
+    - name: create reverse dns records
+      ipa_dnsrecord:
+        zone_name: "1.168.192.in-addr.arpa"
+        record_name: "{{ item.name }}"
+        record_type: "{{ item.type }}"
+        record_value: "{{ item.value }}"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_reverse_dns }}"
+
+    - name: create dns records
+      ipa_dnsrecord:
+        zone_name: "{{ lan_domain }}"
+        record_name: "{{ item.name }}"
+        record_type: "{{ item.type }}"
+        record_value: "{{ item.value }}"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_dnsrecords }}"
+
+
+    - name: create hosts
+      ignore_errors: yes
+      ipa_host:
+        name: "{{ item.name }}.{{ lan_domain }}"
+        description: "{{ item.description }}"
+        ip_address: "{{ item.ip_address }}"
+        mac_address: "{{ item.mac_address }}"
+        state: present
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_hosts }}"
+      register: host_create
+      changed_when: "'no modifications' in host_create.msg"
+
+    - name: create host groups
+      ipa_hostgroup:
+        name: "{{ item.name }}"
+        state: present
+        host: "{{ item.hosts }}"
+        hostgroup: "{{ item.hostgroups }}"
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_hostgroups }}"
+
+    - name: create sudo rules
+      ipa_sudorule:
+        name: sudo_dev_dbserver
+        description: Allow developers to run every command with sudo on all database server
+        cmdcategory: all
+        host: "{{ item.hosts }}"
+        hostgroup: "{{ item.hostgroup }}"
+        sudoopt: "{{ item.sudoopt }}"
+        usergroup: "{{ item.usergroup }}"
+        ipa_host: "{{ ipa_server_hostname }}"
+        ipa_user: "{{ ipa_admin_username }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ ipa_sudorules }}"

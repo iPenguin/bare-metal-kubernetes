@@ -1,0 +1,60 @@
+---
+
+- name: create backup dir and fstab entry
+  hosts: hosts
+  tasks:
+    - name: mkdir backups
+      file:
+        path: "{{ backup_dest }}"
+        state: directory
+    - name: create fstab entry
+      mount:
+        path: "{{ backup_dest }}"
+        src: LABEL=backups
+        fstype: xfs
+        state: mounted
+
+- name: install and configure rsync to do basic sync backups
+  hosts: hosts
+  tasks:
+    - name: add EPEL 8 GPG Key
+      ansible.builtin.rpm_key:
+        key: http://download.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8
+        state: present
+      when: ansible_distribution == "RedHat"
+
+    - name: install epel repos - RedHat
+      yum:
+        name: http://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+        state: present
+      when: ansible_distribution == "RedHat"
+    - name: install epel repos - CentOS
+      yum:
+        name: epel-release
+        state: latest
+      when: ansible_distribution == "CentOS"
+    - name: install rsnapshot & rsync
+      yum:
+        name:
+          - rsync
+          - rsnapshot
+        state: latest
+    - name: configure rsnapshot
+      template:
+        src: rsnapshot.conf.j2
+        dest: /etc/rsnapshot.conf
+    - name: configure daily backups
+      cron:
+        name: daily backups
+        state: present
+        job: rsnapshot daily
+        hour: '1'
+        minute: '30'
+    # - name: configure monthly backups
+    #   cron:
+    #     name: monthly backups
+    #     state: present
+    #     job: rsnapshot monthly
+    #     day: '1'
+    #     hour: '1'
+    #     minute: '0'

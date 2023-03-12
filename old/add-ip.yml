@@ -1,0 +1,21 @@
+---
+
+- name: Configure all servers with Network Manager
+  hosts: servers
+  vars_prompt:
+    - name: server_ipv4
+      prompt: "IPv4 address to add:"
+      default: ''
+      private: no
+    - name: server_ipv6
+      prompt: "IPv6 address to add:"
+      default: ''
+      private: no
+  vars:
+    server:
+      ipv4: "{{ server_ipv4 }}"
+      ipv6: "{{ server_ipv6 }}"
+  tasks:
+    - name: include networking role
+      include_role:
+        name: network-manager

@@ -1,0 +1,19 @@
+---
+
+- name: Setup IPA server
+  hosts: k8smasters
+  tasks:
+    - name: install IPA server
+      include_role:
+        name: docker-freeipa.yml
+
+    - name: create IPA objects to make server usable
+      include_role:
+        name: ipa-create-objects.yml
+
+# - name: Setup IPA Clients
+#   hosts: ipa_clients
+#   tasks:
+#     - name: configure client nodes
+#       include_role:
+#         name: ipa-client.yml

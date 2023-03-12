@@ -1,0 +1,8 @@
+---
+
+- name: install and configure helm
+  hosts: k8smasters
+  tasks:
+    - name: include helm role
+      include_role:
+        name: helm

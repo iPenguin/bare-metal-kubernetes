@@ -1,0 +1,12 @@
+--unattended
+--realm={{ ipa_domain | upper }}
+--domain={{ ipa_domain }}
+--ds-password={{ ipa_directory_password }}
+--admin-password={{ ipa_admin_password }}
+--ntp-pool=us.pool.ntp.org
+--no-host-dns
+--setup-kra
+--setup-dns
+--zonemgr="{{ ipa_server_admin_email }}"
+--forwarder="{{ network.ipv4.dns }}"
+--ca-subject "CN={{ ipa_domain }}"

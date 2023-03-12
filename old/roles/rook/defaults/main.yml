@@ -1,0 +1,12 @@
+---
+# defaults file for rook
+
+local_storage_default_path: /opt/local-path-provisioner
+
+rook_ceph_version: 1.6.5
+
+ceph_image_version: 16.2.4
+
+ceph_storage: "bare-metal"
+
+ceph_device_filter: "^sda"

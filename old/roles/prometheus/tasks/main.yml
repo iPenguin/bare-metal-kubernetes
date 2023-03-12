@@ -1,0 +1,29 @@
+---
+# tasks file for prometheus
+
+- name: template namespace
+  template:
+    src: prometheus.yml
+    dest: /home/{{ ansible_user }}/prometheus.yml
+
+- name: create namespace
+  become: no
+  command: kubectl apply -f /home/{{ ansible_user }}/prometheus.yml
+
+- name: add repo for prometheus community
+  become: no
+  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+- name: update repo
+  become: no
+  command: helm repo update
+
+- name: template vaules
+  become: no
+  template:
+    src: prom.yml
+    dest: "/home/{{ ansible_user }}/prometheus-values.yml"
+
+- name: install prometheus
+  become: no
+  command: helm install prometheus -n {{ prometheus_namespace }} prometheus-community/kube-prometheus-stack -f /home/{{ ansible_user }}/prometheus-values.yml

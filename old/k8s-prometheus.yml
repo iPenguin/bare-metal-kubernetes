@@ -1,0 +1,10 @@
+---
+
+- name: install prometheus monitoring
+  hosts: k8smasters
+  vars_files:
+    - vaults/prometheus.yml
+  tasks:
+    - name: include prometheus role
+      include_role:
+        name: prometheus

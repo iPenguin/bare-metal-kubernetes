@@ -1,0 +1,33 @@
+---
+# tasks file for gitea
+
+- name: create gitea namespace
+  become: no
+  kubernetes.core.k8s:
+    name: "{{ gitea_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+
+- name: add gitea helm chart repo
+  become: no
+  kubernetes.core.helm_repository:
+    name: groundhog2k
+    repo_url: https://groundhog2k.github.io/helm-charts/
+
+- name: setup git-repos PVC
+  become: no
+  kubernetes.core.k8s:
+    state: present
+    template: 'gitea-services.yml'
+
+- name: install gitea chart
+  become: no
+  kubernetes.core.helm:
+    name: gitea
+    chart_version: "{{ gitea_helm_chart_version }}"
+    chart_ref: groundhog2k/gitea
+    release_namespace: "{{ gitea_namespace }}"
+    create_namespace: false
+    values: "{{ lookup('template', 'values.yml') | from_yaml }}"

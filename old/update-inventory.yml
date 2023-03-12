@@ -1,0 +1,26 @@
+---
+
+- name: update the dns inventory
+  hosts: router
+  gather_facts: no
+  tasks:
+    - name: update package list
+      raw: opkg update
+    - name: install python
+      raw: opkg install python
+    - name: install sftp
+      opkg:
+        name: openssh-sftp-server
+        state: present
+    - name: generate config file
+      template:
+        src: dnsmasq.conf.j2
+        dest: /etc/dnsmasq.conf
+        owner: root
+        group: root
+        mode: '0600'
+        validate: 'dnsmasq --test -C %s'
+    - name: restart dns service
+      openwrt_init:
+        name: dnsmasq
+        state: restarted
