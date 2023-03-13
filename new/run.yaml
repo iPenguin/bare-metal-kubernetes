@@ -1,0 +1,22 @@
+---
+
+- name: Setup DNS
+  hosts: router
+  gather_facts: false
+  remote_user: root
+  tags:
+    - dns
+  roles:
+    - role: openwrt-dns
+
+- name: Configure base OS
+  hosts: metal
+  tags:
+    - controllers
+    - workers
+  roles:
+    - role: configure-os
+
+
+
+...

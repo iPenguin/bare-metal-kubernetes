@@ -1,0 +1,37 @@
+---
+
+- name: set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}.{{ lan_domain }}"
+
+- name: update all packages
+  ansible.builtin.package:
+    name: "*"
+    state: latest
+
+- name: Install required packages for Debian
+  ansible.builtin.apt:
+    name:
+      - python3-pip
+    state: latest
+
+- name: Install additional packages for Debian
+  ansible.builtin.apt:
+    name: "{{ common_utils | union( debian_utils ) }}"
+    state: latest
+
+- name: Add users
+  include_tasks: users.yaml
+  loop: "{{ remote_users }}"
+
+- name: Set the timezone
+  ansible.builtin.timezone:
+    name: "{{ timezone }}"
+
+- name: Install additional pip packages
+  ansible.builtin.pip:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ pip_packages }}"
+
+...

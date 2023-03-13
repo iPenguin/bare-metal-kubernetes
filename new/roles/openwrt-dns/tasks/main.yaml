@@ -1,0 +1,13 @@
+
+- name: Update package list
+  ansible.builtin.raw: opkg update
+
+# Cannot use ansible.builtin.opkg until python is installed.
+- name: Install required packages for ansible on OpenWrt
+  ansible.builtin.raw: opkg install python3-light python3-multiprocessing python3-distutils openssh-sftp-server python3-logging
+
+- name: Update hosts
+  include_tasks: update-hosts.yaml
+
+- name: Update inventories
+  include_tasks: update-inventories.yaml

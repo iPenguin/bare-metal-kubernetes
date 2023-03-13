@@ -1,0 +1,18 @@
+---
+
+all:
+  children:
+    metal:
+      children:
+        controllers:
+          hosts:
+            c1.milco.info:
+        workers:
+          hosts:
+            w1.milco.info:
+            w2.milco.info:
+    openwrt:
+      children:
+        router:
+          hosts:
+            r.milco.info:

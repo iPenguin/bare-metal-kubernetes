@@ -1,0 +1,21 @@
+common_utils:
+  - gdisk
+  - git
+  - htop
+  - rsync
+  - smartmontools
+  - sysstat
+  - tmux
+  - vim
+  - zsh
+
+debian_utils:
+  - freeipa-client
+  - libvirt-daemon
+  - libvirt-daemon-system
+  - lvm2
+  - nfs-common
+  - xfsprogs
+
+pip_packages:
+  - kubernetes

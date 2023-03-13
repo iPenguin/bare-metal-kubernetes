@@ -1,0 +1,10 @@
+---
+
+roles:
+  - name: gekmihesg.openwrt
+  - name: nn708.openwrt
+
+collections:
+  - name: community.general
+  - name: ansible.posix
+  - name: kubernetes.core

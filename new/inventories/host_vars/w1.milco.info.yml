@@ -1,0 +1,6 @@
+---
+
+ipv4: "{{ ipv4_network }}.6"
+ipv6: "{{ ipv6_network }}::6"
+
+...

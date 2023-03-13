@@ -1,0 +1,34 @@
+---
+
+ipv4_network: 10.1.1
+ipv6_network: "{{ vault_ipv6_network }}"
+
+network:
+  ipv4:
+    subnet: "{{ ipv4_network }}.0/24"
+    router: "{{ ipv4_network }}.1"
+    dns: "{{ ipv4_network }}.1"
+    server_pool:
+      start: "{{ ipv4_network }}.20"
+      end: "{{ ipv4_network }}.70"
+  ipv6:
+    subnet: "{{ ipv6_network }}::/64"
+    router: "{{ ipv6_network }}::1"
+    dns: "{{ ipv6_network }}::1"
+    server_pool:
+      start: "{{ ipv6_network }}::20"
+      end: "{{ ipv6_network }}::70"
+
+servers:
+  nfs:
+    ipv4: "{{ ipv4_network }}.20"
+    ipv6: "{{ ipv6_network }}::20"
+  git:
+    ipv4: "{{ ipv4_network }}.21"
+    ipv6: "{{ ipv6_network }}::21"
+  ipa:
+    ipv4: "{{ ipv4_network }}.22"
+    ipv6: "{{ ipv6_network }}::22"
+  ci:
+    ipv4: "{{ ipv4_network }}.23"
+    ipv6: "{{ ipv6_network }}::23"

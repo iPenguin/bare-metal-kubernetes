@@ -1,0 +1,15 @@
+- name: add ansible user
+  user:
+    name: "{{ item.user }}"
+    shell: /bin/bash
+    state: present
+- name: add the current users ssh pub key to remote hosts
+  authorized_key:
+    user: "{{ item.user }}"
+    key: "{{ lookup( 'file', item.ssh_pub_key ) }}"
+    state: present
+- name: configure sudo
+  copy:
+    content: "{{ item.user }} ALL=(ALL) NOPASSWD: ALL"
+    dest: /etc/sudoers.d/{{ item.user }}
+    validate: 'visudo -cf %s'
