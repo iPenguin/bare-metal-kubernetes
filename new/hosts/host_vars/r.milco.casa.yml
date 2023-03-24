@@ -1,0 +1,17 @@
+---
+
+ddns_domains:
+  - service: dynu.com
+    username: "{{ vault_dynu_username }}"
+    password: "{{ vault_dynu_password }}"
+    hostname: milco.freeddns.org
+    ipv6: false
+    interface: 'wan'
+  - service: dynu.com
+    username: "{{ vault_dynu_username }}"
+    password: "{{ vault_dynu_password }}"
+    hostname: milco.freeddns.org
+    ipv6: true
+    interface: 'wan6'
+
+...

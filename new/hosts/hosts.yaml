@@ -6,13 +6,13 @@ all:
       children:
         controllers:
           hosts:
-            c1.milco.info:
+            c1.milco.casa:
         workers:
           hosts:
-            w1.milco.info:
-            w2.milco.info:
+            w1.milco.casa:
+            w2.milco.casa:
     openwrt:
       children:
         router:
           hosts:
-            r.milco.info:
+            r.milco.casa:

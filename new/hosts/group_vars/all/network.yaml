@@ -1,0 +1,63 @@
+---
+
+ipv4_network: 10.1.1
+ipv6_network: "{{ vault_ipv6_network }}"
+
+wireguard_network:
+  enabled: true
+  interface: vpn
+  port: 51820
+  private_key: "{{ vault_wireguard_private_key }}"
+  public_key:
+  preshared_key: "{{ vault_wireguard_preshared_key }}"
+  addresses:
+    - 10.1.2.1/24
+    - fd00:10:1:2::1/64
+
+network:
+  ipv4:
+    external_dns:
+      - 1.1.1.3
+      - 1.0.0.3
+    subnet: "{{ ipv4_network }}.0/24"
+    router: "{{ ipv4_network }}.1"
+    dns: "{{ ipv4_network }}.1"
+    server_pool:
+      start: "{{ ipv4_network }}.20"
+      end: "{{ ipv4_network }}.100"
+  ipv6:
+    external_dns:
+      - 2606:4700:4700::1113
+      - 2606:4700:4700::1113
+    subnet: "{{ ipv6_network }}::/64"
+    router: "{{ ipv6_network }}::1"
+    dns: "{{ ipv6_network }}::1"
+    server_pool:
+      start: "{{ ipv6_network }}::20"
+      end: "{{ ipv6_network }}::70"
+
+hosts:
+  - name: c1
+    mac: 98:FA:9B:0A:FF:11
+    ipv4: "{{ ipv4_network }}.5"
+    duid: 00020000ab11e7ad6f05eaf7a042
+    hostid: 5
+  - name: w1
+    mac: 6C:4B:90:E2:89:09
+    ipv4: "{{ ipv4_network }}.6"
+    duid: 00020000ab1175c83adfb7ad202e
+    hostid: 6
+  - name: w2
+    mac: 98:FA:9B:F4:49:44
+    ipv4: "{{ ipv4_network }}.7"
+    duid: 00020000ab116813038d3751bbec
+    hostid: 7
+  - name: laptop
+    mac: 7c:21:4a:a2:99:af
+    ipv4: "{{ ipv4_network }}.75"
+    duid: 0004b4f7440dd7e55228828606dbc77a3c1e
+    hostid: fade
+  - name: printer
+    mac: f4:ce:46:3e:f0:40
+    ipv4: "{{ ipv4_network }}.9"
+domains: []

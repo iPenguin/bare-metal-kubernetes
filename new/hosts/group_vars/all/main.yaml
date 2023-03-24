@@ -1,18 +1,16 @@
 
 timezone: America/New_York
 
-lan_tld: info
-lan_subdomain: milco
-lan_domain: "{{ lan_subdomain }}.{{ lan_tld }}"
-ipa_domain: "auth.milco.info"
+tld: casa
+domain: milco
+lan_domain: "clt.{{ domain }}.{{ tld }}"
 
 site_admin_email: "{{ vault_site_admin_email }}"
 site_admin_username: "{{ vault_site_admin_username }}"
 
-ipa_domain: "n.{{ lan_domain }}"
+ipa_domain: "auth.{{ lan_domain }}"
 ipa_server_hostname: ipa.{{ lan_domain }}
 ipa_server_admin_email: "{{ vault_site_admin_email }}"
-
 
 remote_users:
   - user: ansible
