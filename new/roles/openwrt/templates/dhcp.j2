@@ -48,3 +48,12 @@ config host
   {% if h.duid is defined %}option duid '{{ h.duid }}'{% endif %}
 
 {% endfor %}
+
+{% for d in domains %}
+config domain
+  option name '{{ d.name }}.{{ lan_domain }}'
+  option ip '{{ d.ipv4 }}'
+config domain
+  option name '{{ d.name }}.{{ lan_domain }}'
+  option ip '{{ d.ipv6 }}'
+{% endfor %}
