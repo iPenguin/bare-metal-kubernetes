@@ -5,9 +5,10 @@
   gather_facts: false
   remote_user: root
   tags:
+    - never
     - dns
   roles:
-    - role: openwrt-dns
+    - role: openwrt
 
 - name: Configure base OS
   hosts: metal
