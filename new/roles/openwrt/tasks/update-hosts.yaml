@@ -1,0 +1,10 @@
+---
+
+- name: Configure dhcp
+  ansible.builtin.template:
+    src: dhcp.j2
+    dest: /etc/config/dhcp
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart dnsmasq

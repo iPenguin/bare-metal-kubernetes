@@ -1,0 +1,75 @@
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option packet_steering '1'
+	option ula_prefix 'fd5b:996d:3c79::/48'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'lan2'
+	list ports 'lan3'
+	list ports 'lan4'
+	list ports 'lan5'
+
+config device
+	option name 'lan2'
+	option macaddr '18:fd:74:38:8a:d8'
+
+config device
+	option name 'lan3'
+	option macaddr '18:fd:74:38:8a:d8'
+
+config device
+	option name 'lan4'
+	option macaddr '18:fd:74:38:8a:d8'
+
+config device
+	option name 'lan5'
+	option macaddr '18:fd:74:38:8a:d8'
+
+config interface 'lan'
+	option device 'br-lan'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ipaddr '{{ network.ipv4.router }}'
+	option ip6assign '64'
+	list dns_search '{{ lan_domain }}'
+
+config device
+	option name 'wan'
+	option macaddr '18:fd:74:38:8a:d7'
+
+config interface 'wan'
+	option device 'wan'
+	option proto 'dhcp'
+	option peerdns '0'
+	{% for dns_server in network.ipv4.external_dns %}
+	list dns '{{ dns_server }}'
+	{% endfor %}
+
+config interface 'wan6'
+	option device 'wan'
+	option proto 'dhcpv6'
+	option reqaddress 'try'
+	option peerdns '0'
+	list dns_search '{{ lan_domain }}'
+	{% for dns_server in network.ipv6.external_dns %}
+	list dns '{{ dns_server }}'
+	{% endfor %}
+	option reqprefix '60'
+
+{% if wireguard_network.enabled %}
+config interface '{{ wireguard_network.interface }}'
+	option proto 'wireguard'
+	option private_key '{{ wireguard_network.private_key }}'
+	option ip6assign '64'
+	{% for network in wireguard_network.addresses %}
+	list addresses '{{ network }}'
+	{% endfor %}
+{% endif %}

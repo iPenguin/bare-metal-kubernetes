@@ -1,0 +1,16 @@
+---
+
+- name: Install DDNS packages
+  community.general.opkg:
+    name:
+      - luci-app-ddns
+    state: present
+
+- name: Configure dynamic DNS
+  ansible.builtin.template:
+    src: ddns.j2
+    dest: /etc/config/ddns
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart ddns

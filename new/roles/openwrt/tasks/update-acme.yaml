@@ -1,0 +1,18 @@
+---
+
+- name: Install desired packages
+  community.general.opkg:
+    name:
+      - acme
+      - acme-dnsapi
+      - luci-app-acme
+    state: present
+
+- name: Configure acme
+  ansible.builtin.template:
+    src: acme.j2
+    dest: /etc/config/acme
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart acme

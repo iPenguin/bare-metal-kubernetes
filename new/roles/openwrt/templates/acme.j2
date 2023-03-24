@@ -1,0 +1,20 @@
+config acme
+        option state_dir '/etc/acme'
+        option account_email '{{ account_email }}'
+        option debug '0'
+
+{% for acct in acme_accounts %}
+config cert '{{ acct.name }}'
+        option enabled '{{ acct.enabled | int }}'
+        option keylength '{{ acct.keylength }}'
+        option validation_method '{{ acct.method }}'
+        option dns '{{ acct.plugin }}'
+        {% for creds in credentials %}
+        list credentials '{{ creds }}'
+        {% endfor %}
+        option use_staging '0'
+        option update_uhttpd '{{ update_router | int }}'
+        {% for domain in domains %}
+        list domains '{{ domain }}'
+        {% endfor %}
+{% endfor %}

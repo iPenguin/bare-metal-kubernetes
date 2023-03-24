@@ -1,0 +1,21 @@
+---
+
+- name: restart dnsmasq
+  community.general.openwrt_init:
+    name: dnsmasq
+    state: restarted
+
+- name: restart ddns
+  community.general.openwrt_init:
+    name: ddns
+    state: restarted
+
+- name: restart acme
+  community.general.openwrt_init:
+    name: acme
+    state: restarted
+
+- name: restart network
+  community.general.openwrt_init:
+    name: network
+    state: restarted
