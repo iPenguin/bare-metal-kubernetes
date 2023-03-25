@@ -1,6 +1,4 @@
-
-- name: install wireguard packages
-  ansible.builtin.raw: opkg install luci-proto-wireguard luci-app-wireguard
+---
 
 - name: restart networking to load new protocol
   ansible.builtin.raw: /etc/init.d/network restart
@@ -13,3 +11,5 @@
     group: root
     mode: '0600'
   notify: restart network
+
+...

@@ -3,17 +3,6 @@
 ipv4_network: 10.1.1
 ipv6_network: "{{ vault_ipv6_network }}"
 
-wireguard_network:
-  enabled: true
-  interface: vpn
-  port: 51820
-  private_key: "{{ vault_wireguard_private_key }}"
-  public_key:
-  preshared_key: "{{ vault_wireguard_preshared_key }}"
-  addresses:
-    - 10.1.2.1/24
-    - fd00:10:1:2::1/64
-
 network:
   ipv4:
     external_dns:
@@ -35,6 +24,62 @@ network:
     server_pool:
       start: "{{ ipv6_network }}::20"
       end: "{{ ipv6_network }}::70"
+
+router:
+  ula_prefix: "fd5b:996d:3c79::/48"
+  interfaces:
+    - name: loopback
+      dev: lo
+      proto: static
+      ipv4: 127.0.0.1
+      netmask: 255.0.0.0
+    - name: lan
+      dev: br-lan
+      proto: static
+      netmask: 255.255.255.0
+      ipv4: "{{ network.ipv4.router }}"
+      ip6assign: 64
+      dns_search: "{{ lan_domain }}"
+    - name: wan
+      dev: wan
+      proto: dhcp
+      peerdns: 0
+      dns_servers: "{{ network.ipv4.external_dns }}"
+    - name: wan6
+      dev: wan
+      proto: dhcpv6
+      reqaddress: try
+      reqprefix: 60
+      peerdns: 0
+      dns_search: "{{ lan_domain }}"
+      dns_servers: "{{ network.ipv6.external_dns }}"
+    - name: vpn
+      proto: wireguard
+      ip6assign: 64
+      private_key: "{{ vault_wireguard_private_key }}"
+      # preshared_key: "{{ vault_wireguard_preshared_key }}"
+      # port: 51820
+      addresses:
+        - 10.1.2.1/24
+        - fd00:10:1:2::1/128
+  devices:
+    - name: wan
+      mac: 18:fd:74:38:8a:d7
+    - name: lan2
+      mac: 18:fd:74:38:8a:d8
+    - name: lan3
+      mac: 18:fd:74:38:8a:d8
+    - name: lan4
+      mac: 18:fd:74:38:8a:d8
+    - name: lan5
+      mac: 18:fd:74:38:8a:d8
+    - name: br-lan
+      type: bridge
+      ports:
+        - lan2
+        - lan3
+        - lan4
+        - lan5
 
 hosts:
   - name: c1

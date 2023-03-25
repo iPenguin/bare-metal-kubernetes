@@ -1,75 +1,39 @@
 
-config interface 'loopback'
-	option device 'lo'
-	option proto 'static'
-	option ipaddr '127.0.0.1'
-	option netmask '255.0.0.0'
-
 config globals 'globals'
 	option packet_steering '1'
-	option ula_prefix 'fd5b:996d:3c79::/48'
+	option ula_prefix '{{ router.ula_prefix }}'
 
+{% for dev in router.devices %}
 config device
-	option name 'br-lan'
-	option type 'bridge'
-	list ports 'lan2'
-	list ports 'lan3'
-	list ports 'lan4'
-	list ports 'lan5'
-
-config device
-	option name 'lan2'
-	option macaddr '18:fd:74:38:8a:d8'
-
-config device
-	option name 'lan3'
-	option macaddr '18:fd:74:38:8a:d8'
-
-config device
-	option name 'lan4'
-	option macaddr '18:fd:74:38:8a:d8'
-
-config device
-	option name 'lan5'
-	option macaddr '18:fd:74:38:8a:d8'
-
-config interface 'lan'
-	option device 'br-lan'
-	option proto 'static'
-	option netmask '255.255.255.0'
-	option ipaddr '{{ network.ipv4.router }}'
-	option ip6assign '64'
-	list dns_search '{{ lan_domain }}'
-
-config device
-	option name 'wan'
-	option macaddr '18:fd:74:38:8a:d7'
-
-config interface 'wan'
-	option device 'wan'
-	option proto 'dhcp'
-	option peerdns '0'
-	{% for dns_server in network.ipv4.external_dns %}
-	list dns '{{ dns_server }}'
+	option name '{{ dev.name }}'
+	{% if dev.mac is defined %}option macaddr '{{ dev.mac }}'{%- endif +%}
+	{% if dev.type is defined %}option type '{{ dev.type }}'{%- endif +%}
+	{% if dev.ports is defined -%}
+	{% for port in dev.ports %}list ports '{{ port }}'
 	{% endfor %}
+	{%- endif %}
 
-config interface 'wan6'
-	option device 'wan'
-	option proto 'dhcpv6'
-	option reqaddress 'try'
-	option peerdns '0'
-	list dns_search '{{ lan_domain }}'
-	{% for dns_server in network.ipv6.external_dns %}
-	list dns '{{ dns_server }}'
-	{% endfor %}
-	option reqprefix '60'
+{% endfor %}
 
-{% if wireguard_network.enabled %}
-config interface '{{ wireguard_network.interface }}'
-	option proto 'wireguard'
-	option private_key '{{ wireguard_network.private_key }}'
-	option ip6assign '64'
-	{% for network in wireguard_network.addresses %}
-	list addresses '{{ network }}'
+{% for iface in router.interfaces %}
+config interface '{{ iface.name }}'
+	option proto '{{ iface.proto }}'
+	{% if iface.dev is defined %}option device '{{ iface.dev }}'{% endif +%}
+	{% if iface.ipv4 is defined %}option ipaddr '{{ iface.ipv4 }}'{% endif +%}
+	{% if iface.netmask is defined %}option netmask '{{ iface.netmask }}'{% endif +%}
+	{% if iface.dns_search is defined %}list dns_search '{{ iface.dns_search }}'{% endif +%}
+	{% if iface.peerdns is defined %}option peerdns '{{ iface.peerdns }}'{% endif +%}
+	{% if iface.reqaddress is defined %}option reqaddress '{{ iface.reqaddress }}'{% endif +%}
+	{% if iface.reqprefix is defined %}option reqprefix '{{ iface.reqprefix }}'{% endif +%}
+	{% if iface.ip6assign is defined %}option ip6assign '{{ iface.ip6assign }}'{% endif +%}
+	{% if iface.private_key is defined %}option private_key '{{ iface.private_key }}'{% endif +%}
+	{% if iface.dns_servers is defined -%}
+	{% for dns_server in iface.dns_servers %}list dns '{{ dns_server }}'
 	{% endfor %}
-{% endif %}
+	{%- endif +%}
+	{% if iface.addresses is defined -%}
+	{% for address in iface.addresses %}list addresses '{{ address }}'
+	{% endfor %}
+	{%- endif %}
+
+{% endfor %}

@@ -13,8 +13,9 @@ config dnsmasq
 	option ednspacket_max '1232'
 	option local '/{{ lan_domain }}/'
 	option domain '{{ lan_domain }}'
-	list server '1.1.1.3'
-	list server '1.0.0.3'
+	{% for dns_server in network.ipv4.external_dns %}
+	list server '{{ dns_server }}'
+	{% endfor %}
 
 config dhcp 'lan'
 	option interface 'lan'
@@ -37,10 +38,10 @@ config odhcpd 'odhcpd'
 	option leasetrigger '/usr/sbin/odhcpd-update'
 	option loglevel '4'
 
-{% for h in lan_hosts %}
+{% for h in hosts %}
 config host
   option dns '1'
-  option name '{{ h.hostname }}'
+  option name '{{ h.name }}'
   option mac '{{ h.mac }}'
   option ip '{{ h.ipv4 }}'
   {% if h.hostid is defined %}option hostid '{{ h.hostid }}'{% endif %}

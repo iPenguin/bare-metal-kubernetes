@@ -12,13 +12,11 @@
     - packages
 
 - name: Install wireguard packages
-  community.general.opkg:
-    name:
-      - kmod-wireguard
-      - wireguard-tools
-      - luci-app-wireguard
-      - luci-proto-wireguard
-    state: present
+  ansible.builtin.raw: |-
+    opkg install kmod-wireguard \
+      wireguard-tools \
+      luci-app-wireguard \
+      luci-proto-wireguard
   tags:
     - wireguard
     - networking
