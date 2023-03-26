@@ -1,10 +1,8 @@
 ---
 
 - name: Install DDNS packages
-  community.general.opkg:
-    name:
-      - luci-app-ddns
-    state: present
+  ansible.builtin.raw: |-
+      opkg install luci-app-ddns
 
 - name: Configure dynamic DNS
   ansible.builtin.template:

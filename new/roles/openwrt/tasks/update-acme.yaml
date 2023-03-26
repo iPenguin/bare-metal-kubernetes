@@ -1,12 +1,8 @@
 ---
 
 - name: Install desired packages
-  community.general.opkg:
-    name:
-      - acme
-      - acme-dnsapi
-      - luci-app-acme
-    state: present
+  ansible.builtin.raw: |-
+    opkg install acme acme-dnsapi luci-app-acme
 
 - name: Configure acme
   ansible.builtin.template:
