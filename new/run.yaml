@@ -25,5 +25,14 @@
   roles:
     - role: backups
 
+- name: configure master node
+  hosts: controllers
+  tags:
+    - k8s
+  roles:
+    - role: containerd
+    # - role: kubernetes
+    # - role: cilium
+    # - role: metallb
 
 ...

@@ -1,0 +1,43 @@
+---
+
+- name: create temp folder
+  ansible.builtin.tempfile:
+    state: directory
+  register: tempfolder
+
+- name: create dest folder
+  ansible.builtin.file:
+    path: /usr/local/bin/
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Download binaries
+  ansible.builtin.uri:
+    url: https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz
+    dest: "{{ tempfolder.path }}/containerd.tar.gz"
+
+- name: Unarchive files
+  ansible.builtin.unarchive:
+    src: "{{ tempfolder.path }}/containerd.tar.gz"
+    remote_src: true
+    dest: "{{ tempfolder.path }}/"
+
+- name: Move files into place
+  ansible.builtin.copy:
+    src: "{{ tempfolder.path }}/bin/{{ item }}"
+    remote_src: true
+    dest: "/usr/local/bin/{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+  loop:
+    - containerd
+    - containerd-shim-runc-v1
+    - containerd-stress
+    - containerd-shim
+    - containerd-shim-runc-v2
+    - ctr
+
+...
