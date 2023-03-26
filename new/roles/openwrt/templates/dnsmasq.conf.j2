@@ -35,8 +35,3 @@
 # "bert" another name, bertrand
 # The fields are <cname>,<target>
 #cname=bertand,bert
-
-
-{% for host in hosts %}
-txt-record={{ inventory_domain }},"hostname={{ host.hostname }};sections={% for group in host.groups %}{{ group }}{% if not loop.last %},{% endif %}{% endfor %}"
-{% endfor %}
