@@ -2,7 +2,7 @@
 
 - name: set hostname
   ansible.builtin.hostname:
-    name: "{{ inventory_hostname }}.{{ lan_domain }}."
+    name: "{{ inventory_hostname }}"
 
 - name: update all packages
   ansible.builtin.package:

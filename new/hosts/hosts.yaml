@@ -6,11 +6,11 @@ all:
       children:
         controllers:
           hosts:
-            c1.milco.casa:
+            c1.clt.milco.casa:
         workers:
           hosts:
-            w1.milco.casa:
-            w2.milco.casa:
+            w1.clt.milco.casa:
+            w2.clt.milco.casa:
     openwrt:
       children:
         router:
