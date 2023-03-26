@@ -1,0 +1,33 @@
+---
+
+- name: mkdir backups
+  ansible.builtin.file:
+    path: "{{ backup_dest }}"
+    state: directory
+
+- name: create fstab entry
+  ansible.builtin.mount:
+    path: "{{ backup_dest }}"
+    src: LABEL=backups
+    fstype: xfs
+    state: mounted
+
+- name: install rsnapshot & rsync
+  ansible.builtin.apt:
+    name:
+      - rsync
+      - rsnapshot
+    state: latest
+
+- name: configure rsnapshot
+  ansible.builtin.template:
+    src: rsnapshot.conf.j2
+    dest: /etc/rsnapshot.conf
+
+- name: configure daily backups
+  ansible.builtin.cron:
+    name: daily backups
+    state: present
+    job: rsnapshot daily
+    hour: '1'
+    minute: '30'
