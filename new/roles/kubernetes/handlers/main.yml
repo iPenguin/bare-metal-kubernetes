@@ -1,0 +1,12 @@
+---
+# handlers file for kubernetes
+
+- name: restart sysctl
+  service:
+    name: sysctl
+    state: restarted
+
+- name: restart ubuntu sysctl
+  service:
+    name: systemd-sysctl
+    service: restarted
