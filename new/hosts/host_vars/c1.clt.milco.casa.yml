@@ -3,13 +3,4 @@
 ipv4: "{{ servers.c1.ipv4 }}"
 ipv6: "{{ servers.c1.ipv6 }}"
 
-# do not add trailing slashes (/) or rsync will 'vomit' the files without the dir structure.
-backup_paths:
-  - /docker
-  - /etc
-  - /home
-  - /root
-  - /srv
-backup_dest: /mnt/backups
-
 ...

@@ -16,3 +16,7 @@ all:
         router:
           hosts:
             r.milco.casa:
+
+backups:
+  hosts:
+    c1.clt.milco.casa:
