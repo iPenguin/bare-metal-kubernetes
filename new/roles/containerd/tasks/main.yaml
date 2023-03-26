@@ -40,4 +40,20 @@
     - containerd-shim-runc-v2
     - ctr
 
+- name: install systemd service
+  become: true
+  become_user: root
+  ansible.builtin.uri:
+    url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    dest: /usr/lib/systemd/system/
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable containerd systemd service
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: true
+    daemon_reload: true
+    state: restarted
 ...
