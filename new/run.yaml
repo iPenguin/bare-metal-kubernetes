@@ -28,10 +28,14 @@
 - name: configure master node
   hosts: controllers
   tags:
-    - k8s
+    - cluster
   roles:
     - role: containerd
-    # - role: kubernetes
+      tags:
+        - containerd
+    - role: kubernetes
+      tags:
+        - k8s
     # - role: cilium
     # - role: metallb
 
