@@ -55,5 +55,7 @@
     name: containerd
     enabled: true
     daemon_reload: true
-    state: restarted
+    masked: false
+    state: started
+
 ...
