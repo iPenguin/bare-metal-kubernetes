@@ -18,6 +18,12 @@
   roles:
     - role: configure-os
 
+- name: Setup backups
+  hosts: backups
+  tags:
+    - backups
+  roles:
+    - role: backups
 
 
 ...
