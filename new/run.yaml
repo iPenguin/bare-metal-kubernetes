@@ -26,13 +26,18 @@
     - role: backups
 
 - name: configure master node
-  hosts: controllers
+  hosts:
+    - controllers
+    - workers
   tags:
     - cluster
   roles:
     - role: containerd
       tags:
         - containerd
+    - role: runc
+      tags:
+        - runc
     - role: kubernetes
       tags:
         - k8s
