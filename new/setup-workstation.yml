@@ -96,7 +96,8 @@
     - name: install software common
       apt:
         name:
-          - ansible
+          - python
+          - python3-pip
           - apt-transport-https
           - autofs
           - basket
@@ -138,6 +139,12 @@
           - zsh
           - zsh-autosuggestions
           - zsh-syntax-highlighting
+        state: present
+
+    - name: install pip packages
+      ansible.builtin.pip:
+        name:
+          - ansible
         state: present
 
     - name: configure PAM to use the figerprint reader
