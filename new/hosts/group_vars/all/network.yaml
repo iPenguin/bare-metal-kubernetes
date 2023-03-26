@@ -17,7 +17,7 @@ network:
   ipv6:
     external_dns:
       - 2606:4700:4700::1113
-      - 2606:4700:4700::1113
+      - 2606:4700:4700::1003
     subnet: "{{ ipv6_network }}::/64"
     router: "{{ ipv6_network }}::1"
     dns: "{{ ipv6_network }}::1"
