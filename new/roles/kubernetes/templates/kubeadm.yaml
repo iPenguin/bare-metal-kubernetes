@@ -22,16 +22,8 @@ nodeRegistration:
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 kubernetesVersion: v{{ kubernetes_version }}
-apiServer:
-  extraArgs:
-    feature-gates: RemoveSelfLink=true,IPv6DualStack=true
-  timeoutForControlPlane: 4m0s
 certificatesDir: /etc/kubernetes/pki
-clusterName: kubernetes
-controllerManager:
-  extraArgs:
-    feature-gates: RemoveSelfLink=true,IPv6DualStack=true
-dns: {}
+clusterName: desktop-cluster
 etcd:
   local:
     dataDir: /var/lib/etcd
@@ -40,6 +32,3 @@ networking:
   dnsDomain: cluster.local
   podSubnet: "{{ k8s_pod_network.ipv4 }},{{ k8s_pod_network.ipv6 }}"
   serviceSubnet: "{{ k8s_service_network.ipv4 }},{{ k8s_service_network.ipv6 }}"
-scheduler:
-  extraArgs:
-    feature-gates: RemoveSelfLink=true,IPv6DualStack=true

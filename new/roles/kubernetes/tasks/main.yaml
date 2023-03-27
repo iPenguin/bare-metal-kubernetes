@@ -35,48 +35,10 @@
       - lsb-release
     state: latest
 
-# - name: Add stabel cri-o repo
-#   ansible.builtin.copy:
-#     dest: /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-#     content: |-
-#       deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/{{ base_os }}/ /
-# - name: Add devel cri-o repo
-#   ansible.builtin.copy:
-#     dest: /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:{{ base_os }}.list
-#     content: |-
-#       deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel/kubic/libcontainers/stable/cri-o:/{{ crio_version }}:/{{ base_os }}/ /
-
-# - name: create keyring directory
-#   ansible.builtin.file:
-#     path: /usr/share/keyrings
-#     recurse: true
-#     state: directory
-
-# - name: Add a key for libcontainers stable
-#   ansible.builtin.apt_key:
-#     data: "{{ lookup('ansible.builtin.url', 'https://download.opensuse.org/repositories/devel/kubic/libcontainers/stable/{{ base_os }}/Release.key') }}"
-#     keyring: /usr/share/keyrings/libcontainers-archive-keyring.gpg
-#     state: present
-
-# - name: Add a key for cri-o stable
-#   ansible.builtin.apt_key:
-#     data: "{{ lookup('ansible.builtin.url', 'https://download.opensuse.org/repositories/devel/kubic/libcontainers/stable/cri-o/{{ crio_version }}/{{ base_os }}/Release.key') }}"
-#     state: present
-#     keyring: /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg
-
-# - name: install cri-o
-#   ansible.builtin.apt:
-#     name:
-#       - cri-o
-#       - cri-o-runc
-#     update_cache: yes
-
 - name: Controller config
-  tags:
-    - controller
   include_tasks: controller.yaml
+  when: k8s_server_role == "controller"
 
 - name: worker config
-  tags:
-    - workers
   include_tasks: workers.yaml
+  when: k8s_server_role == "worker"

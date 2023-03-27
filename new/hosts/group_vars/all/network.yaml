@@ -85,7 +85,7 @@ hosts:
   - name: c1
     mac: 98:FA:9B:0A:FF:11
     ipv4: "{{ ipv4_network }}.5"
-    duid: 00020000ab11e7ad6f05eaf7a042
+    duid: 00020000ab11451a71d26340b5e9
     hostid: 5
   - name: w1
     mac: 6C:4B:90:E2:89:09
