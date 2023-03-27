@@ -1,0 +1,40 @@
+
+- name: create temp folder
+  ansible.builtin.tempfile:
+    state: directory
+  register: tempfolder
+
+- name: create dest folder
+  ansible.builtin.file:
+    path: /usr/local/bin/
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: download files
+  ansible.builtin.uri:
+    url: https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_version }}/{{ item }}
+    dest: "{{ tempfolder.path }}/"
+  loop:
+    - cilium-linux-amd64.tar.gz
+    - cilium-linux-amd64.tar.gz.sha256sum
+
+- name: checksum file
+  ansible.builtin.stat:
+    path: "{{ tempfolder.path }}/"
+    checksum_algorithm: sha256
+
+- name: unarchive files
+  ansible.builtin.unarchive:
+    src: "{{ tempfolder.path }}/cilium-linux-amd64.tar.gz"
+    remote_src: true
+    dest: "/usr/local/bin"
+    owner: root
+    group: root
+    mode: 0755
+
+- name: install cilium
+  become: false
+  ansible.builtin.command:
+    cmd: cilium install
