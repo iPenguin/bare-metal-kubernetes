@@ -9,7 +9,7 @@ k8s_master_can_run_pods: no
 k8s_controller: "{{ ipv4_network }}.5"
 
 k8s_pod_network:
-  ipv4: 10.0.0.0/8
+  ipv4: 10.20.0.0/16
   ipv6: fd01:2:3:4::/64
 k8s_service_network:
   ipv4: 172.16.0.0/12
