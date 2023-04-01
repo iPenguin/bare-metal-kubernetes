@@ -35,9 +35,9 @@
     - role: containerd
       tags:
         - containerd
-    - role: runc
+    - role: crio
       tags:
-        - runc
+        - crio
     - role: kubernetes
       tags:
         - k8s
