@@ -1,8 +1,0 @@
-
-- name: Download runc
-  ansible.builtin.uri:
-    url: https://github.com/opencontainers/runc/releases/download/v{{ runc_version }}/runc.amd64
-    dest: /usr/local/bin/runc
-    owner: root
-    group: root
-    mode: 0755
