@@ -8,9 +8,9 @@ bootstrapTokens:
   usages:
   - signing
   - authentication
-localAPIEndpoint:
-  advertiseAddress: "{{ k8s_controller }}"
-  bindPort: 6443
+# localAPIEndpoint:
+#   advertiseAddress: "{{ k8s_controller }}"
+#   bindPort: 6443
 nodeRegistration:
   criSocket: unix:///run/containerd/containerd.sock
   imagePullPolicy: IfNotPresent
@@ -24,6 +24,16 @@ kind: ClusterConfiguration
 kubernetesVersion: v{{ kubernetes_version }}
 certificatesDir: /etc/kubernetes/pki
 clusterName: desktop-cluster
+# apiServer:
+#   extraArgs:
+#     feature-gates: RemoveSelfLink=true,IPv6DualStack=true
+#   timeoutForControlPlane: 4m0s
+# controllerManager:
+#   extraArgs:
+#     feature-gates: RemoveSelfLink=true,IPv6DualStack=true
+# scheduler:
+#   extraArgs:
+#     feature-gates: RemoveSelfLink=true,IPv6DualStack=true
 etcd:
   local:
     dataDir: /var/lib/etcd

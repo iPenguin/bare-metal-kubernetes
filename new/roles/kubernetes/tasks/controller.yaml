@@ -15,7 +15,7 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
 
-- name: copy k8 config to user dir
+- name: copy k8 admin to user dir
   copy:
     remote_src: yes
     src: /etc/kubernetes/admin.conf

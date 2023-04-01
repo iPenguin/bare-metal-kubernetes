@@ -1,0 +1,52 @@
+---
+
+- name: Add cri-o libcontainers GPG key
+  ansible.builtin.apt_key:
+    url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ base_os }}/Release.key
+    state: present
+
+- name: Add cri-o GPG key
+  ansible.builtin.apt_key:
+    url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ crio_version[:-4] }}/{{ base_os }}/Release.key
+
+- name: Add libcontainers repo
+  ansible.builtin.apt_repository:
+    repo: deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ base_os }}/ /
+    state: present
+
+- name: Add cri-o repo
+  ansible.builtin.apt_repository:
+    repo: "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ crio_version[:-4] }}/{{ base_os }}/ /"
+    state: present
+
+- name: Install cri-o packages
+  ansible.builtin.apt:
+    name:
+      - cri-o={{ crio_version }}
+      - cri-o-runc
+      - cri-tools
+    allow_change_held_packages: yes
+    state: present
+    update_cache: yes
+
+- name: Lock cri-o from updates
+  ansible.builtin.dpkg_selections:
+    name: cri-o
+    selection: hold
+
+- name: Lock cri-o from updates
+  ansible.builtin.dpkg_selections:
+    name: cri-o-runc
+    selection: hold
+
+- name: Lock cri-o from updates
+  ansible.builtin.dpkg_selections:
+    name: cri-tools
+    selection: hold
+
+- name: Enable cri-o service
+  ansible.builtin.systemd:
+    enabled: yes
+    state: started
+    name: crio
+...
