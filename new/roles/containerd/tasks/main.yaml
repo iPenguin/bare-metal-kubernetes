@@ -14,41 +14,33 @@
     state: directory
 
 - name: Download binaries
-  ansible.builtin.uri:
-    url: https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz
-    dest: "{{ tempfolder.path }}/containerd.tar.gz"
+  ansible.builtin.get_url:
+    url: https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz
+    dest: "{{ tempfolder.path }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz"
+    checksum: "sha256:https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"
 
 - name: Unarchive files
+  become: yes
   ansible.builtin.unarchive:
-    src: "{{ tempfolder.path }}/containerd.tar.gz"
+    src: "{{ tempfolder.path }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz"
     remote_src: true
-    dest: "{{ tempfolder.path }}/"
+    dest: "/"
 
-- name: Move files into place
-  ansible.builtin.copy:
-    src: "{{ tempfolder.path }}/bin/{{ item }}"
-    remote_src: true
-    dest: "/usr/local/bin/{{ item }}"
+- name: mkdir /etc/containerd
+  ansible.builtin.file:
+    path: /etc/containerd
     owner: root
     group: root
     mode: 0755
-  loop:
-    - containerd
-    - containerd-shim-runc-v1
-    - containerd-stress
-    - containerd-shim
-    - containerd-shim-runc-v2
-    - ctr
+    state: directory
 
-- name: install systemd service
-  become: true
-  become_user: root
-  ansible.builtin.uri:
-    url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
-    dest: /usr/lib/systemd/system/
-    owner: root
-    group: root
-    mode: 0644
+# - name: create config
+#   ansible.builtin.template:
+#     src: config.toml.j2
+#     dest: /etc/containerd/config.toml
+#     owner: root
+#     group: root
+#     mode: 0644
 
 - name: Enable containerd systemd service
   ansible.builtin.systemd:
