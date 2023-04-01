@@ -12,7 +12,13 @@
     fstype: 'swap'
     state: absent
 
-- name: load br_netfilter
+- name: load overlay
+  community.general.modprobe:
+    name: overlay
+    state: present
+    persistent: present
+
+- name: load netfilter
   community.general.modprobe:
     name: br_netfilter
     state: present
@@ -24,8 +30,27 @@
     block: |
       net.bridge.bridge-nf-call-ip6tables=1
       net.bridge.bridge-nf-call-iptables=1
-      net.ipv6.conf.all.forwarding=1
-      net.ipv4.conf.all.forwarding=1
+      net.ipv4.ip_forward=1
     state: present
     create: yes
   notify: restart ubuntu sysctl
+
+- name: configure foreign routes
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/networkd.conf
+    regexp: '#ManageForeignRoutes=yes'
+    line: 'ManageForeignRoutes=no'
+  notify: restart networking
+
+- name: configure foreign route policy rules
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/networkd.conf
+    regexp: '#ManageForeignRoutingPolicyRules=yes'
+    line: 'ManageForeignRoutingPolicyRules=no'
+  notify: restart networking
+
+- name: configure hostname in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: 127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname_short }}

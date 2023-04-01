@@ -9,4 +9,9 @@
 - name: restart ubuntu sysctl
   service:
     name: systemd-sysctl
-    service: restarted
+    state: restarted
+
+- name: restart networking
+  service:
+    name: systemd-networkd
+    state: restarted
