@@ -23,7 +23,7 @@ apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 kubernetesVersion: v{{ kubernetes_version }}
 certificatesDir: /etc/kubernetes/pki
-clusterName: desktop-cluster
+clusterName: homelab
 # apiServer:
 #   extraArgs:
 #     feature-gates: RemoveSelfLink=true,IPv6DualStack=true
@@ -42,3 +42,7 @@ networking:
   dnsDomain: cluster.local
   podSubnet: "{{ k8s_pod_network.ipv4 }},{{ k8s_pod_network.ipv6 }}"
   serviceSubnet: "{{ k8s_service_network.ipv4 }},{{ k8s_service_network.ipv6 }}"
+---
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd

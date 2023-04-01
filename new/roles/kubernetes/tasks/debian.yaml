@@ -34,7 +34,7 @@
       - kubeadm={{ kubernetes_version }}-00
       - kubectl={{ kubernetes_version }}-00
       - kubelet={{ kubernetes_version }}-00
-    allow_change_held_packages: true
+    allow_change_held_packages: yes
     state: present
     update_cache: yes
 

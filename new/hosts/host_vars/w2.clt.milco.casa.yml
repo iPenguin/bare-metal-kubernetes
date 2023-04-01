@@ -1,6 +1,0 @@
----
-
-ipv4: "{{ servers.w2.ipv4 }}"
-ipv6: "{{ servers.w2.ipv6 }}"
-
-...
