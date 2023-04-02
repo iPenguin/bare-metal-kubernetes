@@ -9,16 +9,20 @@
   command: kubeadm init --config /root/kubeadm.yaml
 
 - name: create .kube config dir
+  become: yes
   file:
-    path: "/home/{{ ansible_user }}/.kube"
+    path: "/root/.kube"
     state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    owner: root
+    group: root
+    mode: 0700
 
 - name: copy k8 admin to user dir
+  become: yes
   copy:
     remote_src: yes
     src: /etc/kubernetes/admin.conf
-    dest: "/home/{{ ansible_user }}/.kube/config"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    dest: "/root/.kube/config"
+    owner: root
+    group: root
+    mode: 0600
