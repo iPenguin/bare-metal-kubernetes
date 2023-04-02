@@ -13,17 +13,10 @@
     state: directory
 
 - name: download files
-  ansible.builtin.uri:
-    url: https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_version }}/{{ item }}
+  ansible.builtin.get_url:
+    url: https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_version }}/cilium-linux-amd64.tar.gz
     dest: "{{ tempfolder.path }}/"
-  loop:
-    - cilium-linux-amd64.tar.gz
-    - cilium-linux-amd64.tar.gz.sha256sum
-
-- name: checksum file
-  ansible.builtin.stat:
-    path: "{{ tempfolder.path }}/"
-    checksum_algorithm: sha256
+    checksum: "sha256:https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_version }}/cilium-linux-amd64.tar.gz.sha256sum"
 
 - name: unarchive files
   ansible.builtin.unarchive:
@@ -35,6 +28,6 @@
     mode: 0755
 
 - name: install cilium
-  become: false
+  become: yes
   ansible.builtin.command:
     cmd: cilium install
