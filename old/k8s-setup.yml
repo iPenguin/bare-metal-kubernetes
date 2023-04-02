@@ -1,28 +1,5 @@
 ---
 
-- name: configure master node
-  hosts: k8smasters
-  tags:
-    - config_k8s
-    - config_k8s_master
-  tasks:
-    - name: include docker role
-      include_role:
-        name: docker
-    - name: include kubernetes
-      vars:
-        role_type: master
-      include_role:
-        name: kubernetes
-    - name: include calico role
-      become: no
-      include_role:
-        name: calico
-    - name: include metallb load balancer
-      become: no
-      include_role:
-        name: metallb
-
 - name: kubernetes on the workers
   hosts: k8sworkers
   tags:
