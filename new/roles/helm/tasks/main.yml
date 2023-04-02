@@ -1,0 +1,30 @@
+---
+
+- name: create temp dir
+  ansible.builtin.tempfile:
+    state: directory
+  register: tempfolder
+
+- name: download helm
+  ansible.builtin.get_url:
+    url: https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz
+    dest: "{{ tempfolder.path }}/helm-v{{ helm_version }}-linux-amd64.tar.gz"
+    checksum: "sha256:https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz.sha256sum"
+
+- name: uncompress helm package
+  ansible.builtin.unarchive:
+    remote_src: yes
+    src: "{{ tempfolder.path }}/helm-v{{ helm_version }}-linux-amd64.tar.gz"
+    dest: "{{ tempfolder.path }}/"
+
+
+- name: install helm
+  ansible.builtin.copy:
+    remote_src: yes
+    src: "{{ tempfolder.path }}/linux-amd64/helm"
+    dest: /usr/local/bin/helm
+    owner: root
+    group: root
+    mode: 0755
+
+...

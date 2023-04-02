@@ -37,10 +37,21 @@
         - containerd
     - role: crio
       tags:
+        - never
         - crio
     - role: kubernetes
       tags:
         - k8s
+
+- name: Install Helm
+  hosts:
+    - controllers
+  tags:
+    - cluster
+    - tools
+    - helm
+  roles:
+    - role: helm
 
 - name: configure CNI
   hosts:
