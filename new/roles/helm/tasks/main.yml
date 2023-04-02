@@ -17,7 +17,6 @@
     src: "{{ tempfolder.path }}/helm-v{{ helm_version }}-linux-amd64.tar.gz"
     dest: "{{ tempfolder.path }}/"
 
-
 - name: install helm
   ansible.builtin.copy:
     remote_src: yes
