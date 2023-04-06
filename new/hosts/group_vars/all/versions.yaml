@@ -1,14 +1,14 @@
 ---
 
-cilium_version: 0.13.2
+cilium_version: 0.13.1
+cilium_helm_version: 1.13.1
 containerd_version: 1.7.0
-crio_version: 1.24.4~0
+crio_version: 1.24.5~0
 
 etcd_version: 3.5.6-0
 
 helm_version: 3.11.2
 
 kubernetes_version: 1.26.3
-
 
 ...
