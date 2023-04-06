@@ -1,3 +1,4 @@
+---
 
 - name: create temp folder
   ansible.builtin.tempfile:
@@ -27,7 +28,20 @@
     group: root
     mode: 0755
 
-- name: install cilium
-  become: yes
-  ansible.builtin.command:
-    cmd: cilium install
+- name: Add cilium helm repo
+  kubernetes.core.helm_repository:
+    name: cilium
+    repo_url: https://helm.cilium.io/
+    state: present
+
+- name: install cilium helm chart
+  kubernetes.core.helm:
+    name: cilium
+    kubeconfig: /etc/kubernetes/admin.conf
+    chart_ref: cilium/cilium
+    chart_version: "{{ cilium_helm_version }}"
+    namespace: kube-system
+    values: "{{ lookup('template', 'cilium-values.yaml.j2') | from_yaml }}"
+    state: present
+
+...
