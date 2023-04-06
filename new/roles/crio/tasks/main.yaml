@@ -34,12 +34,12 @@
     name: cri-o
     selection: hold
 
-- name: Lock cri-o from updates
+- name: Lock cri-o-runc from updates
   ansible.builtin.dpkg_selections:
     name: cri-o-runc
     selection: hold
 
-- name: Lock cri-o from updates
+- name: Lock cri-tools from updates
   ansible.builtin.dpkg_selections:
     name: cri-tools
     selection: hold

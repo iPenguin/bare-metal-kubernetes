@@ -5,7 +5,7 @@
   service_facts:
 
 - name: install apt packages
-  apt:
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - ca-certificates
@@ -13,7 +13,7 @@
     state: present
 
 - name: download google gpg keys
-  uri:
+  ansible.builtin.uri:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
     status_code:
@@ -21,7 +21,7 @@
       - 304
 
 - name: install google gpg keys
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: /etc/apt/sources.list.d/kubernetes.list
     block: |
       deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
@@ -29,7 +29,7 @@
     state: present
 
 - name: install kubectl kubeadm and kubelet
-  apt:
+  ansible.builtin.apt:
     name:
       - kubeadm={{ kubernetes_version }}-00
       - kubectl={{ kubernetes_version }}-00
@@ -54,7 +54,7 @@
 # node(s) with the firewall running.
 #
 - name: disable firewall
-  service:
+  ansible.builtin.service:
     name: ufw
     state: stopped
     enabled: no

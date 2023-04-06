@@ -1,7 +1,7 @@
 ---
 
 - name: create kubeadm init config
-  template:
+  ansible.builtin.template:
     src: kubeadm.yaml
     dest: /root/kubeadm.yaml
 
@@ -10,7 +10,7 @@
 
 - name: create .kube config dir
   become: yes
-  file:
+  ansible.builtin.file:
     path: "/root/.kube"
     state: directory
     owner: root
@@ -19,10 +19,14 @@
 
 - name: copy k8 admin to user dir
   become: yes
-  copy:
+  ansible.builtin.copy:
     remote_src: yes
     src: /etc/kubernetes/admin.conf
     dest: "/root/.kube/config"
     owner: root
     group: root
     mode: 0600
+
+- name: Untaint master node so it can run pods
+  ansible.builtin.command: kubectl taint node {{ k8s_command_node }} node-role.kubernetes.io/master:NoSchedule-
+  when: k8s_master_can_run_pods

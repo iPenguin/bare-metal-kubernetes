@@ -1,11 +1,18 @@
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 bootstrapTokens:
-localAPIEndpoint:
-  advertiseAddress: "{{ k8s_controller }}"
-  bindPort: 6443
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: 3ysvc3.2bvndl13jv91l4vv
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+# localAPIEndpoint:
+#   advertiseAddress: {{ k8s_controller }}
+#   bindPort: 6443
 nodeRegistration:
-  criSocket: unix:///run/containerd/containerd.sock
+  criSocket: unix:///run/crio/crio.sock
   imagePullPolicy: IfNotPresent
   name: c1.clt.milco.casa
   taints:
@@ -15,19 +22,24 @@ nodeRegistration:
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 kubernetesVersion: v{{ kubernetes_version }}
-controlPlaneEndpoint: "{{ k8s_controller_lb }}"
+#controlPlaneEndpoint: "{{ k8s_controller_lb }}"
 certificatesDir: /etc/kubernetes/pki
 clusterName: homelab
+controllerManager: {}
+dns: {}
+scheduler: {}
 apiServer:
   extraArgs:
+    endpoint-reconciler-type: lease
     advertise-address: {{ ansible_default_ipv4.address }}
     bind-address: 0.0.0.0
     feature-gates: EphemeralContainers=true,OpenAPIV3=true
+  timeoutForControlPlane: 4m0s
 etcd:
   local:
     dataDir: /var/lib/etcd
-    imageRepository: registry.k8s.io
     imageTag: "{{ etcd_version }}"
+imageRepository: registry.k8s.io
 networking:
   dnsDomain: cluster.local
   podSubnet: "{{ k8s_pod_network.ipv4 }},{{ k8s_pod_network.ipv6 }}"

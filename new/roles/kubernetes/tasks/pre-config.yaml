@@ -5,9 +5,10 @@
 #sudo systemctl mask "dev-sdXX.swap"
 #
 - name: turn off swap now
-  command: "swapoff -a"
+  ansible.builtin.command: "swapoff -a"
+
 - name: turn off swap in fstab
-  mount:
+  ansible.builtin.mount:
     path: none
     fstype: 'swap'
     state: absent
@@ -25,7 +26,7 @@
     persistent: present
 
 - name: configure networking for kubernetes
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: /etc/sysctl.d/kubernetes.conf
     block: |
       net.bridge.bridge-nf-call-ip6tables=1

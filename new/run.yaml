@@ -32,12 +32,8 @@
   tags:
     - cluster
   roles:
-    - role: containerd
-      tags:
-        - containerd
     - role: crio
       tags:
-        - never
         - crio
     - role: kubernetes
       tags:
@@ -48,7 +44,6 @@
     - controllers
   tags:
     - cluster
-    - tools
     - helm
   roles:
     - role: helm

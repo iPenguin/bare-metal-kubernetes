@@ -1,0 +1,24 @@
+
+- name: kubeadm create token
+  ansible.builtin.raw: kubeadm token create --print-join-command
+  register: join_cmd
+  delegate_to: "{{ k8s_controller }}"
+
+- name: set join fact
+  ansible.builtin.set_fact:
+    k8s_join_cmd: "{{ join_cmd.stdout_lines[0] }}"
+
+- name: join cluster
+  ansible.builtin.command: "{{ k8s_join_cmd }}"
+
+- name: enable start kubelet
+  ansible.builtin.service:
+    name: kubelet
+    state: started
+    enabled: yes
+
+- name: check for nodes
+  ansible.builtin.command: kubectl get nodes
+  register: nodelist
+  delegate_to: "{{ k8s_controller }}"
+  failed_when: not '{{ inventory_hostname }}' in nodelist.stdout
