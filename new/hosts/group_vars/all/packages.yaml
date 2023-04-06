@@ -15,6 +15,7 @@ debian_utils:
   - libvirt-daemon-system
   - lvm2
   - nfs-common
+  - python3-packaging
   - xfsprogs
 
 pip_packages:

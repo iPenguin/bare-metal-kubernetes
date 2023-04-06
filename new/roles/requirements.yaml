@@ -2,10 +2,13 @@
 
 roles:
   - name: gekmihesg.openwrt
-  - name: nn708.openwrt
 
 collections:
+  - name: ansible.posix
+    version: 1.2.0
   - name: community.general
     version: 6.4.0
-  - name: ansible.posix
   - name: kubernetes.core
+    version: 2.0.2
+  - name: nn708.openwrt
+    version: 0.4.1
