@@ -10,12 +10,14 @@
     name: metallb
     chart_ref: metallb/metallb
     chart_version:
-    namespace: metallb
+    namespace: metallb-system
     create_namespace: yes
-    values: "{{ lookup('template', 'metallb-values.yaml.j2') | from_yaml }}"
     state: present
 
 - name: apply metallb config
   kubernetes.core.k8s:
     state: present
-    template: 'metallb-config.yml'
+    template:
+      - name: 'metallb-config.yaml.j2'
+
+...
