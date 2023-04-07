@@ -1,0 +1,21 @@
+---
+
+- name: Setup helm repo for MetalLB
+  kubernetes.core.helm_repository:
+    name: metallb
+    url: https://metallb.github.io/metallb
+
+- name: Install MetalLB
+  kubernetes.core.helm:
+    name: metallb
+    chart_ref: metallb/metallb
+    chart_version:
+    namespace: metallb
+    create_namespace: yes
+    values: "{{ lookup('template', 'metallb-values.yaml.j2') | from_yaml }}"
+    state: present
+
+- name: apply metallb config
+  kubernetes.core.k8s:
+    state: present
+    template: 'metallb-config.yml'
