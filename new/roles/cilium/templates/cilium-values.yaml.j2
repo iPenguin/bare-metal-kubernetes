@@ -17,11 +17,11 @@ name: cilium
 # -- Roll out cilium agent pods automatically when configmap is updated.
 rollOutCiliumPods: true
 
-# -- Cilium agent update strategy
-updateStrategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 2
+# # -- Cilium agent update strategy
+# updateStrategy:
+#   type: RollingUpdate
+#   rollingUpdate:
+#     maxUnavailable: 1
 
 # hubble:
 #   enabled: true
@@ -62,3 +62,25 @@ updateStrategy:
 #   listenAddress: ":4244"
 #   # -- Whether Hubble should prefer to announce IPv6 or IPv4 addresses if both are available.
 #   preferIpv6: true
+
+
+#
+# Settings Reference: https://yolops.net/k8s-dualstack-cilium.html
+#
+ipv4:
+  enabled: true
+ipv6:
+  enabled: true
+
+enableIPv6Masquerade: false
+
+ipam:
+  mode: "cluster-pool"
+  operator:
+    clusterPoolIPv4PodCIDRList: [ {{ k8s_pod_network.ipv4 }} ]
+    clusterPoolIPv4MaskSize: 24
+    clusterPoolIPv6PodCIDRList: [ {{ k8s_pod_network.ipv6 }} ]
+    clusterPoolIPv6MaskSize: 112
+
+bpf:
+  masquerade: true

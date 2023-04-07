@@ -2,7 +2,7 @@
 
 - name: create kubeadm init config
   ansible.builtin.template:
-    src: kubeadm.yaml
+    src: kubeadm.yaml.j2
     dest: /root/kubeadm.yaml
 
 - name: kubeadm init

@@ -22,10 +22,13 @@ nodeRegistration:
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 kubernetesVersion: v{{ kubernetes_version }}
-#controlPlaneEndpoint: "{{ k8s_controller_lb }}"
+#controlPlaneEndpoint: {{ k8s_controller_lb }}
 certificatesDir: /etc/kubernetes/pki
 clusterName: homelab
-controllerManager: {}
+controllerManager:
+  extraArgs:
+    node-cidr-mask-size-ipv4: "24"
+    node-cidr-mask-size-ipv6: "112"
 dns: {}
 scheduler: {}
 apiServer:
@@ -38,16 +41,15 @@ apiServer:
 etcd:
   local:
     dataDir: /var/lib/etcd
-    imageTag: "{{ etcd_version }}"
+    imageTag: {{ etcd_version }}
 imageRepository: registry.k8s.io
 networking:
   dnsDomain: cluster.local
-  podSubnet: "{{ k8s_pod_network.ipv4 }},{{ k8s_pod_network.ipv6 }}"
-  serviceSubnet: "{{ k8s_service_network.ipv4 }},{{ k8s_service_network.ipv6 }}"
+  podSubnet: {{ k8s_pod_network.ipv4 }},{{ k8s_pod_network.ipv6 }}
+  serviceSubnet: {{ k8s_service_network.ipv4 }},{{ k8s_service_network.ipv6 }}
 ---
 kind: KubeletConfiguration
 apiVersion: kubelet.config.k8s.io/v1beta1
 cgroupDriver: systemd
-podCIDR: "" # CNI will handle node/pod CIDR assignment
 featureGates:
   EphemeralContainers: true

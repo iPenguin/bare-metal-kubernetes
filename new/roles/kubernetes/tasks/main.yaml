@@ -37,8 +37,8 @@
 
 - name: Controller config
   include_tasks: controller.yaml
-  when: k8s_server_role == "controller"
+  when: inventory_hostname in groups['controllers']
 
 - name: worker config
   include_tasks: workers.yaml
-  when: k8s_server_role == "worker"
+  when: inventory_hostname in groups['workers']

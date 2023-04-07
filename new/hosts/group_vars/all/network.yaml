@@ -23,7 +23,7 @@ network:
     dns: "{{ ipv6_network }}::1"
     server_pool:
       start: "{{ ipv6_network }}::20"
-      end: "{{ ipv6_network }}::70"
+      end: "{{ ipv6_network }}::100"
 
 router:
   ula_prefix: "fd5b:996d:3c79::/48"
