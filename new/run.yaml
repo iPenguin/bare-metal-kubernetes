@@ -31,10 +31,12 @@
     - workers
   tags:
     - cluster
+    - runtime
   roles:
+    - role: containerd
+      when: k8s_runtime == 'containerd'
     - role: crio
-      tags:
-        - crio
+      when: k8s_runtime == 'crio'
     - role: kubernetes
       tags:
         - k8s
@@ -54,11 +56,17 @@
   tags:
     - cluster
     - cni
-    - cilium
   roles:
     - role: cilium
+      when: k8s_cni == 'cilium'
 
-
-    # - role: metallb
+- name: deploy the load balanacer
+  hosts:
+    - controllers
+  tags:
+    - lb
+    - metallb
+  roles:
+    - role: metallb
 
 ...

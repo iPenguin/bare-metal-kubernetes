@@ -11,4 +11,6 @@ helm_version: 3.11.2
 
 kubernetes_version: 1.26.3
 
+metallb_version: 0.13.9
+
 ...

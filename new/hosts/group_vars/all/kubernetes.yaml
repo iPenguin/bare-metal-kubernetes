@@ -1,5 +1,8 @@
 ---
 
+k8s_runtime: crio
+k8s_cni: cilium
+
 k8s_master_can_run_pods: no
 
 k8s_controller: "{{ ipv4_network }}.5"

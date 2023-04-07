@@ -1,5 +1,0 @@
----
-
-pod_config_base_path: /docker
-
-pod_data_path: /srv
