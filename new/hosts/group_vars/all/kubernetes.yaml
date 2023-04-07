@@ -13,4 +13,4 @@ k8s_pod_network:
   ipv6: "{{ ipv6_network }}:dead:fade::/96"
 k8s_service_network:
   ipv4: 172.16.0.0/12
-  ipv6: "{{ ipv6_network }}:0dd:ba11::/112"
+  ipv6: "{{ ipv6_network }}:face:1e55::/112"

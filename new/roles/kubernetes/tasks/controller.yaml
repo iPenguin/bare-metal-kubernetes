@@ -6,7 +6,7 @@
     dest: /root/kubeadm.yaml
 
 - name: kubeadm init
-  command: kubeadm init --config /root/kubeadm.yaml
+  command: kubeadm init --config /root/kubeadm.yaml --skip-phases=addon/kube-proxy
 
 - name: create .kube config dir
   become: yes

@@ -17,52 +17,9 @@ name: cilium
 # -- Roll out cilium agent pods automatically when configmap is updated.
 rollOutCiliumPods: true
 
-# # -- Cilium agent update strategy
-# updateStrategy:
-#   type: RollingUpdate
-#   rollingUpdate:
-#     maxUnavailable: 1
-
-# hubble:
-#   enabled: true
-
-#   # -- Hubble metrics configuration.
-#   # See https://docs.cilium.io/en/stable/observability/metrics/#hubble-metrics
-#   # for more comprehensive documentation about Hubble metrics.
-#   metrics:
-#     enabled:
-#       - dns:query
-#       - drop
-#       - tcp
-#       - flow
-#       - icmp
-#       - http
-#     serviceMonitor:
-#       # -- Create ServiceMonitor resources for Prometheus Operator.
-#       enabled: true
-#       # -- Relabeling configs for the ServiceMonitor hubble
-#       relabelings:
-#         - sourceLabels:
-#             - __meta_kubernetes_pod_node_name
-#           targetLabel: node
-#           replacement: ${1}
-#       # -- Metrics relabeling configs for the ServiceMonitor hubble
-#       metricRelabelings: ~
-#     # -- Grafana dashboards for hubble
-#     dashboards:
-#       enabled: true
-#       label: grafana_dashboard
-#       namespace: ~
-#       labelValue: "1"
-
-#   # -- Unix domain socket path to listen to when Hubble is enabled.
-#   socketPath: /var/run/cilium/hubble.sock
-
-#   # -- An additional address for Hubble to listen to.
-#   listenAddress: ":4244"
-#   # -- Whether Hubble should prefer to announce IPv6 or IPv4 addresses if both are available.
-#   preferIpv6: true
-
+kubeProxyReplacement: "strict"
+k8sServiceHost: "{{ k8s_controller }}"
+k8sServicePort: "6443"
 
 #
 # Settings Reference: https://yolops.net/k8s-dualstack-cilium.html
