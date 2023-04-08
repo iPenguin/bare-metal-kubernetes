@@ -1,5 +1,7 @@
 ---
 
+ceph_version: 17.2.5
+cert_manager_version: 1.11.1
 cilium_version: 0.13.1
 cilium_helm_version: 1.13.1
 containerd_version: 1.7.0
@@ -13,4 +15,5 @@ kubernetes_version: 1.26.3
 
 metallb_version: 0.13.9
 
+rook_version: 1.11.3
 ...

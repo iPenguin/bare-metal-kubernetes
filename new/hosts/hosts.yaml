@@ -20,3 +20,19 @@ all:
 backups:
   hosts:
     c1.clt.milco.casa:
+
+#
+# In a production cluster the mons should be different from the osds.
+#
+ceph:
+  children:
+    ceph_mons:
+      hosts:
+        c1.clt.milco.casa:
+        w1.clt.milco.casa:
+        w2.clt.milco.casa:
+    ceph_osds:
+      hosts:
+        c1.clt.milco.casa:
+        w1.clt.milco.casa:
+        w2.clt.milco.casa:

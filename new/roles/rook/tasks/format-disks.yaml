@@ -1,0 +1,13 @@
+
+
+- name: erase drives
+  command: "sgdisk -Z /dev/{{ k8s_node_storage[ansible_hostname] }}"
+
+- name: delete rook configuration folder
+  file:
+    path: "/var/lib/rook"
+    state: absent
+# - name: create basic mbr partion
+#   community.general.parted:
+#     device: /dev/{{ k8s_node_storage[host] }}
+#     label: msdos

@@ -1,0 +1,99 @@
+
+crds:
+  enabled: true
+
+# Constraint rook-ceph-operator Deployment to nodes with label `disktype: ssd`.
+#  disktype: ssd
+
+tolerations: []
+
+# -- Whether the operator should watch cluster CRD in its own namespace or not
+currentNamespaceOnly: false
+
+# -- Global log level for the operator.
+# Options: `ERROR`, `WARNING`, `INFO`, `DEBUG`
+logLevel: INFO
+
+# -- If true, create & use RBAC resources
+rbacEnable: true
+
+# -- If true, create & use PSP resources
+pspEnable: false
+
+# -- Set the priority class for the rook operator deployment if desired
+priorityClassName:
+
+allowLoopDevices: false
+
+csi:
+  enableRbdDriver: true
+  enableCephfsDriver: true
+  enableGrpcMetrics: true
+  # -- Enable host networking for CSI CephFS and RBD nodeplugins. This may be necessary
+  # in some network configurations where the SDN does not provide access to an external cluster or
+  # there is significant drop in read/write performance
+  enableCSIHostNetwork: true
+
+  enableCephfsSnapshotter: true
+  enableRBDSnapshotter: true
+
+  enableCSIEncryption: false
+
+  rbdFSGroupPolicy: "File"
+  cephFSFSGroupPolicy: "File"
+
+  # Set to "ms_mode=secure" when connections.encrypted is enabled in CephCluster CR
+  cephFSKernelMountOptions:
+
+  # -- Enable adding volume metadata on the CephFS subvolumes and RBD images.
+  # Not all users might be interested in getting volume/snapshot details as metadata on CephFS subvolume and RBD images.
+  # Hence enable metadata is false by default
+  enableMetadata: false
+
+  # -- Set replicas for csi provisioner deployment
+  provisionerReplicas: 2
+
+  enableLiveness: false
+
+  nfs:
+    enabled: false
+
+  topology:
+    # -- Enable topology based provisioning
+    enabled: false
+    # NOTE: the value here serves as an example and needs to be
+    # updated with node labels that define domains of interest
+    # -- domainLabels define which node labels to use as domains
+    # for CSI nodeplugins to advertise their domains
+    domainLabels:
+    # - kubernetes.io/hostname
+    # - topology.kubernetes.io/zone
+    # - topology.rook.io/rack
+
+  readAffinity:
+    # Recommended to set to true if running kernel 5.8 or newer.
+    enabled: true
+    # -- Define which node labels to use
+    # as CRUSH location. This should correspond to the values set
+    # in the CRUSH map.
+    # @default -- labels listed [here](../CRDs/Cluster/ceph-cluster-crd.md#osd-topology)
+    crushLocationLabels:
+
+  # **WARNING** It's highly discouraged to use this for CephFS RWO volumes.
+  # Refer to this [issue](https://github.com/kubernetes/kubernetes/issues/103305) for more details.
+  cephFSAttachRequired: true
+  # **WARNING** It's highly discouraged to use this for RWO volumes as it can cause data corruption.
+  # csi-addons operations like Reclaimspace and PVC Keyrotation will also not be supported if set
+  # to false since we'll have no VolumeAttachments to determine which node the PVC is mounted on.
+  # Refer to this [issue](https://github.com/kubernetes/kubernetes/issues/103305) for more details.
+  rbdAttachRequired: true
+
+# -- Enable discovery daemon
+enableDiscoveryDaemon: false
+
+# -- if true, run rook operator on the host network
+useOperatorHostNetwork:
+
+monitoring:
+  # Requires Prometheus to be pre-installed.
+  enabled: false
