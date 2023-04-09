@@ -17,7 +17,7 @@
 #       metadata:
 #         name: "{{ inventory_hostname }}"
 #         label:
-#           "{{ lan_domain }}/node-role": "storage-node"
+#           "{{ lan_tld }}/node-role": "storage-node"
 
 - name: Add rook helm repo
   kubernetes.core.helm_repository:
@@ -31,7 +31,7 @@
     kubeconfig: /etc/kubernetes/admin.conf
     chart_ref: rook-release/rook-ceph
     chart_version: "{{ rook_version }}"
-    namespace: rook-ceph
+    namespace: rook-ceph-system
     create_namespace: true
     values: "{{ lookup('template', 'rook-values.yaml.j2') | from_yaml }}"
     state: present
