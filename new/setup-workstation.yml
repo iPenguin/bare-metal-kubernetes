@@ -94,7 +94,7 @@
         deb: http://dell.archive.canonical.com/updates/pool/public/libf/libfprint-2-tod1-goodix/libfprint-2-tod1-goodix_0.0.6-0ubuntu1~somerville1_amd64.deb
 
     - name: install software common
-      apt:
+      ansible.builtin.apt:
         name:
           - python
           - python3-pip
@@ -198,19 +198,19 @@
         classic: yes
 
     - name: update kubuntu
-      apt:
+      ansible.builtin.apt:
         name: "*"
         update_cache: "{{ add_i386.changed }}"
         state: latest
 
     - name: enable auto.misc
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/auto.master
         regexp: '#/misc'
         line: '/misc        /etc/auto.misc'
 
     - name: add shares
-      template:
+      ansible.builtin.template:
         src: auto.misc
         dest: /etc/auto.misc
         owner: root
@@ -218,7 +218,7 @@
         mode: '0644'
 
     - name: restart autofs
-      service:
+      ansible.builtin.service:
         name: autofs
         state: restarted
         enabled: true

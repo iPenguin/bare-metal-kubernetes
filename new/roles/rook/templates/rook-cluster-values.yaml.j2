@@ -1,0 +1,263 @@
+# Exmaple values.yaml:
+# https://github.com/rook/rook/blob/release-1.11/deploy/charts/rook-ceph-cluster/values.yaml
+operatorNamespace: rook-ceph
+
+toolbox:
+  enabled: true
+
+monitoring:
+  # Monitoring requires Prometheus to be pre-installed
+  enabled: false
+  createPrometheusRules: true
+  rulesNamespaceOverride: monitoring
+
+pspEnable: false
+
+# This config is for a converged cluster where all the Ceph daemons are running locally
+cephClusterSpec:
+  cephVersion:
+    image: quay.io/ceph/ceph:v{{ ceph_version }}
+    allowUnsupported: false
+
+  # Important: clear this folder on the host if you recreate the cluster
+  dataDirHostPath: /var/lib/rook
+
+  mon:
+    count: 3
+    allowMultiplePerNode: false
+  mgr:
+    count: 2
+    allowMultiplePerNode: false
+    modules:
+      # The "dashboard" and "monitoring" modules are already enabled by other settings.
+      - name: pg_autoscaler
+        enabled: true
+  dashboard:
+    enabled: true
+    #ssl: true
+  network:
+    connections:
+      encryption:
+        enabled: true
+      compression:
+        enabled: false
+      requireMsgr2: true
+      ipFamily: "IPv6"
+      dualStack: false
+
+  crashCollector:
+    disable: false
+    daysToRetain: 30
+
+  logCollector:
+    enabled: true
+    periodicity: daily # one of: hourly, daily, weekly, monthly
+    maxLogSize: 50M
+
+  cleanupPolicy:
+    # Since cluster cleanup is destructive to data, confirmation is required.
+    # To destroy all Rook data on hosts during uninstall, confirmation must be set to "yes-really-destroy-data".
+    confirmation: ""
+    sanitizeDisks:
+      method: quick
+      dataSource: zero # random takes much longer
+      iteration: 1
+    # delete PVs before deleting the cluster
+    allowUninstallWithVolumes: false
+
+  placement:
+    all:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ lan_domain }}/node-role
+                operator: In
+                values:
+                - storage-node
+
+  # The option to automatically remove OSDs that are out and are safe to destroy.
+  removeOSDsIfOutAndSafeToRemove: false
+
+  storage:
+    useAllNodes: false
+    useAllDevices: false
+    # deviceFilter: sda
+    config:
+      crushRoot: "{{ lan_domain }}-ceph-root" # specify a non-default root label for the CRUSH map
+      osdsPerDevice: "1" # this value can be overridden at the node or device level
+    #   metadataDevice: "md0" # specify a non-rotational storage so ceph-volume will use it as block db device of bluestore.
+    #   encryptedDevice: "true" # the default value for this option is "false"
+
+    {% if ceph_storage is defined %}
+    nodes:
+      {% for node in ceph_storage %}
+      - name: "{{ node.name }}"
+        {% if node.devices is defined %}
+        devices:
+          {% for dev in node.devices %}
+          - name: "{{ dev.name }}"
+            config:
+              osdsPerDevice: "{{ dev.osds }}"
+          {% endfor %}
+        {% elif node.deviceFilter is defined %}
+        deviceFilter: {{ node.deviceFilter }}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+  # The section for configuring management of daemon disruptions during upgrade or fencing.
+  disruptionManagement:
+    managePodBudgets: true
+    osdMaintenanceTimeout: 30
+    # wait until healthy
+    pgHealthCheckTimeout: 0
+
+ingress:
+  dashboard:
+    host:
+      name: dashboard.{{ lan_domain }}
+      path: "/ceph-dashboard(/|$)(.*)"
+      ingressClassName: nginx
+    # tls:
+    # - hosts:
+    #     - dashboard.{{ lan_domain }}
+    #   secretName: star-{{ lan_domain }}
+
+cephBlockPools:
+  - name: ceph-blockpool
+    spec:
+      failureDomain: host
+      replicated:
+        size: 3
+    storageClass:
+      enabled: true
+      name: ceph-block
+      isDefault: true
+      reclaimPolicy: Delete
+      allowVolumeExpansion: true
+      volumeBindingMode: "Immediate"
+      # allowedTopologies:
+      #  - matchLabelExpressions:
+      #      - key: rook-ceph-role
+      #        values:
+      #          - storage-node
+      # see https://github.com/rook/rook/blob/master/Documentation/ceph-block.md#provision-storage for available configuration
+      parameters:
+        # RBD image format. Defaults to "2".
+        imageFormat: "2"
+
+        # These secrets contain Ceph admin credentials.
+        csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+        csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
+        csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+        csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
+        csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+        csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
+
+        # Do not use xfs in when volume is on same node as osds.
+        csi.storage.k8s.io/fstype: ext4
+
+cephFileSystems:
+  - name: ceph-filesystem
+    # see https://github.com/rook/rook/blob/master/Documentation/CRDs/Shared-Filesystem/ceph-filesystem-crd.md#filesystem-settings for available configuration
+    spec:
+      metadataPool:
+        replicated:
+          size: 3
+      dataPools:
+        - failureDomain: host
+          replicated:
+            size: 3
+          name: {{ lan_domain }}-data0
+      metadataServer:
+        activeCount: 1
+        activeStandby: true
+        resources:
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+          requests:
+            cpu: "1000m"
+            memory: "4Gi"
+        priorityClassName: system-cluster-critical
+    storageClass:
+      enabled: true
+      isDefault: false
+      name: ceph-filesystem
+      # (Optional) specify a data pool to use, must be the name of one of the data pools above, 'data0' by default
+      pool: {{ lan_domain }}-data0
+      reclaimPolicy: Delete
+      allowVolumeExpansion: true
+      volumeBindingMode: "Immediate"
+      mountOptions: []
+      # see https://github.com/rook/rook/blob/master/Documentation/ceph-filesystem.md#provision-storage for available configuration
+      parameters:
+        # The secrets contain Ceph admin credentials.
+        csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+        csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
+        csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
+        csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
+        csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+        csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
+        # Specify the filesystem type of the volume. If not specified, csi-provisioner
+        # will set default as `ext4`. Note that `xfs` is not recommended due to potential deadlock
+        # in hyperconverged settings where the volume is mounted on the same node as the osds.
+        csi.storage.k8s.io/fstype: ext4
+
+cephFileSystemVolumeSnapshotClass:
+  enabled: false
+  name: ceph-filesystem
+  isDefault: true
+  deletionPolicy: Delete
+  annotations: {}
+  labels: {}
+  # see https://rook.io/docs/rook/v1.10/Storage-Configuration/Ceph-CSI/ceph-csi-snapshot/#cephfs-snapshots for available configuration
+  parameters: {}
+
+# -- Settings for the block pool snapshot class
+# @default -- See [RBD Snapshots](../Storage-Configuration/Ceph-CSI/ceph-csi-snapshot.md#rbd-snapshots)
+cephBlockPoolsVolumeSnapshotClass:
+  enabled: false
+  name: ceph-block
+  isDefault: false
+  deletionPolicy: Delete
+  annotations: {}
+  labels: {}
+  # see https://rook.io/docs/rook/v1.10/Storage-Configuration/Ceph-CSI/ceph-csi-snapshot/#rbd-snapshots for available configuration
+  parameters: {}
+
+cephObjectStores:
+  - name: ceph-objectstore
+    # see https://github.com/rook/rook/blob/master/Documentation/CRDs/Object-Storage/ceph-object-store-crd.md#object-store-settings for available configuration
+    spec:
+      metadataPool:
+        failureDomain: host
+        replicated:
+          size: 3
+      dataPool:
+        failureDomain: host
+        erasureCoded:
+          dataChunks: 2
+          codingChunks: 1
+      preservePoolsOnDelete: true
+      gateway:
+        port: 80
+        resources:
+          limits:
+            cpu: "2000m"
+            memory: "2Gi"
+          requests:
+            cpu: "1000m"
+            memory: "1Gi"
+        # securePort: 443
+        # sslCertificateRef:
+        instances: 1
+        priorityClassName: system-cluster-critical
+    storageClass:
+      enabled: true
+      name: ceph-bucket
+      reclaimPolicy: Delete
+      volumeBindingMode: "Immediate"
+      parameters:
+        region: us-east-1
