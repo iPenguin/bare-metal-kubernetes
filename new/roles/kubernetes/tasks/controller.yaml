@@ -28,5 +28,5 @@
     mode: 0600
 
 - name: Untaint master node so it can run pods
-  ansible.builtin.command: kubectl taint node {{ k8s_command_node }} node-role.kubernetes.io/master:NoSchedule-
-  when: k8s_master_can_run_pods
+  ansible.builtin.command: kubectl taint node {{ ansible_hostname }} node-role.kubernetes.io/control-plane:NoSchedule-
+  when: k8s_master_can_run_pods | bool

@@ -3,7 +3,8 @@
 k8s_runtime: crio
 k8s_cni: cilium
 
-k8s_master_can_run_pods: no
+# I only have 3 nodes :(
+k8s_master_can_run_pods: yes
 
 k8s_controller: "{{ ipv4_network }}.5"
 k8s_controller_lb: "{{ ipv4_network }}.5"
