@@ -1,4 +1,5 @@
 common_utils:
+  - awscli
   - gdisk
   - git
   - htop
