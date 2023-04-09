@@ -3,6 +3,7 @@ timezone: America/New_York
 
 tld: casa
 domain: milco
+lan_tld: "{{ domain }}.{{ tld }}"
 lan_domain: "clt.{{ domain }}.{{ tld }}"
 
 site_admin_email: "{{ vault_site_admin_email }}"

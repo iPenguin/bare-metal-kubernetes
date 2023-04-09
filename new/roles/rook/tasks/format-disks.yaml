@@ -1,10 +1,4 @@
 
-- name: install needed disk utils
-  ansible.builtin.apt:
-    name:
-      - util-linux #sfdisk
-    state: present
-
 - name: erase drives
   command: "sgdisk -Z /dev/{{ item.1.name }}"
   delegate_to: "{{ item.0.name }}"
