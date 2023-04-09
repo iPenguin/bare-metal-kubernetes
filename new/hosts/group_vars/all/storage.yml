@@ -1,9 +1,0 @@
-#
-# wipe out the gpt partition information for a completely clean disk for ceph:
-# sudo dd if=/dev/zero of=/dev/sda bs=512 count=34
-#
-
-k8s_node_storage:
-  c1: "sda" # 250GB SSD
-  w1: "sda" # 256GB SSD
-  w2: "sda" # 240GB SSD

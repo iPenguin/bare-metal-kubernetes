@@ -69,4 +69,21 @@
   roles:
     - role: metallb
 
+- name: Wipe ceph drives
+  hosts:
+    - controllers
+  tags:
+    - never
+    - yes-really-wipe-the-ceph-drives
+  tasks:
+    - include_tasks: roles/rook/tasks/format-disks.yaml
+
+- name: Deploy Rook ceph
+  hosts:
+    - controllers
+  tags:
+    - rook
+    - ceph
+  roles:
+    - role: rook
 ...

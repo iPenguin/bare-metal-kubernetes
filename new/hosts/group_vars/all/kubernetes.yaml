@@ -7,6 +7,7 @@ k8s_master_can_run_pods: no
 
 k8s_controller: "{{ ipv4_network }}.5"
 k8s_controller_lb: "{{ ipv4_network }}.5"
+k8s_command_node: "{{ groups['controllers'] | first }}"
 
 k8s_pod_network:
   ipv4: 10.200.0.0/16

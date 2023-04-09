@@ -15,7 +15,3 @@ ipa_server_admin_email: "{{ vault_site_admin_email }}"
 remote_users:
   - user: ansible
     ssh_pub_key: ~/.ssh/id_ed25519.pub
-
-# k8s_master_can_run_pods: yes
-# k8s_command_node: "{{ groups['k8smasters'] | first }}.{{ lan_domain }}"
-# k8s_use_ipv6: true
