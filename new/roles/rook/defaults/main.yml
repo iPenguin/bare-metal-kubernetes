@@ -1,8 +1,0 @@
----
-local_storage_default_path: /opt/local-path-provisioner
-
-ceph_image_version: 16.2.4
-
-ceph_storage: "bare-metal"
-
-ceph_device_filter: "^sda"

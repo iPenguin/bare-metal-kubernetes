@@ -8,8 +8,8 @@ toolbox:
 monitoring:
   # Monitoring requires Prometheus to be pre-installed
   enabled: false
-  createPrometheusRules: true
-  rulesNamespaceOverride: monitoring
+  #createPrometheusRules: true
+  #rulesNamespaceOverride: monitoring
 
 pspEnable: false
 
@@ -42,8 +42,8 @@ cephClusterSpec:
       compression:
         enabled: false
       requireMsgr2: true
-      ipFamily: "IPv6"
-      dualStack: false
+    ipFamily: "IPv6"
+    dualStack: false
 
   crashCollector:
     disable: false
