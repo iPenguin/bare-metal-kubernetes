@@ -8,16 +8,16 @@
       - hdparm
     state: present
 
-# - name: Label node as storage node
-#   kubernetes.core.k8s:
-#     state: present
-#     definition: |-
-#       apiversion: v1
-#       kind: Node
-#       metadata:
-#         name: "{{ inventory_hostname }}"
-#         label:
-#           "{{ lan_tld }}/node-role": "storage-node"
+- name: Label node as storage node
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiversion: v1
+      kind: Node
+      metadata:
+        name: "{{ ansible_hostname }}"
+        label:
+          "{{ lan_tld }}/node-role": "storage-node"
 
 - name: Add rook helm repo
   kubernetes.core.helm_repository:
@@ -31,7 +31,7 @@
     kubeconfig: /etc/kubernetes/admin.conf
     chart_ref: rook-release/rook-ceph
     chart_version: "{{ rook_version }}"
-    namespace: rook-ceph-system
+    namespace: "{{ rook_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'rook-values.yaml.j2') | from_yaml }}"
     state: present
@@ -42,7 +42,12 @@
     kubeconfig: /etc/kubernetes/admin.conf
     chart_ref: rook-release/rook-ceph-cluser
     chart_version: "{{ rook_version }}"
-    namespace: rook-ceph
+    namespace: "{{ rook_namespace }}"
     values: "{{ lookup('template', 'rook-cluster-values.yaml.j2') | from_yaml }}"
     state: present
+
+- name: Deploy LoadBalancer for public s3 endpoint
+  kubernetes.core.k8s:
+    state: present
+    template: 's3.yaml.j2'
 ...
