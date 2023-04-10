@@ -14,12 +14,9 @@
     create_namespace: yes
     state: present
 
-# FIXME: while this will kubectl apply manually,
-# it's broken in ansible :(
 - name: apply metallb config
   kubernetes.core.k8s:
     state: present
-    template:
-      - name: 'metallb-config.yaml.j2'
+    template: 'metallb-config.yaml.j2'
 
 ...
