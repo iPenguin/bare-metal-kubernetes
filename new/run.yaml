@@ -86,4 +86,16 @@
     - ceph
   roles:
     - role: rook
+
+
+- name: Deploy gitea
+  hosts:
+    - gitea
+  tags:
+    - apps
+    - gitea
+  roles:
+    - role: gitea
+
+
 ...
