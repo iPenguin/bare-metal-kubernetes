@@ -1,0 +1,15 @@
+---
+
+- name: Add gitea helm repo
+  kubernetes.core.helm_repository:
+    name: gitea-charts
+    repo_url: https://dl.gitea.io/charts/
+
+- name: Deploy gitea helm chart
+  kubernetes.core.helm:
+    name: gitea
+    chart_version: "v{{ gitea_helm_chart_version }}"
+    chart_ref: gitea-charts/gitea
+    release_namespace: "{{ gitea_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'gitea-values.yaml.j2') | from_yaml }}"

@@ -36,3 +36,9 @@ ceph:
         c1.clt.milco.casa:
         w1.clt.milco.casa:
         w2.clt.milco.casa:
+
+apps:
+  children:
+    gitea:
+      hosts:
+        c1.clt.milco.casa:
