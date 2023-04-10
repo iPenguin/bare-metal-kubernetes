@@ -42,3 +42,6 @@ apps:
     gitea:
       hosts:
         c1.clt.milco.casa:
+    ingress:
+      hosts:
+        c1.clt.milco.casa:

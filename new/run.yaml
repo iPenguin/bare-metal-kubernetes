@@ -87,6 +87,15 @@
   roles:
     - role: rook
 
+- name: Deploy ingress-nginx
+  hosts:
+    - ingress
+  tags:
+    - apps
+    - ingress
+  roles:
+    - role: ingress-nginx
+      when: "'ingress-nginx' in ingress_controllers"
 
 - name: Deploy gitea
   hosts:
