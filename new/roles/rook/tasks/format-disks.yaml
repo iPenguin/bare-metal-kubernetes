@@ -10,4 +10,5 @@
   file:
     path: "/var/lib/rook"
     state: absent
-
+  delegate_to: "{{ item.name }}"
+  loop: "{{ ceph_storage }}"
