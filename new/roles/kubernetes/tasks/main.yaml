@@ -39,6 +39,13 @@
   include_tasks: controller.yaml
   when: inventory_hostname in groups['controllers']
 
+- name: check for nodes
+  ansible.builtin.command: kubectl get nodes
+  register: nodelist
+  delegate_to: "{{ k8s_controller }}"
+
 - name: worker config
   include_tasks: workers.yaml
-  when: inventory_hostname in groups['workers']
+  when:
+    - inventory_hostname in groups['workers']
+    - not inventory_hostname in nodelist.stdout

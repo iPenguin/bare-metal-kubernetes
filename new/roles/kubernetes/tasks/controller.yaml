@@ -4,9 +4,11 @@
   ansible.builtin.template:
     src: kubeadm.yaml.j2
     dest: /root/kubeadm.yaml
+  register: kube_config
 
 - name: kubeadm init
   command: kubeadm init --config /root/kubeadm.yaml --skip-phases=addon/kube-proxy
+  when: kube_config.changed
 
 - name: create .kube config dir
   become: yes
@@ -27,6 +29,15 @@
     group: root
     mode: 0600
 
-- name: Untaint master node so it can run pods
-  ansible.builtin.command: kubectl taint node {{ ansible_hostname }} node-role.kubernetes.io/control-plane:NoSchedule-
+- name: clear the taint from the master node
+  ansible.builtin.set_fact:
+    _k8s_master_node_schedule_taint: absent
   when: k8s_master_can_run_pods | bool
+
+- name: Un/taint master node so it can run pods
+  kubernetes.core.k8s_taint:
+    state: "{{ _k8s_master_node_schedule_taint }}"
+    name: "{{ ansible_hostname }}"
+    taints:
+    - effect: NoSchedule
+      key: "node-role.kubernetes.io/control-plane"
