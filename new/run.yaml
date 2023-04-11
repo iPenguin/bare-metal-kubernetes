@@ -82,6 +82,7 @@
   hosts:
     - controllers
   tags:
+    - storage
     - rook
     - ceph
   roles:
@@ -96,6 +97,15 @@
   roles:
     - role: ingress-nginx
       when: "'ingress-nginx' in ingress_controllers"
+
+- name: Deploy Free IPA
+  hosts:
+    - freeipa
+  tags:
+    - apps
+    - ipa
+  roles:
+    - role: freeipa
 
 - name: Deploy gitea
   hosts:

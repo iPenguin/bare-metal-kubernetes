@@ -1,0 +1,75 @@
+# Some inspiration take from:
+#https://www.linkedin.com/pulse/how-install-freeipa-ubuntu-docker-packopsdev-farshad-nickfetrat/
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: freeipa
+  namespace: {{ ipa_namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: freeipa # has to match .spec.template.metadata.labels
+  serviceName: "freeipa"
+  replicas: 1 # by default is 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app: freeipa # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: freeipa
+          image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
+          #image: nicolaka/netshoot:latest
+          env:
+            - name: IPA_SERVER_HOSTNAME
+              value: "{{ ipa_server_hostname }}"
+            - name: TZ
+              value: "America/New_York"
+            - name: IPA_SERVER_INSTALL_OPTS
+              valueFrom:
+                secretKeyRef:
+                  name: freeipa-install-secrets
+                  key: IPA_OPTIONS
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_TIME
+          stdin: true
+          tty: true
+          ports:
+            - containerPort: 53 # dns
+            - containerPort: 53 # dns
+              protocol: UDP
+            - containerPort: 80 # https
+            - containerPort: 88 # kerberos
+            - containerPort: 88 # kerberos
+              protocol: UDP
+            - containerPort: 123 # ntp
+            - containerPort: 123 # ntp
+              protocol: UDP
+            - containerPort: 389 # ldap
+            - containerPort: 443 # https
+            - containerPort: 464 # kpasswd
+            - containerPort: 464 # kpasswd
+              protocol: UDP
+            - containerPort: 636 # ldaps
+          volumeMounts:
+            - name: ipa-data
+              mountPath: /data
+            - name: cgroups
+              mountPath: /sys/fs/cgroup
+              readOnly: true
+      hostname: "{{ ipa_server_hostname }}"
+      volumes:
+        - name: ipa-data
+          persistentVolumeClaim:
+            claimName: ipa-data
+        - name: cgroups
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+

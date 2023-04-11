@@ -9,6 +9,8 @@ crio_version: 1.24.5~0
 
 etcd_version: 3.5.6-0
 
+freeipa_version: 4.10.1
+
 gitea_helm_chart_version: 8.0.2
 gitea_version: 1.19.0
 

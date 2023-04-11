@@ -39,6 +39,9 @@ ceph:
 
 apps:
   children:
+    freeipa:
+      hosts:
+        c1.clt.milco.casa:
     gitea:
       hosts:
         c1.clt.milco.casa:

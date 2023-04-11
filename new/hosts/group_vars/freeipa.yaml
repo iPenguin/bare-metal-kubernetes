@@ -1,0 +1,11 @@
+---
+
+ipa_hostname: ipa-01.{{ lan_domain }}
+
+ipa_directory_password: "{{ vault_ipa_directory_password }}"
+ipa_admin_password: "{{ vault_ipa_admin_password }}"
+
+ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
+
+ipa_lookup_user: "{{ vault_ipa_lookup_user }}"
+ipa_lookup_password: "{{ vault_ipa_lookup_password }}"

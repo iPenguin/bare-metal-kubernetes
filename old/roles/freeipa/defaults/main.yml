@@ -1,9 +1,0 @@
----
-# defaults file for freeipa
-
-ipa_storage_dir: "{{ pod_data_path }}/ipa"
-
-ipa_docker_version: centos-8
-
-ipa_ipv4: ""
-ipa_ipv6: ""

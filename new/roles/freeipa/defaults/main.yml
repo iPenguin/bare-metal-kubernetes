@@ -1,0 +1,9 @@
+---
+# defaults file for freeipa
+
+ipa_namespace: freeipa
+
+ipa_docker_os: centos-9-stream
+
+ipa_storage_dir: "{{ pod_data_path }}/ipa"
+
