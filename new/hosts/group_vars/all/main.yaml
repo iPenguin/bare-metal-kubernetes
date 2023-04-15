@@ -9,8 +9,7 @@ lan_domain: "clt.{{ domain }}.{{ tld }}"
 site_admin_email: "{{ vault_site_admin_email }}"
 site_admin_username: "{{ vault_site_admin_username }}"
 
-ipa_domain: "auth.{{ lan_domain }}"
-ipa_server_hostname: ipa-01.{{ lan_domain }}
+ipa_domain: "auth.{{ lan_tld }}"
 ipa_server_admin_email: "{{ vault_site_admin_email }}"
 
 remote_users:

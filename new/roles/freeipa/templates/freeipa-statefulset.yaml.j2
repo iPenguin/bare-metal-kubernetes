@@ -21,7 +21,8 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: freeipa
-          image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
+          image: ipenguin/freeipa-server:centos-9-stream-4.10.1-2
+          #image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
           readinessProbe:
             exec:
               # FIXME: systemctl status fails during ipa-replica-install as the
@@ -41,7 +42,7 @@ spec:
               port: 80
           env:
             - name: IPA_SERVER_HOSTNAME
-              value: "{{ ipa_server_hostname }}"
+              value: "{{ ipa_hostname }}"
             - name: TZ
               value: "America/New_York"
             - name: IPA_SERVER_INSTALL_OPTS
@@ -50,9 +51,10 @@ spec:
                   name: freeipa-install-secrets
                   key: IPA_OPTIONS
           securityContext:
+            seccompProfile:
+              type: Unconfined
             capabilities:
               add:
-                #- NET_ADMIN
                 - SYS_TIME
           stdin: true
           tty: true
@@ -78,14 +80,13 @@ spec:
               mountPath: /data
             - name: cgroups
               mountPath: /sys/fs/cgroup
-              readOnly: true
             - name: run
               mountPath: /run
             - name: run-systemd
               mountPath: /run/systemd
             - name: tmp
               mountPath: /tmp
-      hostname: "{{ ipa_server_hostname }}"
+      hostname: "{{ ipa_hostname }}"
       volumes:
         - name: ipa-data
           persistentVolumeClaim:

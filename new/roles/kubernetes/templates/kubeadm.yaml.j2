@@ -14,7 +14,7 @@ bootstrapTokens:
 nodeRegistration:
   criSocket: unix:///run/crio/crio.sock
   imagePullPolicy: IfNotPresent
-  name: c1.clt.milco.casa
+  name: {{ k8s_controller }}
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane

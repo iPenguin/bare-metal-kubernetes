@@ -17,6 +17,25 @@
     state: present
     template: 'freeipa-pvc.yaml.j2'
 
+- name: Deploy IPA Load Balancer
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-lb.yaml.j2'
+
+- name: Deploy IPA Service
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-svc.yaml.j2'
+
+- name: Get IP of FreeIPA LoadBalancer
+  ansible.builtin.command:
+    cmd: kubectl -n freeipa get svc freeipa-lb -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+  register: _ipa_svc_ip
+
+- name: Set FreeIPA public IP address
+  ansible.builtin.set_fact:
+    ipa_public_ip: "{{ _ipa_svc_ip.stdout }}"
+
 - name: Create IPA Secrets
   kubernetes.core.k8s:
     state: present
@@ -26,10 +45,5 @@
   kubernetes.core.k8s:
     state: present
     template: 'freeipa-statefulset.yaml.j2'
-
-- name: Deploy IPA Services
-  kubernetes.core.k8s:
-    state: present
-    template: 'freeipa-svc.yaml.j2'
 
 ...
