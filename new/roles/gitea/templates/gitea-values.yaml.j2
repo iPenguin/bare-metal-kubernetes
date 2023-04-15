@@ -16,22 +16,18 @@ podSecurityContext:
 
 ## @param containerSecurityContext Security context
 containerSecurityContext: {}
-#   allowPrivilegeEscalation: false
-#   capabilities:
-#     drop:
-#       - ALL
-#   # Add the SYS_CHROOT capability for root and rootless images if you intend to
-#   # run pods on nodes that use the container runtime cri-o. Otherwise, you will
-#   # get an error message from the SSH server that it is not possible to read from
-#   # the repository.
-#   # https://gitea.com/gitea/helm-chart/issues/161
-#     add:
-#       - SYS_CHROOT
-#   privileged: false
-#   readOnlyRootFilesystem: true
-#   runAsGroup: 1000
-#   runAsNonRoot: true
-#   runAsUser: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  # Add the SYS_CHROOT capability for root and rootless images running on cri-o.
+    add:
+      - SYS_CHROOT
+  privileged: false
+  readOnlyRootFilesystem: true
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
 
 ## @deprecated The securityContext variable has been split two:
 ## - containerSecurityContext
@@ -114,20 +110,19 @@ gitea:
 
   ## @param gitea.ldap LDAP configuration
   ldap:
-    []
-    # - name: "LDAP 1"
-    #  existingSecret:
-    #  securityProtocol:
-    #  host:
-    #  port:
-    #  userSearchBase:
-    #  userFilter:
-    #  adminFilter:
-    #  emailAttribute:
-    #  bindDn:
-    #  bindPassword:
-    #  usernameAttribute:
-    #  publicSSHKeyAttribute:
+    - name: "FreeIPA"
+     existingSecret:
+     securityProtocol:
+     host: "{{ ipa_hostname }}"
+     port: 636
+     userSearchBase:
+     userFilter:
+     adminFilter:
+     emailAttribute:
+     bindDn: "{{ ipa_lookup_user }}"
+     bindPassword: "{{ ipa_lookup_password }}"
+     usernameAttribute:
+     publicSSHKeyAttribute:
 
   ## @param gitea.config  Configuration for the Gitea server,ref: [config-cheat-sheet](https://docs.gitea.io/en-us/config-cheat-sheet/)
   config: {}

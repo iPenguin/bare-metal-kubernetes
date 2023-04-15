@@ -9,9 +9,6 @@ lan_domain: "clt.{{ domain }}.{{ tld }}"
 site_admin_email: "{{ vault_site_admin_email }}"
 site_admin_username: "{{ vault_site_admin_username }}"
 
-ipa_domain: "auth.{{ lan_tld }}"
-ipa_server_admin_email: "{{ vault_site_admin_email }}"
-
 remote_users:
   - user: ansible
     ssh_pub_key: ~/.ssh/id_ed25519.pub
