@@ -1,13 +1,29 @@
 ---
 
+#
+# Network Definition:
+# 1-19    - physical devices and hosts
+# 20-100  - virtual servers and services
+# 101-254 - other devices
+#
+
 ipv4_network: 10.1.1
 ipv6_network: "{{ vault_ipv6_network }}"
+
+network_services:
+  rook:
+    ipv4: "{{ ipv4_network }}.20"
+    ipv6: "{{ ipv6_network }}::20"
+  ipa:
+    ipv4: "{{ ipv4_network }}.21"
+    ipv6: "{{ ipv6_network }}::21"
 
 network:
   ipv4:
     external_dns:
       - 1.1.1.3
       - 1.0.0.3
+      - "/{{ lan_domain }}/{{ network_services.ipa.ipv4 }}"
     subnet: "{{ ipv4_network }}.0/24"
     router: "{{ ipv4_network }}.1"
     dns: "{{ ipv4_network }}.1"
