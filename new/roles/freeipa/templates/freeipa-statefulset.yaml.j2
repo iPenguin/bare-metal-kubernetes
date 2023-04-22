@@ -21,21 +21,22 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: freeipa
-          image: ipenguin/freeipa-server:centos-9-stream-4.10.1-2
-          #image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
+          #image: ipenguin/freeipa-server:centos-9-stream-4.10.1-2
+          image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
           readinessProbe:
             exec:
               # FIXME: systemctl status fails during ipa-replica-install as the
               #        Service does not route to the pod as long as its its not
               #        ready... but it *must* talk to itself on its public IP
               command: ["/usr/bin/systemctl", "is-active", "--quiet", "ipa"]
-            initialDelaySeconds: 550
+              #command: [ "/usr/bin/systemctl", "status", "ipa" ]
+            initialDelaySeconds: 1200
             timeoutSeconds: 10
             periodSeconds: 30
             successThreshold: 1
             failureThreshold: 3
           livenessProbe:
-            initialDelaySeconds: 550
+            initialDelaySeconds: 1200
             periodSeconds: 30
             httpGet:
               path: /
@@ -62,7 +63,7 @@ spec:
             - containerPort: 53 # dns
             - containerPort: 53 # dns
               protocol: UDP
-            - containerPort: 80 # https
+            - containerPort: 80 # http
             - containerPort: 88 # kerberos
             - containerPort: 88 # kerberos
               protocol: UDP

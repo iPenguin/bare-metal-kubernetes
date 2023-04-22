@@ -3,7 +3,7 @@
 
 ipa_namespace: freeipa
 
-ipa_docker_os: centos-9-stream
+ipa_docker_os: fedora-38
 
 ipa_storage_dir: "{{ pod_data_path }}/ipa"
 
