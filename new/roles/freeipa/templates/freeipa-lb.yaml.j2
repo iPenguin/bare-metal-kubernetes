@@ -6,6 +6,8 @@ metadata:
   namespace: {{ ipa_namespace }}
   labels:
     app: freeipa
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: {{ network_services.ipa.ipv4 }}, {{ network_services.ipa.ipv6 }}
 spec:
   type: LoadBalancer
   ipFamilyPolicy: PreferDualStack
