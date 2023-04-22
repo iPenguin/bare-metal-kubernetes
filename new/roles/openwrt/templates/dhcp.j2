@@ -52,9 +52,9 @@ config host
 
 {% for d in domains %}
 config domain
-  option name '{{ d.name }}.{{ lan_domain }}'
+  option name '{{ d.name }}'
   option ip '{{ d.ipv4 }}'
 config domain
-  option name '{{ d.name }}.{{ lan_domain }}'
+  option name '{{ d.name }}'
   option ip '{{ d.ipv6 }}'
 {% endfor %}
