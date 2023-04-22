@@ -121,4 +121,7 @@ hosts:
   - name: printer
     mac: f4:ce:46:3e:f0:40
     ipv4: "{{ ipv4_network }}.9"
-domains: []
+domains:
+  - name: "ipa-01.{{ lan_domain }}"
+    ipv4: "{{ network_services.ipa.ipv4 }}"
+    ipv6: "{{ network_services.ipa.ipv6 }}"
