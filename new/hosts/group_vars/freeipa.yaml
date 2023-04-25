@@ -2,5 +2,16 @@
 
 ipa_directory_password: "{{ vault_ipa_directory_password }}"
 ipa_admin_password: "{{ vault_ipa_admin_password }}"
+ipa_admin_user: "admin"
 
 ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
+
+ipa_users:
+  - name: bmilco
+    first_name: Brian
+    last_name: Milco
+    loginshell: /usr/bin/zsh
+    emails:
+      - "{{ site_admin_email }}"
+    ssh_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPQGjMgHnJcTrRNNSFLFbiBFIf4LeG1R4rxq7mBuhWGk {{ site_admin_email }}

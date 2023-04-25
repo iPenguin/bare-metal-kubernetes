@@ -1,0 +1,19 @@
+---
+
+- name: Add IPA users
+  community.general.ipa_user:
+    name: "{{ item.name }}"
+    state: present
+    givenname: "{{ item.first_name }}"
+    sn: "{{ item.last_name }}"
+    mail: "{{ item.emails }}"
+    sshpubkey: "{{ item.ssh_keys }}"
+    ipa_host: "{{ ipa_hostname }}"
+    ipa_user: "{{ ipa_admin_user }}"
+    ipa_pass: "{{ ipa_admin_password }}"
+    update_password: on_create
+    password: "{{ ipa_new_user_password }}"
+    userauthtype: password
+    validate_certs: false
+
+...
