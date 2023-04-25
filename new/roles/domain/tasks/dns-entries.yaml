@@ -1,0 +1,24 @@
+
+- name: Add IPv4 address for {{ item.key }}
+  community.general.ipa_dnsrecord:
+    ipa_host: "{{ ipa_hostname }}"
+    ipa_user: "admin"
+    ipa_pass: "{{ ipa_admin_password }}"
+    zone_name: "{{ lan_domain }}."
+    record_type: 'A'
+    record_name: "{{ item.key }}"
+    record_value: '{{ item.value.ipv4 }}'
+    validate_certs: false
+    state: present
+
+- name: Add IPv6 address for {{ item.key }}
+  community.general.ipa_dnsrecord:
+    ipa_host: "{{ ipa_hostname }}"
+    ipa_user: "admin"
+    ipa_pass: "{{ ipa_admin_password }}"
+    zone_name: "{{ lan_domain }}."
+    record_name: "{{ item.key }}"
+    record_type: 'AAAA'
+    record_value: '{{ item.value.ipv6 }}'
+    validate_certs: false
+    state: present

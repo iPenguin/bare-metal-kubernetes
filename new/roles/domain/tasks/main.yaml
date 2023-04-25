@@ -1,0 +1,22 @@
+---
+
+# - name: Create dns zone {{ lan_domain }} @ {{ ipa_hostname }}
+#   freeipa.ansible_freeipa.ipadnszone:
+#     ipaadmin_password: "{{ ipa_admin_password }}"
+#     name: "{{ lan_domain }}"
+#     state: present
+
+- name: Create dns zone {{ lan_domain }} @ {{ ipa_hostname }}
+  community.general.ipa_dnszone:
+    ipa_host: "{{ ipa_hostname }}"
+    ipa_user: "admin"
+    ipa_pass: "{{ ipa_admin_password }}"
+    zone_name: "{{ lan_domain }}."
+    state: present
+    validate_certs: false
+
+- name: Add DNS records
+  include_tasks: dns-entries.yaml
+  loop: "{{ lookup( 'ansible.builtin.dict', network_services ) }}"
+
+...

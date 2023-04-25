@@ -107,6 +107,17 @@
   roles:
     - role: freeipa
 
+- name: Deploy Domain config
+  hosts:
+    - freeipa
+  tags:
+    - config
+    - domain
+  connection: local
+  become: false
+  roles:
+    - role: domain
+
 - name: Deploy gitea
   hosts:
     - gitea
