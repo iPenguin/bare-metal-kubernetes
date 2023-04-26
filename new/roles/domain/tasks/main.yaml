@@ -14,7 +14,12 @@
   include_tasks: dns-entries.yaml
   loop: "{{ lookup( 'ansible.builtin.dict', network_services ) }}"
 
+- name: Add IPA groups
+  include_tasks: add-groups.yaml
+  loop: "{{ ipa_groups }}"
+
 - name: Add IPA users
   include_tasks: add-users.yaml
-  loop: "{{ ipa_users }}"
+  loop: "{{ ipa_users|subelements('groups') }}"
+
 ...

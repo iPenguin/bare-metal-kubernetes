@@ -2,12 +2,12 @@
 
 - name: Add IPA users
   community.general.ipa_user:
-    name: "{{ item.name }}"
+    name: "{{ item.0.name }}"
     state: present
-    givenname: "{{ item.first_name }}"
-    sn: "{{ item.last_name }}"
-    mail: "{{ item.emails }}"
-    sshpubkey: "{{ item.ssh_keys }}"
+    givenname: "{{ item.0.first_name }}"
+    sn: "{{ item.0.last_name }}"
+    mail: "{{ item.0.emails }}"
+    sshpubkey: "{{ item.0.ssh_keys }}"
     ipa_host: "{{ ipa_hostname }}"
     ipa_user: "{{ ipa_admin_user }}"
     ipa_pass: "{{ ipa_admin_password }}"
@@ -15,5 +15,17 @@
     password: "{{ ipa_new_user_password }}"
     userauthtype: password
     validate_certs: false
+
+- name: Create Groups
+  community.general.ipa_group:
+    name: "{{ item.1.name }}"
+    user:
+      - "{{ item.0.name }}"
+    ipa_host: "{{ ipa_hostname }}"
+    ipa_user: "{{ ipa_admin_user }}"
+    ipa_pass: "{{ ipa_admin_password }}"
+    append: true
+    validate_certs: false
+    state: present
 
 ...

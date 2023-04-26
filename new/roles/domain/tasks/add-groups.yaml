@@ -1,0 +1,9 @@
+
+- name: Create Groups
+  community.general.ipa_group:
+    name: "{{ item.name }}"
+    ipa_host: "{{ ipa_hostname }}"
+    ipa_user: "{{ ipa_admin_user }}"
+    ipa_pass: "{{ ipa_admin_password }}"
+    validate_certs: false
+    state: present

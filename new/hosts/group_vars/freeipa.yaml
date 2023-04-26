@@ -6,11 +6,18 @@ ipa_admin_user: "admin"
 
 ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
 
+ipa_groups:
+  - name: app-gitea-admins
+  - name: app-gitea-users
+
 ipa_users:
   - name: bmilco
     first_name: Brian
     last_name: Milco
     loginshell: /usr/bin/zsh
+    groups:
+      - name: admins
+      - name: app-gitea-admins
     emails:
       - "{{ site_admin_email }}"
     ssh_keys:
