@@ -46,4 +46,33 @@
     state: present
     template: 'freeipa-statefulset.yaml.j2'
 
+#
+# TODO:
+#   - Pause while IPA is configured
+#   - Disable anonymous bind
+#
+# - name: Pause play until IPA is up
+#   ansible.builtin.uri:
+#     url: "https://{{ ipa_hostname }}"
+#     method: GET
+#   register: _ipa_result
+#   until: _ipa_result.status == 200
+#   retries: 180 # 30 minutes
+#   delay: 10 # seconds
+
+# # ldapmodify -x -D "" -W -h server.example.com -p 389 -ZZ -f files/anon-read.ldif
+# - name: Remove anonymous LDAP access
+#   community.general.ldap_entry:
+#     dn: cn=config
+#     state: present
+#     server_uri: ldap://{{ ipa_hostname }}/
+#     bind_dn: cn=Directory Manager
+#     bind_pw: "{{ ipa_directory_password }}"
+#     validate_certs: false
+#     olcAccess:
+#       - >-
+#         changetype: modify
+#         replace: nsslapd-allow-anonymous-access
+#         nsslapd-allow-anonymous-access: rootdse
+
 ...
