@@ -14,7 +14,7 @@
     update_password: on_create
     password: "{{ ipa_new_user_password }}"
     userauthtype: password
-    validate_certs: false
+    validate_certs: "{{ ipa_validate_certs }}"
 
 - name: Create Groups
   community.general.ipa_group:
@@ -25,7 +25,7 @@
     ipa_user: "{{ ipa_admin_user }}"
     ipa_pass: "{{ ipa_admin_password }}"
     append: true
-    validate_certs: false
+    validate_certs: "{{ ipa_validate_certs }}"
     state: present
 
 ...

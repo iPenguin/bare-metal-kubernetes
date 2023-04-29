@@ -68,7 +68,7 @@
 #     server_uri: ldap://{{ ipa_hostname }}/
 #     bind_dn: cn=Directory Manager
 #     bind_pw: "{{ ipa_directory_password }}"
-#     validate_certs: false
+#     validate_certs: "{{ ipa_validate_certs }}"
 #     olcAccess:
 #       - >-
 #         changetype: modify

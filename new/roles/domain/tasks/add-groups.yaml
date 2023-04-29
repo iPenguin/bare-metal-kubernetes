@@ -5,5 +5,5 @@
     ipa_host: "{{ ipa_hostname }}"
     ipa_user: "{{ ipa_admin_user }}"
     ipa_pass: "{{ ipa_admin_password }}"
-    validate_certs: false
+    validate_certs: "{{ ipa_validate_certs }}"
     state: present

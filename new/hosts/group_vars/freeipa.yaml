@@ -6,6 +6,17 @@ ipa_admin_user: "admin"
 
 ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
 
+ipa_dns_zones:
+  - "{{ lan_domain }}."
+  - "{{ ceph_srv_zone }}"
+
+ipa_srv_records:
+  - name: _ceph-mon
+    data:
+      - 10 20 6789 mon1.{{ lan_domain }}.
+      - 10 30 6789 mon2.{{ lan_domain }}.
+      - 20 50 6789 mon3.{{ lan_domain }}.
+
 ipa_groups:
   - name: app-gitea-admins
   - name: app-gitea-users
@@ -22,3 +33,5 @@ ipa_users:
       - "{{ site_admin_email }}"
     ssh_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPQGjMgHnJcTrRNNSFLFbiBFIf4LeG1R4rxq7mBuhWGk {{ site_admin_email }}
+
+...

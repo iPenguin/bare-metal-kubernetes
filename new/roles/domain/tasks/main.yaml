@@ -5,14 +5,19 @@
     ipa_host: "{{ ipa_hostname }}"
     ipa_user: "{{ ipa_admin_user }}"
     ipa_pass: "{{ ipa_admin_password }}"
-    zone_name: "{{ lan_domain }}."
+    zone_name: "{{ item }}"
     state: present
-    validate_certs: false
+    validate_certs: "{{ ipa_validate_certs }}"
+  loop: "{{ ipa_dns_zones }}"
   ignore_errors: true
 
 - name: Add DNS records
   include_tasks: dns-entries.yaml
   loop: "{{ lookup( 'ansible.builtin.dict', network_services ) }}"
+
+- name: Add SRV records
+  include_tasks: dns-srv.yaml
+  loop: "{{ ipa_srv_records }}"
 
 - name: Add IPA groups
   include_tasks: add-groups.yaml
@@ -20,6 +25,6 @@
 
 - name: Add IPA users
   include_tasks: add-users.yaml
-  loop: "{{ ipa_users|subelements('groups') }}"
+  loop: "{{ ipa_users | subelements('groups') }}"
 
 ...

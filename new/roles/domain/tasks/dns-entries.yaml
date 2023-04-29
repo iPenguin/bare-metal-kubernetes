@@ -8,7 +8,7 @@
     record_type: 'A'
     record_name: "{{ item.key }}"
     record_value: '{{ item.value.ipv4 }}'
-    validate_certs: false
+    validate_certs: "{{ ipa_validate_certs }}"
     state: present
 
 - name: Add IPv6 address for {{ item.key }}
@@ -20,5 +20,5 @@
     record_name: "{{ item.key }}"
     record_type: 'AAAA'
     record_value: '{{ item.value.ipv6 }}'
-    validate_certs: false
+    validate_certs: "{{ ipa_validate_certs }}"
     state: present

@@ -7,3 +7,5 @@ ipa_hostname: ipa-01.{{ lan_domain }}
 
 ipa_lookup_user: "uid={{ vault_ipa_lookup_user }},cn=groups,cn=accounts,dn=auth,dn={{ domain }},dn= {{ tld }}"
 ipa_lookup_password: "{{ vault_ipa_lookup_password }}"
+
+ipa_validate_certs: false

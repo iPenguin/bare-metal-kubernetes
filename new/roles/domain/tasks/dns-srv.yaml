@@ -1,0 +1,14 @@
+---
+
+- name: Add SRV records
+  community.general.ipa_dnsrecord:
+    ipa_host: "{{ ipa_hostname }}"
+    ipa_pass: "{{ ipa_admin_password }}"
+    state: present
+    zone_name: "{{ ceph_srv_zone }}."
+    record_name: "{{ item.name }}"
+    record_type: 'SRV'
+    record_values: "{{ item.data }}"
+    validate_certs: "{{ ipa_validate_certs }}"
+
+...
