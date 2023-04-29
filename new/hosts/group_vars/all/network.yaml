@@ -10,12 +10,15 @@ ipv4_network: 10.1.1
 ipv6_network: "{{ vault_ipv6_network }}"
 
 network_services:
-  rook:
-    ipv4: "{{ ipv4_network }}.20"
-    ipv6: "{{ ipv6_network }}::20"
+  gitea:
+    ipv4: "{{ ipv4_network }}.22"
+    ipv6: "{{ ipv6_network }}::22"
   ipa:
     ipv4: "{{ ipv4_network }}.21"
     ipv6: "{{ ipv6_network }}::21"
+  ceph:
+    ipv4: "{{ ipv4_network }}.20"
+    ipv6: "{{ ipv6_network }}::20"
 
 network:
   ipv4:
