@@ -1,0 +1,5 @@
+---
+
+ceph_srv_zone: "_tcp.{{ lan_domain }}"
+
+...
