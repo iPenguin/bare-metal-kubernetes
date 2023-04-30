@@ -15,3 +15,6 @@ k8s_pod_network:
 k8s_service_network:
   ipv4: 172.16.0.0/12
   ipv6: "{{ ipv6_network }}:face:1e55::/112"
+
+k8s_admin_users:
+  - bmilco

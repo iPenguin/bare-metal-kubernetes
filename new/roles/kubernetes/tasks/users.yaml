@@ -1,0 +1,6 @@
+---
+
+- name: Create admin accounts
+  kubernetes.core.k8s:
+    state: present
+    template: admin-accounts.yaml.j2

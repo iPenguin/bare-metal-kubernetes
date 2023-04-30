@@ -1,0 +1,36 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-users
+subjects:
+{% for user in k8s_admin_users %}
+  - kind: ServiceAccount
+    name: admin-{{ user }}
+    namespace: kube-system
+{% endfor %}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+{% for user in k8s_admin_users %}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-{{ user }}
+  namespace: kube-system
+secrets:
+  - name: admin-{{ user }}
+{% endfor %}
+{% for user in k8s_admin_users %}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admin-{{ user }}
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: admin-{{ user }}
+type: kubernetes.io/service-account-token
+{% endfor %}
