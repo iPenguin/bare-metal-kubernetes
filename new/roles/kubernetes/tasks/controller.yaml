@@ -37,7 +37,7 @@
 - name: Un/taint master node so it can run pods
   kubernetes.core.k8s_taint:
     state: "{{ _k8s_master_node_schedule_taint }}"
-    name: "{{ ansible_hostname }}"
+    name: "{{ inventory_hostname }}"
     taints:
     - effect: NoSchedule
       key: "node-role.kubernetes.io/control-plane"

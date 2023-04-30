@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# Reset the cluster
+#
+
+{% if inventory_hostname == k8s_controller %}
+sudo cilium uninstall
+sudo rf -f /root/kubeadm.yaml
+{% endif %}
+
+sudo kubeadm reset -f
+sudo systemctl stop kubelet
+sudo systemctl stop {{ k8s_runtime }}
+
+sudo rm -rf /etc/cni/net.d
+sudo rm -rf /etc/kubernetes/*
+sudo rm -rf /var/lib/kubelet/*
+sudo rm -rf /var/lib/etcd/*
+sudo rm -rf /opt/cni/bin/*
+
+sudo rm -rf /root/.kube
+sudo mkdir /root/.kube
+
+sudo iptables -F
+for X in `sudo iptables -S|awk '$2 ~ /KUBE/ || $2 ~ /CILIUM/ {print $2}'`
+do
+  sudo iptables -X ${X}
+done
+
+{% if k8s_runtime == 'containerd' %}
+sudo rm -rf /opt/containerd/*
+sudo rm -rf /var/lib/containerd
+sudo rm -rf /etc/containerd/*
+sudo mkdir /var/lib/containerd
+
+{% elif k8s_runtime == 'crio' %}
+sudo rm -rf /var/lib/crio
+sudo rm -rf /etc/crio/*
+sudo mkdir /var/lib/crio
+
+{% endif %}
+
+sudo systemctl start {{ k8s_runtime }}

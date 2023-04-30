@@ -49,3 +49,11 @@
   when:
     - inventory_hostname in groups['workers']
     - not inventory_hostname in nodelist.stdout
+
+- name: Setup cluster-reset script
+  ansible.builtin.template:
+    src: cluster-reset.sh.j2
+    dest: /root/cluster-reset.sh
+    owner: root
+    group: root
+    mode: 0755
