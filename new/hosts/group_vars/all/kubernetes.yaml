@@ -6,9 +6,8 @@ k8s_cni: cilium
 # I only have 3 nodes :(
 k8s_master_can_run_pods: yes
 
-k8s_controller: "{{ ipv4_network }}.5"
-k8s_controller_lb: "{{ ipv4_network }}.5"
-k8s_command_node: "{{ groups['controllers'] | first }}"
+k8s_controller: "{{ groups['controllers'] | first }}"
+k8s_controller_lb: "{{ groups['controllers'] | first }}"
 
 k8s_pod_network:
   ipv4: 10.200.0.0/16
