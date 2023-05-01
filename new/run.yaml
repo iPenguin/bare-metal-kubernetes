@@ -69,6 +69,15 @@
   roles:
     - role: metallb
 
+- name: Deploy ingress-nginx
+  hosts:
+    - ingress
+  tags:
+    - ingress
+  roles:
+    - role: ingress-nginx
+      when: "'ingress-nginx' in ingress_controllers"
+
 - name: Wipe ceph drives
   hosts:
     - controllers
@@ -87,16 +96,6 @@
     - ceph
   roles:
     - role: rook
-
-- name: Deploy ingress-nginx
-  hosts:
-    - ingress
-  tags:
-    - apps
-    - ingress
-  roles:
-    - role: ingress-nginx
-      when: "'ingress-nginx' in ingress_controllers"
 
 - name: Deploy Free IPA
   hosts:

@@ -11,6 +11,6 @@
     name: ingress-nginx
     chart_ref: ingress-nginx/ingress-nginx
     chart_version: "{{ ingress_nginx_version }}"
-    namespace: ingress-nginx
-    create_namespace: yes
+    namespace: "{{ ingress_nginx_namespace }}"
+    create_namespace: true
     state: present
