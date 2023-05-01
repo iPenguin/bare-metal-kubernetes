@@ -1,3 +1,4 @@
+---
 #
 # wipe out the gpt partition information for a completely clean disk for ceph:
 # sudo dd if=/dev/zero of=/dev/sda bs=512 count=34
