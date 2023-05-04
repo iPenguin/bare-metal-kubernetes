@@ -6,6 +6,8 @@ k8s_cni: cilium
 # I only have 3 nodes :(
 k8s_master_can_run_pods: yes
 
+k8s_cluster_name: homelab
+
 k8s_controller: "{{ groups['controllers'] | first }}"
 k8s_controller_lb: "{{ groups['controllers'] | first }}"
 

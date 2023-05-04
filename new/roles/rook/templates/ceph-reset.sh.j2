@@ -1,0 +1,14 @@
+#!/bin/bash
+
+kubectl -n {{ rook_namespace }} patch cephblockpools.ceph.rook.io ceph-blockpool -p '{"metadata":{"finalizers":null}}' --type=merge
+kubectl -n {{ rook_namespace }} patch cephclusters.ceph.rook.io {{ k8s_cluster_name }} -p '{"metadata":{"finalizers":null}}' --type=merge
+kubectl -n {{ rook_namespace }} patch cephfilesystem ceph-filesystem -p '{"metadata":{"finalizers":null}}' --type=merge
+kubectl -n {{ rook_namespace }} patch cephobjectstore ceph-objectstore -p '{"metadata":{"finalizers":null}}' --type=merge
+kubectl -n {{ rook_namespace }} patch cm rook-ceph-mon-endpoints -p '{"metadata":{"finalizers":null}}' --type=merge
+kubectl -n {{ rook_namespace }} patch secret rook-ceph-mon -p '{"metadata":{"finalizers":null}}' --type=merge
+
+helm uninstall -n {{ rook_namespace }} rook-ceph-cluster
+helm uninstall -n {{ rook_namespace }} rook-ceph
+
+kubectl get crd | grep ceph | awk '{ print $1 }' | xargs kubectl delete crd
+kubectl get crd | grep bucket | awk '{ print $1 }' | xargs kubectl delete crd

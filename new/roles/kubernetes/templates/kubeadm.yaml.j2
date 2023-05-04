@@ -24,7 +24,7 @@ kind: ClusterConfiguration
 kubernetesVersion: v{{ kubernetes_version }}
 #controlPlaneEndpoint: {{ k8s_controller_lb }}
 certificatesDir: /etc/kubernetes/pki
-clusterName: homelab
+clusterName: {{ k8s_cluster_name }}
 controllerManager:
   extraArgs:
     node-cidr-mask-size-ipv4: "24"

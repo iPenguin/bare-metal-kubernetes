@@ -1,5 +1,12 @@
 ---
 
+# - name: template
+#   become: false
+#   ansible.builtin.template:
+#     src: rook-cluster.yaml.j2
+#     dest: /home/bmilco/rook.cluster.yaml
+#   connection: local
+
 - name: install lvm2 and other fs tools
   apt:
     name:
@@ -40,8 +47,18 @@
     values: "{{ lookup('template', 'rook-cluster.yaml.j2') | from_yaml }}"
     state: present
 
-- name: Deploy LoadBalancer for public s3 endpoint
-  kubernetes.core.k8s:
-    state: present
-    template: 's3.yaml.j2'
+# - name: Deploy LoadBalancer for public s3 endpoint
+#   kubernetes.core.k8s:
+#     state: present
+#     template: 's3.yaml.j2'
+
+- name: Copy reset script to controller
+  ansible.builtin.template:
+    src: ceph-reset.sh.j2
+    dest: /root/ceph-reset.sh
+    owner: root
+    group: root
+    mode: 0700
+  delegate_to: "{{ k8s_controller }}"
+
 ...
