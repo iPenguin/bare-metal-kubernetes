@@ -1,9 +1,10 @@
 ---
 # defaults file for freeipa
 
-ipa_namespace: freeipa
+ipa_namespace: ipa
 
 ipa_docker_os: fedora-38
 
 ipa_storage_dir: "{{ pod_data_path }}/ipa"
 
+...

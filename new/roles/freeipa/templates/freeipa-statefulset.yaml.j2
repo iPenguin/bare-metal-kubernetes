@@ -25,22 +25,19 @@ spec:
           image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
           readinessProbe:
             exec:
-              # FIXME: systemctl status fails during ipa-replica-install as the
-              #        Service does not route to the pod as long as its its not
-              #        ready... but it *must* talk to itself on its public IP
               command: ["/usr/bin/systemctl", "is-active", "--quiet", "ipa"]
-              #command: [ "/usr/bin/systemctl", "status", "ipa" ]
-            initialDelaySeconds: 1200
-            timeoutSeconds: 10
-            periodSeconds: 30
             successThreshold: 1
             failureThreshold: 3
           livenessProbe:
-            initialDelaySeconds: 1200
-            periodSeconds: 30
             httpGet:
               path: /
               port: 80
+            failureThreshold: 5
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 120
           env:
             - name: IPA_SERVER_HOSTNAME
               value: "{{ ipa_hostname }}"

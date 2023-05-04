@@ -10,6 +10,9 @@ metadata:
     metallb.universe.tf/loadBalancerIPs: {{ network_services.ipa.ipv4 }}, {{ network_services.ipa.ipv6 }}
 spec:
   type: LoadBalancer
+  #clusterIP: None
+  selector:
+    app: freeipa
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -52,5 +55,3 @@ spec:
       port: 123
       protocol: UDP
       targetPort: 123
-  selector:
-    app: freeipa

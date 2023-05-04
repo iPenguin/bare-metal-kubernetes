@@ -27,14 +27,9 @@
     state: present
     template: 'freeipa-svc.yaml.j2'
 
-- name: Get IP of FreeIPA LoadBalancer
-  ansible.builtin.command:
-    cmd: kubectl -n freeipa get svc freeipa-lb -o jsonpath='{.status.loadBalancer.ingress[].ip}'
-  register: _ipa_svc_ip
-
 - name: Set FreeIPA public IP address
   ansible.builtin.set_fact:
-    ipa_public_ip: "{{ _ipa_svc_ip.stdout }}"
+    ipa_public_ip: "{{ network_services.ipa.ipv4 }}"
 
 - name: Create IPA Secrets
   kubernetes.core.k8s:

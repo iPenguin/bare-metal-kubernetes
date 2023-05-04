@@ -10,15 +10,19 @@ ipv4_network: 10.1.1
 ipv6_network: "{{ vault_ipv6_network }}"
 
 network_services:
-  gitea:
-    ipv4: "{{ ipv4_network }}.22"
-    ipv6: "{{ ipv6_network }}::22"
-  ipa:
-    ipv4: "{{ ipv4_network }}.21"
-    ipv6: "{{ ipv6_network }}::21"
   ceph:
     ipv4: "{{ ipv4_network }}.20"
     ipv6: "{{ ipv6_network }}::20"
+  ceph-dashboard:
+    ipv4: "{{ ipv4_network }}.21"
+    ipv6: "{{ ipv6_network }}::21"
+  ipa:
+    ipv4: "{{ ipv4_network }}.22"
+    ipv6: "{{ ipv6_network }}::22"
+  gitea:
+    ipv4: "{{ ipv4_network }}.23"
+    ipv6: "{{ ipv6_network }}::23"
+
 
 network:
   ipv4:
