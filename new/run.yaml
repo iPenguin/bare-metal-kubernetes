@@ -1,12 +1,12 @@
 ---
 
-- name: Setup DNS
+- name: Setup OpenWrt router
   hosts: router
   gather_facts: false
   remote_user: root
   tags:
     - never
-    - dns
+    - openwrt
   roles:
     - role: openwrt
 
