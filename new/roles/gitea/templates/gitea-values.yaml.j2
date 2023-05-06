@@ -1,10 +1,11 @@
+---
 replicaCount: 1
 clusterDomain: cluster.local
 
 image:
   repository: gitea/gitea
   tag: "{{ gitea_version }}"
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   rootless: false # only possible when running 1.14 or later
 
 dnsConfig:
@@ -43,21 +44,21 @@ service:
     externalTrafficPolicy: Local
     ipFamilyPolicy: PreferDualStack
     ipFamilies:
-      - IPv6
       - IPv4
+      - IPv6
   ssh:
     annotations:
       metallb.universe.tf/allow-shared-ip: "gitea-shared-ip"
     type: LoadBalancer
-    port: 2222
+    port: 22
     externalTrafficPolicy: Local
     ipFamilyPolicy: PreferDualStack
     ipFamilies:
-      - IPv6
       - IPv4
+      - IPv6
 
 ingress:
-  enabled: false
+  enabled: true
   className: nginx
   hosts:
     - host: git.{{ lan_domain }}
@@ -115,30 +116,25 @@ gitea:
 
   ## @param gitea.ldap LDAP configuration
   ldap:
-    - name: "FreeIPA"
-     existingSecret:
-     securityProtocol:
-     host: "{{ ipa_hostname }}"
-     port: 636
-     userSearchBase:
-     userFilter:
-     adminFilter:
-     emailAttribute:
-     bindDn: "{{ ipa_lookup_user }}"
-     bindPassword: "{{ ipa_lookup_password }}"
-     usernameAttribute:
-     publicSSHKeyAttribute:
+    []
+    # - name: "{{ lan_domain }}"
+    #   securityProtocol: ldaps
+    #   host: "{{ ipa_hostname }}"
+    #   port: 636
+    #   userSearchBase:
+    #   userFilter:
+    #   adminFilter:
+    #   emailAttribute:
+    #   bindDn: uid=svc_ldaplookup,cn=users,cn=accounts,dn=auth,dn={{ domain }},dn={{ tld }}
+    #   bindPassword: {{ ipa_lookup_password }}
+    #   usernameAttribute: uid
+    #   publicSSHKeyAttribute:
+
 
   ## @param gitea.config  Configuration for the Gitea server,ref: [config-cheat-sheet](https://docs.gitea.io/en-us/config-cheat-sheet/)
-  config: {}
-  #  APP_NAME: "Gitea: Git with a cup of tea"
-  #  RUN_MODE: dev
-  #
-  #  server:
-  #    SSH_PORT: 22
-  #
-  #  security:
-  #    PASSWORD_COMPLEXITY: spec
+  config:
+    APP_NAME: "git @ {{ lan_domain }}"
+    RUN_MODE: prod
 
   ## @param gitea.ssh.logLevel Configure OpenSSH's log level. Only available for root-based Gitea image.
   ssh:
