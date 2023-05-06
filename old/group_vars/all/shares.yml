@@ -1,6 +1,0 @@
----
-
-user_shares:
-  - name: shares
-    server: nfs.{{ lan_domain }}
-    path: /srv/shares

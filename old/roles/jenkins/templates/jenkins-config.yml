@@ -56,7 +56,7 @@ data:
           jenkinsTunnel: "jenkins-jnlp.{{ k8s_jenkins_namespace }}.svc:{{ jenkins_agent_slave_port }}"
           name: "Local Cluster"
           namespace: "{{ k8s_jenkins_namespace }}"
-          serverUrl: "{{ k8s_command_node }}:6443"
+          serverUrl: "{{ k8s_controller }}:6443"
           skipTlsVerify: true
           templates:
           - containers:
