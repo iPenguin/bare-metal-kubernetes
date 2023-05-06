@@ -12,5 +12,6 @@
     chart_ref: ingress-nginx/ingress-nginx
     chart_version: "{{ ingress_nginx_version }}"
     namespace: "{{ ingress_nginx_namespace }}"
+    values: "{{ lookup('template', 'ingress-nginx-values.yaml.j2') | from_yaml }}"
     create_namespace: true
     state: present
