@@ -38,7 +38,8 @@ spec:
               path: /
               port: 80
             # NOTE: if initial installation fails, try increasing this value:
-            failureThreshold: 90
+            failureThreshold: 35
+            periodSeconds: 30
           env:
             - name: IPA_SERVER_HOSTNAME
               value: "{{ ipa_hostname }}"
