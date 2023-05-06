@@ -23,6 +23,9 @@ network_services:
     ipv4: "{{ ipv4_network }}.23"
     ipv6: "{{ ipv6_network }}::23"
 
+network_cnames:
+  ingress_nginx:
+    - git
 
 network:
   ipv4:
