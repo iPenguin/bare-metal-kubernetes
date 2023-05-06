@@ -1,4 +1,3 @@
-
 replicaCount: 1
 clusterDomain: cluster.local
 
@@ -6,7 +5,12 @@ image:
   repository: gitea/gitea
   tag: "{{ gitea_version }}"
   pullPolicy: Always
-  rootless: true
+  rootless: false # only possible when running 1.14 or later
+
+dnsConfig:
+  options:
+    - name: ndots
+      value: "4"
 
 ## @section Security
 # Security context is only usable with rootless image due to image design
@@ -15,29 +19,25 @@ podSecurityContext:
   fsGroup: 1000
 
 ## @param containerSecurityContext Security context
-containerSecurityContext: {}
-  allowPrivilegeEscalation: false
+containerSecurityContext:
+  #allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
-  # Add the SYS_CHROOT capability for root and rootless images running on cri-o.
+  # Add the SYS_CHROOT capability for root and rootless images when using cri-o.
     add:
       - SYS_CHROOT
-  privileged: false
-  readOnlyRootFilesystem: true
-  runAsGroup: 1000
-  runAsNonRoot: true
-  runAsUser: 1000
-
-## @deprecated The securityContext variable has been split two:
-## - containerSecurityContext
-## - podSecurityContext.
-## @param securityContext Run init and Gitea containers as a specific securityContext
-securityContext: {}
+  privileged: true
+  readOnlyRootFilesystem: false
+  # runAsGroup: 1000
+  # runAsNonRoot: true
+  # runAsUser: 1000
 
 ## @section Service
 service:
   http:
+    annotations:
+      metallb.universe.tf/allow-shared-ip: "gitea-shared-ip"
     type: LoadBalancer
     port: 3000
     externalTrafficPolicy: Local
@@ -46,6 +46,8 @@ service:
       - IPv6
       - IPv4
   ssh:
+    annotations:
+      metallb.universe.tf/allow-shared-ip: "gitea-shared-ip"
     type: LoadBalancer
     port: 2222
     externalTrafficPolicy: Local
@@ -55,22 +57,27 @@ service:
       - IPv4
 
 ingress:
-  enabled: true
+  enabled: false
   className: nginx
   hosts:
     - host: git.{{ lan_domain }}
       paths:
         - path: /
           pathType: Prefix
-
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - git.example.com
+  # Mostly for argocd or any other CI that uses `helm template | kubectl apply` or similar
+  # If helm doesn't correctly detect your ingress API version you can set it here.
+  # apiVersion: networking.k8s.io/v1
 
 persistence:
   enabled: true
-  #existingClaim:
-  size: 10Gi
+  size: 5Gi
   accessModes:
-    - ReadWriteOnce
-  #storageClass:
+    - ReadWriteMany
+  storageClass: cephfs
 
 # Configure commit/action signing prerequisites
 ## @section Signing
@@ -93,8 +100,6 @@ signing:
 #
 gitea:
   admin:
-    # existingSecret: gitea-admin-secret
-    #existingSecret:
     username: gitea_admin
     password: {{ vault_gitea_admin_password }}
     email: "admin@{{ lan_domain }}"
@@ -139,6 +144,9 @@ gitea:
   ssh:
     logLevel: "INFO"
 
+memcached:
+  enabled: true
+
 postgresql:
   enabled: true
   global:
@@ -152,4 +160,4 @@ postgresql:
           postgresql: 5432
   primary:
     persistence:
-      size: 10Gi
+      size: 2Gi
