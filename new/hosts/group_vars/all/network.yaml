@@ -40,6 +40,7 @@ network:
     external_dns:
       - 2606:4700:4700::1113
       - 2606:4700:4700::1003
+      - "/{{ lan_domain }}/{{ network_services.ipa.ipv6 }}"
     subnet: "{{ ipv6_network }}::/64"
     router: "{{ ipv6_network }}::1"
     dns: "{{ ipv6_network }}::1"
@@ -75,15 +76,15 @@ router:
       peerdns: 0
       dns_search: "{{ lan_domain }}"
       dns_servers: "{{ network.ipv6.external_dns }}"
-    - name: vpn
-      proto: wireguard
-      ip6assign: 64
-      private_key: "{{ vault_wireguard_private_key }}"
-      # preshared_key: "{{ vault_wireguard_preshared_key }}"
-      # port: 51820
-      addresses:
-        - 10.1.2.1/24
-        - fd00:10:1:2::1/128
+    # - name: vpn
+    #   proto: wireguard
+    #   ip6assign: 64
+    #   private_key: "{{ vault_wireguard_private_key }}"
+    #   # preshared_key: "{{ vault_wireguard_preshared_key }}"
+    #   # port: 51820
+    #   addresses:
+    #     - 10.1.2.1/24
+    #     - fd00:10:1:2::1/128
   devices:
     - name: wan
       mac: 18:fd:74:38:8a:d7
