@@ -37,7 +37,8 @@ spec:
             httpGet:
               path: /
               port: 80
-            failureThreshold: 120
+            # NOTE: if initial installation fails, try increasing this value:
+            failureThreshold: 90
           env:
             - name: IPA_SERVER_HOSTNAME
               value: "{{ ipa_hostname }}"
