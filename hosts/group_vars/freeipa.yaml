@@ -17,6 +17,17 @@ ipa_srv_records:
       - 10 30 6789 mon2.{{ lan_domain }}.
       - 20 50 6789 mon3.{{ lan_domain }}.
 
+ipa_dns_entries:
+  - name: ipa-01
+    type: A
+    data: "{{ network_services.ipa.ipv4 }}"
+  - name: ipa-01
+    type: AAAA
+    data: "{{ network_services.ipa.ipv6 }}"
+  - name: git
+    type: CNAME
+    data: "ingress.{{ lan_domain }}."
+
 ipa_groups:
   - name: app-gitea-admins
   - name: app-gitea-users

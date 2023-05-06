@@ -11,9 +11,13 @@
   loop: "{{ ipa_dns_zones }}"
   ignore_errors: true
 
-- name: Add DNS records
-  include_tasks: dns-entries.yaml
+- name: Add DNS records for hosts
+  include_tasks: dns-hosts.yaml
   loop: "{{ lookup( 'ansible.builtin.dict', network_services ) }}"
+
+- name: Create additional DNS entries
+  include_tasks: dns-entries.yaml
+  loop: "{{ ipa_dns_entries }}"
 
 - name: Add SRV records
   include_tasks: dns-srv.yaml

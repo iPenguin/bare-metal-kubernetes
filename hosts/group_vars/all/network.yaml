@@ -10,7 +10,7 @@ ipv4_network: 10.1.1
 ipv6_network: "{{ vault_ipv6_network }}"
 
 network_services:
-  ingress_nginx:
+  ingress:
     ipv4: "{{ ipv4_network }}.20"
     ipv6: "{{ ipv6_network }}::20"
   s3:
@@ -22,10 +22,6 @@ network_services:
   gitea:
     ipv4: "{{ ipv4_network }}.23"
     ipv6: "{{ ipv6_network }}::23"
-
-network_cnames:
-  ingress_nginx:
-    - git
 
 network:
   ipv4:
