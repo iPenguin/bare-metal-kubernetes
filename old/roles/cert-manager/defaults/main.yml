@@ -1,5 +1,0 @@
----
-
-cert_manager_version: 1.4.0
-
-cert_manager_namespace: "cert-manager"
