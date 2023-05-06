@@ -22,11 +22,6 @@
     state: present
     template: 'freeipa-lb.yaml.j2'
 
-- name: Deploy IPA Service
-  kubernetes.core.k8s:
-    state: present
-    template: 'freeipa-svc.yaml.j2'
-
 - name: Set FreeIPA public IP address
   ansible.builtin.set_fact:
     ipa_public_ip: "{{ network_services.ipa.ipv4 }}"
