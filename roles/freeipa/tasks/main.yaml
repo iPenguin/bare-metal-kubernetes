@@ -36,33 +36,47 @@
     state: present
     template: 'freeipa-statefulset.yaml.j2'
 
-#
-# TODO:
-#   - Pause while IPA is configured
-#   - Disable anonymous bind
-#
-# - name: Pause play until IPA is up
-#   ansible.builtin.uri:
-#     url: "https://{{ ipa_hostname }}"
-#     method: GET
-#   register: _ipa_result
-#   until: _ipa_result.status == 200
-#   retries: 180 # 30 minutes
-#   delay: 10 # seconds
+- name: Wait until IPA is up (this could take 15+ minutes)
+  become: false
+  ansible.builtin.uri:
+    url: "https://{{ ipa_hostname }}/ipa/ui/"
+    validate_certs: "{{ ipa_validate_certs }}"
+  register: _ipa_result
+  until: _ipa_result.status == 200
+  retries: 40  # (30 sec x 40 tries = 20 minutes)
+  delay: 30    # 30 seconds
+  connection: local
 
-# # ldapmodify -x -D "" -W -h server.example.com -p 389 -ZZ -f files/anon-read.ldif
-# - name: Remove anonymous LDAP access
-#   community.general.ldap_entry:
-#     dn: cn=config
-#     state: present
-#     server_uri: ldap://{{ ipa_hostname }}/
-#     bind_dn: cn=Directory Manager
-#     bind_pw: "{{ ipa_directory_password }}"
-#     validate_certs: "{{ ipa_validate_certs }}"
-#     olcAccess:
-#       - >-
-#         changetype: modify
-#         replace: nsslapd-allow-anonymous-access
-#         nsslapd-allow-anonymous-access: rootdse
+- name: create temp folder
+  ansible.builtin.tempfile:
+    state: directory
+  register: tempfolder
+
+- name: copy anon read ldif to server
+  ansible.builtin.copy:
+    src: files/anon-read.ldif
+    dest: "{{ tempfolder.path }}/anon-read.ldif"
+
+- name: Copy ldif to IPA pod
+  ansible.builtin.command:
+    cmd: |-
+      kubectl -n {{ ipa_namespace }} cp
+      "{{ tempfolder.path }}/anon-read.ldif"
+      freeipa-0:/data/etc/openldap/anon-read.ldif
+
+- name: Remove anonymous LDAP access
+  ansible.builtin.command:
+    cmd: |-
+      kubectl -n {{ ipa_namespace }} exec freeipa-0
+      -- ldapmodify -x -D "cn=Directory Manager"
+      -w {{ ipa_directory_password }} -f /data/etc/openldap/anon-read.ldif
+
+- name: Test anonymous access is removed
+  ansible.builtin.command:
+    cmd: |-
+      kubectl -n {{ ipa_namespace }} exec freeipa-0
+      -- ldapsearch -x -b "dc=auth,dc={{ domain }},dc={{ tld }}"
+  register: anon_access
+  failed_when: "not 'Anonymous access is not allowed.' in anon_access.stdout"
 
 ...
