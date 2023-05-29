@@ -48,3 +48,7 @@ apps:
     ingress:
       hosts:
         c1.clt.milco.casa:
+
+workstations:
+  hosts:
+    localhost:
