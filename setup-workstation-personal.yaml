@@ -113,14 +113,14 @@
 
     - name: configure PAM to use the figerprint reader
       ansible.builtin.template:
-        src: "{{ item }}"
-        dest: /etc/pam.d/
+        src: "{{ item }}.j2"
+        dest: "/etc/pam.d/{{ item }}"
         owner: root
         group: root
         mode: 0644
       loop:
-        - "kde.j2"
-        - "sddm.j2"
+        - "kde"
+        - "sddm"
       become: yes
       tags:
         - dell
