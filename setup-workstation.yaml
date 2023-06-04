@@ -21,49 +21,12 @@
           - python3-pip
           - apt-transport-https
           - flatpak
-          - fzf
           - kubectl
-          - tldr
           - tmux
           - vim
-          - zsh
-          - zsh-autosuggestions
-          - zsh-syntax-highlighting
         state: present
 
     - name: install pip packages
       ansible.builtin.pip:
         name:
           - pre-commit
-
-    - name: test if oh-my-zsh has been installed
-      ansible.builtin.stat:
-        path: ~/.oh-my-zsh/
-      become: no
-      register: _omz_path
-
-    - name: create temp folder
-      ansible.builtin.tempfile:
-        state: directory
-      register: tempfolder
-      become: no
-      when: not _omz_path.stat.exists
-
-    - name: get oh-my-zsh script
-      ansible.builtin.uri:
-        url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-        dest: "{{ tempfolder.path }}/install.sh"
-        mode: 0755
-      become: no
-      when: not _omz_path.stat.exists
-
-    - name: install oh-my-zsh
-      ansible.builtin.command:
-        cmd: "{{ tempfolder.path }}/install.sh --unattended"
-      become: no
-      when: not _omz_path.stat.exists
-
-    - name: set default shell
-      ansible.builtin.user:
-        name: $ANSIBLE_USER
-        shell: /usr/bin/zsh

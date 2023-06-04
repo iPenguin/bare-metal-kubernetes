@@ -2,210 +2,128 @@
 
 - name: configure a workstation for personal use
   hosts: "workstations"
+  connection: local
+  become: false
   tasks:
-    - name: install VS Code
-      apt:
-        deb: https://go.microsoft.com/fwlink/?LinkID=760868
-        state: present
-      tags:
-        - code
-
-    - name: install Manuskript
-      apt:
-        deb: https://github.com/olivierkes/manuskript/releases/download/0.14.0/manuskript-0.14.0-1.deb
-        state: present
-      tags:
-        - manuskript
-
-    - name: Add signal apt key
-      apt_key:
-        url: https://updates.signal.org/desktop/apt/keys.asc
-        keyring: /usr/share/keyrings/signal-desktop-keyring.gpg
-        state: present
-      tags:
-        - signal
-    - name: Add signal repo
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
-        state: present
-      tags:
-        - signal
-
-    - name: install signal desktop
-      ansible.builtin.apt:
-        name:
-          - signal-desktop
-      tags:
-        - signal
-
-    - name: Add an Apt signing key to a specific keyring file
-      apt_key:
-        url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-        keyring: /etc/apt/trusted.gpg.d/brave-browser.gpg
-        state: present
-      tags:
-        - brave
-    - name: create repo for brave
-      copy:
-        content: "deb [signed-by=/etc/apt/trusted.gpg.d/brave-browser.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"
-        dest: /etc/apt/sources.list.d/brave-browser-release.list
-      tags:
-        - brave
-
-    - name: install brave browser
-      ansible.builtin.apt:
-        name:
-          - brave-browser
-      tags:
-        - brave
-
     - name: add kubuntu backports repo
       command: apt-add-repository --yes --update ppa:kubuntu-ppa/backports
       when: ansible_distribution == 'Ubuntu'
+      become: yes
       tags:
         - backports
 
     - name: install ProtonVPN repo
       ansible.builtin.apt:
-        deb: https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3_all.deb
+        deb: https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-2_all.deb
+      become: yes
       tags:
         - proton
     - name: install proton vpn
       ansible.builtin.apt:
         name:
           - protonvpn
+      become: yes
       tags:
         - proton
 
-    - name: install zoom
-      ansible.builtin.apt:
-        deb: https://zoom.us/client/latest/zoom_amd64.deb
-      tags:
-        - zoom
-
-    - name: install terminal
+    - name: install tabby console
       ansible.builtin.apt:
         deb: https://github.com/Eugeny/tabby/releases/download/v1.0.197/tabby-1.0.197-linux-x64.deb
+      become: yes
       tags:
         - tabby
 
     - name: install balena
       ansible.builtin.apt:
-        deb: https://github.com/balena-io/etcher/releases/download/v1.7.9/balena-etcher-electron_1.7.9_amd64.deb
+        deb: https://github.com/balena-io/etcher/releases/download/v1.18.4/balena-etcher_1.18.4_amd64.deb
+      become: yes
       tags:
         - balena
-
-    - name: install goodix fingerprint drivers
-      ansible.builtin.apt:
-        deb: http://dell.archive.canonical.com/updates/pool/public/libf/libfprint-2-tod1-goodix/libfprint-2-tod1-goodix_0.0.6-0ubuntu1~somerville1_amd64.deb
-      tags:
-        - dell
-
-    - name: install dell drivers
-      ansible.builtin.apt:
-        name:
-          - fprintd
-          - libfprint-2-tod1
-          - libfprint-2-2
-          - libpam-fprintd
-      tags:
-        - dell
-
-    - name: configure PAM to use the figerprint reader
-      ansible.builtin.template:
-        src: "{{ item }}"
-        dest: /etc/pam.d/
-        owner: root
-        group: root
-        mode: 0644
-      loop:
-        - "kde.j2"
-        - "sddm.j2"
-      tags:
-        - dell
-
-    - name: install additional browser
-      ansible.builtin.apt:
-        name:
-          - chromium-browser
-          - firefox
-      tags:
-        - browsers
 
     - name: install dev apps
       ansible.builtin.apt:
         name:
           - giggle
           - kompare
+          - ohcount
+          - qgit
+          - retext
+          - sloccount
           - tldr
           - yakuake
         state: present
+      become: yes
       tags:
         - dev-tools
 
     - name: install random apps
       ansible.builtin.apt:
         name:
-          - autofs
+          - autokey-qt
           - basket
-          - duplicity
-          - flatpak
-          - gimp
-          - inkscape
-          - kdenlive
-          - krita
-          - libreoffice
-          - mkvtoolnix-gui
-          - mplayer
-          - ohcount
-          - retext
-          - sloccount
-          - virtualbox
+          - konqueror
+          - neovim-qt
+          - skanlite
           - virt-manager
-          - vlc
+      become: yes
       tags:
         - other-apps
 
-    - name: create destination directory for displaylink drivers
-      ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/DisplayLink-{{ displaylink_version }}"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_group }}"
-        mode: "0755"
-        state: directory
-      tags:
-        - displaylink
-
-    - name: install dev packages for displaylink setup
-      ansible.builtin.apt:
+    - name: install flatpak apps
+      community.general.flatpak:
         name:
-          - libdrm-dev
-          - libpciaccess-dev
-          - libpciaccess-dev
+          - app/org.apache.directory.studio
+          - bibletime
+          - app/bitwarden
+          - app/brave
+          - app/org.chromium.chromium/x86_64/stable
+          - app/com.dosbox.dosbox
+          - app/com.microsoft.Edge/x86_64/stable
+          - app/org.mozilla.firefox/x86_64/stable
+          - app/gimp
+          - git-cola
+          - gitg
+          - gittyup
+          - app/handbrake
+          - inkscape
+          - iplookup
+          - jitsi
+          - kcalc
+          - kdenlive
+          - app/krita
+          - lapce
+          - app/libreoffice
+          - librewolf
+          - manuskript
+          - mattermost
+          - meld
+          - mkvtoolnix-gui
+          - neovim
+          - app/org.nextcloud.nextcloud
+          - app/obsidian
+          - openlens
+          - podmandesktop
+          - postman
+          - pulsar
+          - retext
+          - scribus
+          - signal
+          - simplenote
+          - slack
+          - spotify
+          - sweethome3d
+          - app/org.videolan.VLC
+          - vieb
+          - vscodium
+          - xiphos
+          - com.yubico.yubioath
+          - zoom
         state: present
-      tags:
-        - displaylink
-
-    - name: Download & extract DisplayLink Drivers for docking station
-      ansible.builtin.unarchive:
-        url: https://synaptics.com/sites/default/files/exe_files/2022-08/DisplayLink%20USB%20Graphics%20Software%20for%20Ubuntu{{ displaylink_version }}-EXE.zip
-        dest: "{{ ansible_env.HOME }}/DisplayLink-{{ displaylink_version }}"
-      tags:
-        - displaylink
-
-    #
-    # Script requests a passwd be entered if using Secure Boot, and requires a reboot.
-    #
-    - name: run the binary
-      ansible.builtin.shell:
-        cmd: sh {{ ansible_env.HOME }}/DisplayLink-{{ displaylink_version }}/displaylink-{{ displaylink_version }}-*.run --accept
-      become: yes
-      tags:
-        - displaylink
 
     - name: update os
       ansible.builtin.apt:
         name: "*"
         state: latest
+      become: yes
       tags:
         - updates

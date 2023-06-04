@@ -1,0 +1,153 @@
+---
+
+- name: Personal config and settings
+  hosts: "workstations"
+  connection: local
+  become: false
+  tasks:
+    - name: create temporary directory
+      ansible.builtin.tempfile:
+        state: directory
+      register: tempfolder
+      tags:
+        - zsh
+        - distrobox
+
+    - name: Install apps
+      ansible.builtin.apt:
+        name:
+          - fzf
+          - screen
+          - zsh
+          - zsh-autosuggestions
+          - zsh-syntax-highlighting
+        state: present
+      become: yes
+      tags:
+        - zsh
+
+    - name: test if oh-my-zsh has been installed
+      ansible.builtin.stat:
+        path: ~/.oh-my-zsh/
+      register: _omz_path
+      tags:
+        - zsh
+
+    - name: get oh-my-zsh script
+      ansible.builtin.uri:
+        url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+        dest: "{{ tempfolder.path }}/install.sh"
+        mode: 0755
+      when: not _omz_path.stat.exists
+      tags:
+        - zsh
+
+    - name: install oh-my-zsh
+      ansible.builtin.command:
+        cmd: "{{ tempfolder.path }}/install.sh --unattended"
+      when: not _omz_path.stat.exists
+      tags:
+        - zsh
+
+    - name: set default shell
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        shell: /usr/bin/zsh
+      tags:
+        - zsh
+
+    - name: download distrobox install script
+      ansible.builtin.uri:
+        url: https://raw.githubusercontent.com/89luca89/distrobox/main/install
+        dest: "{{ tempfolder.path }}/distrobox-install"
+        mode: 0755
+      tags:
+        - distrobox
+
+    - name: install distrobox
+      ansible.builtin.command:
+        cmd: "{{ tempfolder.path }}/distrobox-install --prefix ~/.local"
+      tags:
+        - distrobox
+
+    - name: create directory for apps
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.gitapps"
+        state: directory
+        mode: '0755'
+      tags:
+        - focus-follows-mouse
+
+    - name: clone kwin window scripts
+      ansible.builtin.git:
+        repo: https://github.com/nclarius/KWin-window-positioning-scripts.git
+        dest: "{{ ansible_env.HOME }}/.gitapps/KWin-window-positioning-scripts"
+      tags:
+        - focus-follows-mouse
+
+    - name: install kwin window scripts
+      ansible.builtin.command:
+        cmd: ./install.sh
+      args:
+        chdir: "{{ ansible_env.HOME }}/.gitapps/KWin-window-positioning-scripts/always-open-on-active-screen/"
+      tags:
+        - focus-follows-mouse
+
+    - name: install goodix fingerprint drivers
+      ansible.builtin.apt:
+        deb: http://dell.archive.canonical.com/updates/pool/public/libf/libfprint-2-tod1-goodix/libfprint-2-tod1-goodix_0.0.6-0ubuntu1~somerville1_amd64.deb
+      become: yes
+      tags:
+        - dell
+
+    - name: install dell drivers
+      ansible.builtin.apt:
+        name:
+          - fprintd
+          - libfprint-2-tod1
+          - libfprint-2-2
+          - libpam-fprintd
+      become: yes
+      tags:
+        - dell
+
+    - name: configure PAM to use the figerprint reader
+      ansible.builtin.template:
+        src: "{{ item }}"
+        dest: /etc/pam.d/
+        owner: root
+        group: root
+        mode: 0644
+      loop:
+        - "kde.j2"
+        - "sddm.j2"
+      become: yes
+      tags:
+        - dell
+
+    - name: Install Synaptics keyring
+      ansible.builtin.apt:
+        deb: "https://www.synaptics.com/sites/default/files/Ubuntu/pool/stable/main/all/synaptics-repository-keyring.deb"
+        state: present
+      become: yes
+      tags:
+        - displaylink
+
+    - name: install displaylink drivers
+      ansible.builtin.apt:
+        name:
+          - evdi
+          - evdi-dkms
+          - displaylink-driver
+        update_cache: true
+      become: yes
+      tags:
+        - displaylink
+
+    # - name: reboot
+    #   ansible.builtin.command:
+    #     cmd: reboot
+    #   tags:
+    #     - displaylink
+
+...
