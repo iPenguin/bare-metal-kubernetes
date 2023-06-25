@@ -22,6 +22,7 @@
       ansible.builtin.apt:
         name:
           - protonvpn
+        update_cache: yes
       become: yes
       tags:
         - proton
@@ -46,6 +47,7 @@
           - giggle
           - kompare
           - ohcount
+          - openconnect
           - qgit
           - retext
           - sloccount
@@ -69,56 +71,62 @@
       tags:
         - other-apps
 
-    - name: install flatpak apps
+    - name: install work flatpak apps
       community.general.flatpak:
         name:
           - app/org.apache.directory.studio
-          - bibletime
-          - app/bitwarden
           - app/brave
-          - app/org.chromium.chromium/x86_64/stable
-          - app/com.dosbox.dosbox
-          - app/com.microsoft.Edge/x86_64/stable
-          - app/org.mozilla.firefox/x86_64/stable
+          - app/org.gnome.Evolution
           - app/gimp
           - git-cola
           - gitg
           - gittyup
-          - app/handbrake
-          - inkscape
           - iplookup
-          - jitsi
           - kcalc
-          - kdenlive
-          - app/krita
-          - lapce
           - app/libreoffice
           - librewolf
-          - manuskript
           - mattermost
           - meld
-          - mkvtoolnix-gui
-          - neovim
-          - app/org.nextcloud.nextcloud
           - app/obsidian
           - openlens
           - podmandesktop
           - postman
-          - pulsar
           - retext
-          - scribus
           - signal
+          - vscodium
+        state: present
+      tags:
+        - work
+
+    - name: install non-work flatpak apps
+      community.general.flatpak:
+        name:
+          - bibletime
+          - app/bitwarden
+          - app/org.chromium.chromium/x86_64/stable
+          - app/com.dosbox.dosbox
+          - app/org.mozilla.firefox/x86_64/stable
+          - app/handbrake
+          - inkscape
+          - jitsi
+          - kdenlive
+          - app/krita
+          - lapce
+          - manuskript
+          - mkvtoolnix-gui
+          - neovim
+          - app/org.nextcloud.nextcloud
+          - scribus
           - simplenote
           - slack
           - spotify
           - sweethome3d
           - app/org.videolan.VLC
-          - vieb
-          - vscodium
           - xiphos
           - com.yubico.yubioath
-          - zoom
         state: present
+      tags:
+        - personal
 
     - name: update os
       ansible.builtin.apt:
