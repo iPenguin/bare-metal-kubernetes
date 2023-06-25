@@ -12,10 +12,12 @@
       tags:
         - zsh
         - distrobox
+        - helm
 
-    - name: Install apps
+    - name: Install cli apps
       ansible.builtin.apt:
         name:
+          - exa
           - fzf
           - screen
           - zsh
@@ -53,8 +55,25 @@
       ansible.builtin.user:
         name: "{{ ansible_user }}"
         shell: /usr/bin/zsh
+      become: yes
       tags:
         - zsh
+
+    - name: Extract helm archive
+      ansible.builtin.unarchive:
+        src: https://get.helm.sh/helm-v3.12.1-linux-amd64.tar.gz
+        dest: "{{ tempfolder.path }}/"
+        remote_src: yes
+      tags:
+        - helm
+
+    - name: install command
+      ansible.builtin.copy:
+        src: "{{ tempfolder.path }}/linux-amd64/helm"
+        dest: "$HOME/.local/bin/helm"
+        mode: "0755"
+      tags:
+        - helm
 
     - name: download distrobox install script
       ansible.builtin.uri:
@@ -100,16 +119,23 @@
       tags:
         - dell
 
-    - name: install dell drivers
+    - name: install dell finger print drivers
+      ansible.builtin.apt:
+        name:
+          - libfprint-2-tod1
+      become: yes
+      tags:
+        - dell
+
+    - name: install finger print drivers
       ansible.builtin.apt:
         name:
           - fprintd
-          - libfprint-2-tod1
           - libfprint-2-2
           - libpam-fprintd
       become: yes
       tags:
-        - dell
+        - fprintd
 
     - name: configure PAM to use the figerprint reader
       ansible.builtin.template:
@@ -137,7 +163,6 @@
       ansible.builtin.apt:
         name:
           - evdi
-          - evdi-dkms
           - displaylink-driver
         update_cache: true
       become: yes

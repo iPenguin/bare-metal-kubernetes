@@ -17,16 +17,28 @@
     - name: install software common
       ansible.builtin.apt:
         name:
+          - apt-transport-https
           - htop
+          - flatpak
           - podman
           - python3
           - python3-pip
-          - apt-transport-https
-          - flatpak
-          - kubectl
           - tmux
           - vim
         state: present
+
+    - name: set default cli editor
+      community.general.alternatives:
+        name: editor
+        path: /usr/bin/vim.basic
+
+    - name: download kubectl
+      ansible.builtin.uri:
+        url: https://dl.k8s.io/release/v1.27.3/bin/linux/amd64/kubectl
+        dest: "$HOME/.local/bin/kubectl"
+        mode: 0755
+        status_code: [200,304]
+      become: no
 
     - name: install pip packages
       ansible.builtin.pip:
