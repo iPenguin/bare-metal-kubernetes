@@ -149,7 +149,7 @@
         - "sddm"
       become: yes
       tags:
-        - dell
+        - fprintd
 
     - name: Install Synaptics keyring
       ansible.builtin.apt:
