@@ -69,6 +69,14 @@
   roles:
     - role: metallb
 
+- name: Deploy cert-manager
+  hosts:
+    - controllers
+  tags:
+    - certs
+  roles:
+    - role: cert-manager
+
 - name: Deploy ingress-nginx
   hosts:
     - ingress

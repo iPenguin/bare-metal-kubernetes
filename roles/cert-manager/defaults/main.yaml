@@ -1,0 +1,4 @@
+---
+
+cert_manager_namespace: sys-cert-mgmt
+cert_manager_version: 1.11.0

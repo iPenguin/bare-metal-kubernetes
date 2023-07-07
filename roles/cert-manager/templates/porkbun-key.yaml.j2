@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: porkbun-secret
+  namespace: {{ cert_manager_namespace }}
+type: Opaque
+stringData:
+  api-key: {{ porkbun_key }}
+  secret-key: {{ porkbun_secret }}

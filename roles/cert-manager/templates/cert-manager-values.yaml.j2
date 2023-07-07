@@ -1,0 +1,145 @@
+---
+# Default values for cert-manager.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  rbac:
+    create: true
+    # Aggregate ClusterRoles to Kubernetes default user-facing roles. Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles
+    aggregateClusterRoles: true
+
+  leaderElection:
+    # Override the namespace used for the leader election lease
+    namespace: "kube-system"
+
+installCRDs: true
+replicaCount: 1
+
+image:
+  repository: quay.io/jetstack/cert-manager-controller
+  pullPolicy: IfNotPresent
+
+# Override the namespace used to store DNS provider credentials etc. for ClusterIssuer
+# resources. By default, the same namespace as cert-manager is deployed within is
+# used. This namespace will not be automatically created by the Helm chart.
+clusterResourceNamespace: ""
+
+# This namespace allows you to define where the services will be installed into
+# if not set then they will use the namespace of the release
+# This is helpful when installing cert manager as a chart dependency (sub chart)
+namespace: "{{ cert_manager_namespace }}"
+
+# Additional command line flags to pass to cert-manager controller binary.
+# To see all available flags run docker run quay.io/jetstack/cert-manager-controller:<version> --help
+extraArgs: []
+  # When this flag is enabled, secrets will be automatically removed when the certificate resource is deleted
+  # - --enable-certificate-owner-ref=true
+  # Use this flag to enable or disable arbitrary controllers, for example, disable the CertificiateRequests approver
+  # - --controllers=*,-certificaterequests-approver
+
+extraEnv: []
+# - name: SOME_VAR
+#   value: 'some value'
+
+# Pod Security Context
+# ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container Security Context to be set on the controller component container
+# ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+# prometheus:
+#   enabled: true
+#   servicemonitor:
+#     enabled: false
+#     prometheusInstance: default
+#     targetPort: 9402
+#     path: /metrics
+#     interval: 60s
+#     scrapeTimeout: 30s
+#     labels: {}
+#     annotations: {}
+#     honorLabels: false
+
+cainjector:
+  enabled: true
+  replicaCount: 1
+
+  # Pod Security Context to be set on the cainjector component Pod
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+  # Container Security Context to be set on the cainjector component container
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  image:
+    repository: quay.io/jetstack/cert-manager-cainjector
+    # You can manage a registry with
+    # registry: quay.io
+    # repository: jetstack/cert-manager-cainjector
+
+    # Override the image tag to deploy by setting this variable.
+    # If no value is set, the chart's appVersion will be used.
+    # tag: canary
+
+    # Setting a digest will override any tag
+    # digest: sha256:0e072dddd1f7f8fc8909a2ca6f65e76c5f0d2fcfb8be47935ae3457e8bbceb20
+
+    pullPolicy: IfNotPresent
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    # name: ""
+    # Optional additional annotations to add to the controller's ServiceAccount
+    # annotations: {}
+    # Automount API credentials for a Service Account.
+    # Optional additional labels to add to the cainjector's ServiceAccount
+    # labels: {}
+    automountServiceAccountToken: true
+
+  # Automounting API credentials for a particular pod
+  # automountServiceAccountToken: true
+
+acmesolver:
+  image:
+    repository: quay.io/jetstack/cert-manager-acmesolver
+    # You can manage a registry with
+    # registry: quay.io
+    # repository: jetstack/cert-manager-acmesolver
+
+    # Override the image tag to deploy by setting this variable.
+    # If no value is set, the chart's appVersion will be used.
+    # tag: canary
+
+    # Setting a digest will override any tag
+    # digest: sha256:0e072dddd1f7f8fc8909a2ca6f65e76c5f0d2fcfb8be47935ae3457e8bbceb20
+
