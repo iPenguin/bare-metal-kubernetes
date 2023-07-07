@@ -38,7 +38,7 @@ config odhcpd 'odhcpd'
 	option leasetrigger '/usr/sbin/odhcpd-update'
 	option loglevel '4'
 
-{% for h in hosts %}
+{% for h in _hosts %}
 config host
   option dns '1'
   option name '{{ h.name }}'

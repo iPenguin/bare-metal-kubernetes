@@ -1,5 +1,9 @@
 ---
 
+- name: Combine hosts lists
+  ansible.builtin.set_fact:
+    _hosts: "{{ hosts + vault_hosts }}"
+
 - name: Configure dhcp
   ansible.builtin.template:
     src: dhcp.j2

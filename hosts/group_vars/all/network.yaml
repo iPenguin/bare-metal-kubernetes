@@ -16,19 +16,22 @@ network_services:
   s3:
     ipv4: "{{ ipv4_network }}.21"
     ipv6: "{{ ipv6_network }}::21"
-  ipa:
+  ipa-01:
     ipv4: "{{ ipv4_network }}.22"
     ipv6: "{{ ipv6_network }}::22"
-  gitea:
+  ipa-02:
     ipv4: "{{ ipv4_network }}.23"
     ipv6: "{{ ipv6_network }}::23"
+  gitea:
+    ipv4: "{{ ipv4_network }}.24"
+    ipv6: "{{ ipv6_network }}::24"
 
 network:
   ipv4:
     external_dns:
       - 1.1.1.3
       - 1.0.0.3
-      - "/{{ lan_domain }}/{{ network_services.ipa.ipv4 }}"
+      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv4 }}"
     subnet: "{{ ipv4_network }}.0/24"
     router: "{{ ipv4_network }}.1"
     dns: "{{ ipv4_network }}.1"
@@ -39,7 +42,7 @@ network:
     external_dns:
       - 2606:4700:4700::1113
       - 2606:4700:4700::1003
-      - "/{{ lan_domain }}/{{ network_services.ipa.ipv6 }}"
+      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv6 }}"
     subnet: "{{ ipv6_network }}::/64"
     router: "{{ ipv6_network }}::1"
     dns: "{{ ipv6_network }}::1"
@@ -104,30 +107,47 @@ router:
         - lan5
 
 hosts:
+  - name: r
+    mac: 18:FD:74:38:8A:D8
+    ipv4: "{{ ipv4_network }}.1"
+  - name: sw1
+    mac: 34:98:B5:A0:62:8E
+    ipv4: "{{ ipv4_network }}.2"
+  - name: ap1
+    mac: F0:2F:74:92:A0:20
+    ipv4: "{{ ipv4_network }}.3"
   - name: c1
     mac: 98:FA:9B:0A:FF:11
-    ipv4: "{{ ipv4_network }}.5"
-    duid: 00020000ab11451a71d26340b5e9
-    hostid: 5
-  - name: w1
+    ipv4: "{{ ipv4_network }}.10"
+    duid: 00020000ab119e76bb584ca540b8
+    hostid: 10
+  - name: c2
     mac: 6C:4B:90:E2:89:09
-    ipv4: "{{ ipv4_network }}.6"
-    duid: 00020000ab1175c83adfb7ad202e
-    hostid: 6
-  - name: w2
+    ipv4: "{{ ipv4_network }}.11"
+    duid: 00020000ab1141e3610454d8e45d
+    hostid: 11
+  - name: c3
     mac: 98:FA:9B:F4:49:44
-    ipv4: "{{ ipv4_network }}.7"
-    duid: 00020000ab116813038d3751bbec
-    hostid: 7
-  - name: laptop
-    mac: 7c:21:4a:a2:99:af
-    ipv4: "{{ ipv4_network }}.75"
-    duid: 0004b4f7440dd7e55228828606dbc77a3c1e
-    hostid: fade
-  - name: printer
-    mac: f4:ce:46:3e:f0:40
-    ipv4: "{{ ipv4_network }}.9"
+    ipv4: "{{ ipv4_network }}.12"
+    duid: 00020000ab11107a31861e9e07b0
+    hostid: 12
+  - name: w1
+    mac: 04:7B:CB:A2:67:49
+    ipv4: "{{ ipv4_network }}.13"
+    duid: 00020000ab115ab5348f3a9b65d1
+    hostid: 13
+  - name: w2
+    mac: 04:7B:CB:A2:66:13
+    ipv4: "{{ ipv4_network }}.14"
+    duid: 00020000ab11642704f6e5c98bc3
+    hostid: 14
+  - name: w3
+    mac: 04:7B:CB:A2:66:FA
+    ipv4: "{{ ipv4_network }}.15"
+    duid: 00020000ab11d55a3eb23fba8a04
+    hostid: 15
+
 domains:
   - name: "ipa-01.{{ lan_domain }}"
-    ipv4: "{{ network_services.ipa.ipv4 }}"
-    ipv6: "{{ network_services.ipa.ipv6 }}"
+    ipv4: "{{ network_services['ipa-01'].ipv4 }}"
+    ipv6: "{{ network_services['ipa-01'].ipv6 }}"
