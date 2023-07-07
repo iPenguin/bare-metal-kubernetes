@@ -1,5 +1,6 @@
 ---
 
+ipa_replicas: 1
 ipa_directory_password: "{{ vault_ipa_directory_password }}"
 ipa_admin_password: "{{ vault_ipa_admin_password }}"
 ipa_admin_user: "admin"
@@ -20,10 +21,16 @@ ipa_srv_records:
 ipa_dns_entries:
   - name: ipa-01
     type: A
-    data: "{{ network_services.ipa.ipv4 }}"
+    data: "{{ network_services['ipa-01'].ipv4 }}"
   - name: ipa-01
     type: AAAA
-    data: "{{ network_services.ipa.ipv6 }}"
+    data: "{{ network_services['ipa-01'].ipv6 }}"
+  - name: ipa-02
+    type: A
+    data: "{{ network_services['ipa-02'].ipv4 }}"
+  - name: ipa-02
+    type: AAAA
+    data: "{{ network_services['ipa-02'].ipv6 }}"
   - name: git
     type: CNAME
     data: "ingress.{{ lan_domain }}."

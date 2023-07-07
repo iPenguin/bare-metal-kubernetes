@@ -1,16 +1,18 @@
+{% for i in range( ipa_counter | int ) %}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: freeipa-lb
+  name: ipa-{{ "%02d" | format( i + 1 ) }}-lb
   namespace: {{ ipa_namespace }}
   labels:
     app: freeipa
   annotations:
-    metallb.universe.tf/loadBalancerIPs: {{ network_services.ipa.ipv4 }}, {{ network_services.ipa.ipv6 }}
+    metallb.universe.tf/loadBalancerIPs: |-
+      {{ network_services[ "ipa-%02d" | format( i + 1 ) ].ipv4 }},
+      {{ network_services[ "ipa-%02d" | format( i + 1 ) ].ipv6 }}
 spec:
   type: LoadBalancer
-  #clusterIP: None
   selector:
     app: freeipa
   ipFamilyPolicy: PreferDualStack
@@ -55,3 +57,4 @@ spec:
       port: 123
       protocol: UDP
       targetPort: 123
+{% endfor %}

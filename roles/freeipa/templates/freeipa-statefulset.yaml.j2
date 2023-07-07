@@ -1,17 +1,16 @@
-# Some inspiration take from:
-#https://www.linkedin.com/pulse/how-install-freeipa-ubuntu-docker-packopsdev-farshad-nickfetrat/
+{% for i in range( ipa_counter | int ) %}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: freeipa
+  name: ipa-{{ "%02d" | format( i + 1 ) }}
   namespace: {{ ipa_namespace }}
 spec:
   selector:
     matchLabels:
       app: freeipa # has to match .spec.template.metadata.labels
   serviceName: "freeipa"
-  replicas: 1 # by default is 1
+  replicas: 1
   minReadySeconds: 10 # by default is 0
   template:
     metadata:
@@ -19,9 +18,18 @@ spec:
         app: freeipa # has to match .spec.selector.matchLabels
     spec:
       terminationGracePeriodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - freeipa
+            topologyKey: "kubernetes.io/hostname"
       containers:
         - name: freeipa
-          #image: ipenguin/freeipa-server:centos-9-stream-4.10.1-2
           image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
           readinessProbe:
             exec:
@@ -38,18 +46,37 @@ spec:
               path: /
               port: 80
             # NOTE: if initial installation fails, try increasing this value:
-            failureThreshold: 35
+            failureThreshold: 50
             periodSeconds: 30
           env:
-            - name: IPA_SERVER_HOSTNAME
-              value: "{{ ipa_hostname }}"
             - name: TZ
-              value: "America/New_York"
+              value: "{{ timezone }}"
+            - name: IPA_SERVER_HOSTNAME
+              value: "ipa-{{ "%02d" | format( i + 1 ) }}.{{ lan_domain }}"
+
+          {% if i == 0 %}
+
             - name: IPA_SERVER_INSTALL_OPTS
               valueFrom:
                 secretKeyRef:
-                  name: freeipa-install-secrets
+                  name: ipa-{{ "%02d" | format( i + 1 ) }}-install-secrets
                   key: IPA_OPTIONS
+
+          {% else %}
+
+            - name: IPA_SERVER_INSTALL_OPTS
+              valueFrom:
+                secretKeyRef:
+                  name: ipa-{{ "%02d" | format( i + 1 ) }}-install-secrets
+                  key: IPA_REPLICA_OPTIONS
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ipa-{{ "%02d" | format( i + 1 ) }}-install-secrets
+                  key: IPA_ADMIN_PASSWORD
+            args: [ "{%- if i > 0 -%}ipa-replica-install{%- endif -%}" ]
+          {% endif %}
+
           securityContext:
             seccompProfile:
               type: Unconfined
@@ -86,11 +113,11 @@ spec:
               mountPath: /run/systemd
             - name: tmp
               mountPath: /tmp
-      hostname: "{{ ipa_hostname }}"
+      hostname: "ipa-{{ "%02d" | format( i +1 ) }}.{{ lan_domain }}"
       volumes:
         - name: ipa-data
           persistentVolumeClaim:
-            claimName: ipa-data
+            claimName: ipa-{{ "%02d" | format( i +1 ) }}-data
         - name: cgroups
           hostPath:
             path: /sys/fs/cgroup
@@ -104,3 +131,4 @@ spec:
           emptyDir:
             medium: Memory
         - name: data
+{% endfor %}

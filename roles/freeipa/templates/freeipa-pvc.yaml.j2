@@ -1,8 +1,9 @@
+{% for i in range( ipa_counter | int ) %}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ipa-data
+  name: ipa-{{ "%02d" | format( i + 1 ) }}-data
   namespace: {{ ipa_namespace }}
 spec:
   storageClassName: ceph-block
@@ -11,3 +12,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
+{% endfor %}
