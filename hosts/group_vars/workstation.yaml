@@ -1,0 +1,8 @@
+---
+
+workstation_container_packages:
+  - iputils-ping
+  - dnsutils
+  - man
+
+...
