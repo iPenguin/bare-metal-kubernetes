@@ -34,6 +34,9 @@ ipa_dns_entries:
   - name: git
     type: CNAME
     data: "ingress.{{ lan_domain }}."
+  - name: harbor
+    type: CNAME
+    data: "{{ k8s_controller }}."
 
 ipa_groups:
   - name: app-gitea-admins
