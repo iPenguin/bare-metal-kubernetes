@@ -31,4 +31,6 @@ for this repo.
 ```sh
 eval $(./setup.sh)
 ansible-playbook -i hosts/hosts.yaml setup-workstation.yml
+ansible-playbook -i hosts/hosts.yaml setup-workstation-dev.yaml
+ansible-playbook -i hosts/hosts.yaml setup-workstation-apps.yaml
 ```
