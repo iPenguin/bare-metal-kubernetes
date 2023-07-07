@@ -18,6 +18,7 @@
       ansible.builtin.apt:
         name:
           - htop
+          - podman
           - python3
           - python3-pip
           - apt-transport-https
