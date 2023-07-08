@@ -7,10 +7,13 @@ all:
         controllers:
           hosts:
             c1.clt.milco.casa:
+            c2.clt.milco.casa:
+            c3.clt.milco.casa:
         workers:
           hosts:
             w1.clt.milco.casa:
             w2.clt.milco.casa:
+            w3.clt.milco.casa:
     openwrt:
       children:
         router:
@@ -29,13 +32,16 @@ ceph:
     ceph_mons:
       hosts:
         c1.clt.milco.casa:
-        w1.clt.milco.casa:
-        w2.clt.milco.casa:
+        c2.clt.milco.casa:
+        c3.clt.milco.casa:
     ceph_osds:
       hosts:
         c1.clt.milco.casa:
+        c2.clt.milco.casa:
+        c3.clt.milco.casa:
         w1.clt.milco.casa:
         w2.clt.milco.casa:
+        w3.clt.milco.casa:
 
 apps:
   children:
