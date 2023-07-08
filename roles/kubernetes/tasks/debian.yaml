@@ -12,40 +12,32 @@
       - curl
     state: present
 
-- name: download google gpg keys
-  ansible.builtin.uri:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
-    status_code:
-      - 200
-      - 304
+- name: Download kubectl binary
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/v{{ kubernetes_version }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    owner: root
+    group: root
+    mode: 0755
+    checksum: sha256:https://dl.k8s.io/release/v{{ kubernetes_version }}/bin/linux/amd64/kubectl.sha256
 
-- name: install google gpg keys
-  ansible.builtin.blockinfile:
-    path: /etc/apt/sources.list.d/kubernetes.list
-    block: |
-      deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
-    create: yes
-    state: present
+- name: Donwload kubeadm binary
+  ansible.builtin.get_url:
+    url: https://dl.k8s.io/release/v{{ kubernetes_version }}/bin/linux/amd64/kubeadm
+    dest: /usr/local/bin/kubeadm
+    owner: root
+    group: root
+    mode: 0755
+    checksum: sha256:https://dl.k8s.io/release/v{{ kubernetes_version }}/bin/linux/amd64/kubeadm.sha256
 
-- name: install kubectl kubeadm and kubelet
-  ansible.builtin.apt:
-    name:
-      - kubeadm={{ kubernetes_version }}-00
-      - kubectl={{ kubernetes_version }}-00
-      - kubelet={{ kubernetes_version }}-00
-    allow_change_held_packages: yes
-    state: present
-    update_cache: yes
-
-- name: mark hold updates on k8s packages
-  ansible.builtin.dpkg_selections:
-    name: "{{ item }}"
-    selection: hold
-  loop:
-    - kubeadm
-    - kubectl
-    - kubelet
+- name: Donwload kubelete binary
+  ansible.builtin.get_url:
+    url: https://dl.k8s.io/release/v{{ kubernetes_version }}/bin/linux/amd64/kubelet
+    dest: /usr/local/bin/kubelet
+    owner: root
+    group: root
+    mode: 0755
+    checksum: sha256:https://dl.k8s.io/release/v{{ kubernetes_version }}/bin/linux/amd64/kubelet.sha256
 
 #
 # If the firewall is enabled you may see the following issue:

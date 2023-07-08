@@ -1,5 +1,10 @@
 ---
 
+- name: Add GPG Key
+  ansible.builtin.apt_key:
+    url: https://dl.k8s.io/apt/doc/apt-key.gpg
+    state: present
+
 - name: Add cri-o libcontainers GPG key
   ansible.builtin.apt_key:
     url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ base_os }}/Release.key
@@ -28,6 +33,7 @@
     allow_change_held_packages: yes
     state: present
     update_cache: yes
+  become: yes
 
 - name: Lock cri-o from updates
   ansible.builtin.dpkg_selections:
