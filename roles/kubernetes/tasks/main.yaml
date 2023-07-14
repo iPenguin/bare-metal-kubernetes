@@ -6,6 +6,14 @@
 - name: Pre-config tasks
   include_tasks: pre-config.yaml
 
+- name: Setup cluster-reset script
+  ansible.builtin.template:
+    src: cluster-reset.sh.j2
+    dest: /root/cluster-reset.sh
+    owner: root
+    group: root
+    mode: 0755
+
 - name: common k8s setup tasks
   include_tasks: "{{ ansible_os_family | lower }}.yaml"
 
@@ -54,14 +62,6 @@
   when:
     - inventory_hostname in groups['workers']
     - not inventory_hostname in nodelist.stdout
-
-- name: Setup cluster-reset script
-  ansible.builtin.template:
-    src: cluster-reset.sh.j2
-    dest: /root/cluster-reset.sh
-    owner: root
-    group: root
-    mode: 0755
 
 - name: Add admin users
   include_tasks: users.yaml
