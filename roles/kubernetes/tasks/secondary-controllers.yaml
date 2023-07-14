@@ -1,0 +1,29 @@
+---
+
+- name: kubeadm create token
+  ansible.builtin.raw: |-
+    kubeadm token create --print-join-command --certificate-key \
+    $(kubeadm init phase upload-certs --upload-certs 2> /dev/null | tail -n +3)
+  register: join_control_plane_cmd
+  delegate_to: "{{ k8s_controller }}"
+
+- name: Pause 10 seconds
+  ansible.builtin.pause:
+    seconds: 10
+
+- name: join cluster control plane
+  ansible.builtin.command: "{{ join_control_plane_cmd.stdout }}"
+
+- name: enable start kubelet
+  ansible.builtin.service:
+    name: kubelet
+    state: started
+    enabled: yes
+
+- name: check for nodes
+  ansible.builtin.command: kubectl get nodes
+  register: nodelist
+  delegate_to: "{{ k8s_controller }}"
+  failed_when: not '{{ inventory_hostname }}' in nodelist.stdout
+
+...
