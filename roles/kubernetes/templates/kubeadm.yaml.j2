@@ -12,7 +12,10 @@ bootstrapTokens:
 #   advertiseAddress: {{ k8s_controller }}
 #   bindPort: 6443
 nodeRegistration:
-  criSocket: unix:///run/crio/crio.sock
+  {% if k8s_runtime == 'crio' %}criSocket: unix:///run/crio/crio.sock{% endif %}
+
+  {% if k8s_runtime == 'containerd' %}criSocket:  unix:///var/run/containerd/containerd.sock{% endif %}
+
   imagePullPolicy: IfNotPresent
   name: {{ k8s_controller }}
   taints:
