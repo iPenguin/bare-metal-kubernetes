@@ -21,8 +21,6 @@
       - docker
       - docker-engine
       - docker.io
-      - containerd
-      - runc
     state: absent
 
 - name: update all packages
@@ -37,12 +35,19 @@
 
 - name: Controller config
   include_tasks: controller.yaml
-  when: inventory_hostname in groups['controllers']
+  when: inventory_hostname in groups['controllers'][0]
 
 - name: check for nodes
   ansible.builtin.command: kubectl get nodes
   register: nodelist
   delegate_to: "{{ k8s_controller }}"
+
+- name: join other controllers
+  include_tasks: secondary-controllers.yaml
+  when:
+    - inventory_hostname in groups['controllers']
+    - inventory_hostname != groups['controllers'][0]
+    - not inventory_hostname in nodelist.stdout
 
 - name: worker config
   include_tasks: workers.yaml
@@ -60,3 +65,4 @@
 
 - name: Add admin users
   include_tasks: users.yaml
+  when: inventory_hostname in groups['controllers'][0]

@@ -58,7 +58,9 @@
     - cni
   roles:
     - role: cilium
-      when: k8s_cni == 'cilium'
+      when:
+        - k8s_cni == 'cilium'
+        - inventory_hostname in groups['controllers'][0]
 
 - name: deploy the load balanacer
   hosts:
@@ -68,6 +70,8 @@
     - metallb
   roles:
     - role: metallb
+      when:
+        - inventory_hostname in groups['controllers'][0]
 
 - name: Deploy cert-manager
   hosts:

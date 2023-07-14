@@ -34,7 +34,7 @@
     _k8s_master_node_schedule_taint: absent
   when: k8s_master_can_run_pods | bool
 
-- name: Un/taint master node so it can run pods
+- name: Set if master node can run pods
   kubernetes.core.k8s_taint:
     state: "{{ _k8s_master_node_schedule_taint }}"
     name: "{{ inventory_hostname }}"

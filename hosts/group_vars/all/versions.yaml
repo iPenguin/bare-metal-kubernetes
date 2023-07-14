@@ -2,10 +2,10 @@
 
 ceph_version: 17.2.5
 cert_manager_version: 1.11.1
-cilium_version: 0.13.4
+cilium_version: 0.15.0
 cilium_helm_version: 1.13.4
 containerd_version: 1.7.0
-crio_version: 1.24.6~0
+crio_version: 1.27.0~0
 
 etcd_version: 3.5.9-0
 
@@ -19,7 +19,7 @@ helm_version: 3.11.2
 
 ingress_nginx_version: 4.6.0
 
-kubernetes_version: 1.27.3
+kubernetes_version: 1.26.6
 
 metallb_version: 0.13.10
 

@@ -30,6 +30,7 @@
       - cri-o={{ crio_version }}
       - cri-o-runc
       - cri-tools
+      - runc
     allow_change_held_packages: yes
     state: present
     update_cache: yes

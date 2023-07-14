@@ -3,8 +3,7 @@
 k8s_runtime: crio
 k8s_cni: cilium
 
-# I only have 3 nodes :(
-k8s_master_can_run_pods: yes
+k8s_master_can_run_pods: no
 
 k8s_cluster_name: homelab
 
