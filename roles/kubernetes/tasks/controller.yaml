@@ -29,12 +29,12 @@
     group: root
     mode: 0600
 
-- name: clear the taint from the master node
+- name: should we clear the taint for master nodes?
   ansible.builtin.set_fact:
     _k8s_master_node_schedule_taint: absent
   when: k8s_master_can_run_pods | bool
 
-- name: Set if master node can run pods
+- name: Set if master nodes can run pods
   kubernetes.core.k8s_taint:
     state: "{{ _k8s_master_node_schedule_taint }}"
     name: "{{ inventory_hostname }}"

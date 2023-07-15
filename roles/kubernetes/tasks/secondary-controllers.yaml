@@ -26,4 +26,11 @@
   delegate_to: "{{ k8s_controller }}"
   failed_when: not '{{ inventory_hostname }}' in nodelist.stdout
 
+- name: Set if master nodes can run pods
+  kubernetes.core.k8s_taint:
+    state: "{{ _k8s_master_node_schedule_taint }}"
+    name: "{{ inventory_hostname }}"
+    taints:
+    - effect: NoSchedule
+      key: "node-role.kubernetes.io/control-plane"
 ...
