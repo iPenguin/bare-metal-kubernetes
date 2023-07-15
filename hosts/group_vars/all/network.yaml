@@ -119,7 +119,7 @@ hosts:
   - name: c1
     mac: 98:FA:9B:0A:FF:11
     ipv4: "{{ ipv4_network }}.10"
-    duid: 00020000ab119e76bb584ca540b8
+    duid: 00020000ab11ee035c834eb2cbc1
     hostid: 10
   - name: c2
     mac: 6C:4B:90:E2:89:09
