@@ -1,6 +1,22 @@
 ---
+- name: Get values for admins
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: admin-{{ item }}
+    namespace: kube-system
+  register: admin_secret
 
-- name: Create admin accounts
-  kubernetes.core.k8s:
-    state: present
-    template: admin-accounts.yaml.j2
+- name: Create kube-config for admins
+  vars:
+    _cluster_cert: "{{ admin_secret.resources[0].data['ca.crt'] }}"
+    _user_token: "{{ admin_secret.resources[0].data.token }}"
+    _username: "{{ item }}"
+  ansible.builtin.template:
+    src: admin-kubeconfig.j2
+    dest: /root/admin-{{ item }}.conf
+    owner: root
+    group: root
+    mode: 0640
+
+...

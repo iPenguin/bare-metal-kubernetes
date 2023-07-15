@@ -63,6 +63,16 @@
     - inventory_hostname in groups['workers']
     - not inventory_hostname in nodelist.stdout
 
-- name: Add admin users
-  include_tasks: users.yaml
-  when: inventory_hostname in groups['controllers'][0]
+- name: Generate users
+  when:
+    - inventory_hostname in groups['controllers'][0]
+    - k8s_admin_users is defined
+  block:
+    - name: Create admin accounts
+      kubernetes.core.k8s:
+        state: present
+        template: admin-accounts.yaml.j2
+
+    - name: Add admin users
+      include_tasks: users.yaml
+      loop: "{{ k8s_admin_users }}"
