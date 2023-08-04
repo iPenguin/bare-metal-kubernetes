@@ -5,9 +5,8 @@
 # Cannot use ansible.builtin.opkg until python is installed.
 - name: Install required packages for ansible on OpenWrt
   ansible.builtin.raw: |-
-    opkg install python3-light python3-multiprocessing \
-    python3-distutils python3-logging openssh-sftp-server \
-    python3-urllib
+    opkg install python3-multiprocessing python3-distutils \
+      python3-logging openssh-sftp-server python3-urllib
   tags:
     - ansible
     - packages
