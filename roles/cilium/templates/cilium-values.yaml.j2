@@ -41,3 +41,79 @@ ipam:
 
 bpf:
   masquerade: true
+
+
+hubble:
+  enabled: true
+
+  metrics:
+    enabled: ~
+    serviceMonitor:
+      enabled: false
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      namespace: ~
+      labelValue: "1"
+      annotations: {}
+  socketPath: /var/run/cilium/hubble.sock
+
+  redact: ~
+  preferIpv6: true
+
+  # -- TLS configuration for Hubble
+  tls:
+    enabled: true
+    auto:
+      enabled: true
+      # - certmanager:  This method use cert-manager to generate & rotate certificates.
+      method: helm
+      # -- Generated certificates validity duration in days.
+      certValidityDuration: 1095
+
+      # [Example]
+      # certManagerIssuerRef:
+      #   group: cert-manager.io
+      #   kind: ClusterIssuer
+      #   name: ca-issuer
+      # -- certmanager issuer used when hubble.tls.auto.method=certmanager.
+      certManagerIssuerRef: {}
+
+    # -- base64 encoded PEM values for the Hubble server certificate and private key
+    server:
+      cert: ""
+      key: ""
+      # -- Extra DNS names added to certificate when it's auto generated
+      extraDnsNames: []
+      # -- Extra IP addresses added to certificate when it's auto generated
+      extraIpAddresses: []
+
+  relay:
+    enabled: true
+    replicas: 1
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              k8s-app: cilium
+
+    nodeSelector:
+      kubernetes.io/os: linux
+
+    prometheus:
+      enabled: false
+
+  ui:
+    enabled: true
+
+    replicas: 1
+
+    # -- Node labels for pod assignment
+    # ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+    nodeSelector:
+      kubernetes.io/os: linux
+
+    ingress:
+      enabled: false
