@@ -3,6 +3,8 @@ common_utils:
   - gdisk
   - git
   - htop
+  - iperf
+  - r8125-dkms
   - rsync
   - smartmontools
   - sysstat
