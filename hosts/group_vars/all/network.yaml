@@ -117,17 +117,20 @@ hosts:
     mac: F0:2F:74:92:A0:20
     ipv4: "{{ ipv4_network }}.3"
   - name: c1
-    mac: 98:FA:9B:0A:FF:11
+    mac: 1C:FD:08:7C:08:BC
+    #mac: 98:FA:9B:0A:FF:11
     ipv4: "{{ ipv4_network }}.10"
     duid: 00020000ab11ee035c834eb2cbc1
     hostid: 10
   - name: c2
-    mac: 6C:4B:90:E2:89:09
+    mac: 1C:FD:08:7C:08:E2
+    #mac: 6C:4B:90:E2:89:09
     ipv4: "{{ ipv4_network }}.11"
     duid: 00020000ab1141e3610454d8e45d
     hostid: 11
   - name: c3
-    mac: 98:FA:9B:F4:49:44
+    mac: 1C:FD:08:7C:08:7D
+    #mac: 98:FA:9B:F4:49:44
     ipv4: "{{ ipv4_network }}.12"
     duid: 00020000ab11107a31861e9e07b0
     hostid: 12
