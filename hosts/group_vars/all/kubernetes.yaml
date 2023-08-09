@@ -9,6 +9,7 @@ k8s_cluster_name: homelab
 
 k8s_controller: "{{ groups['controllers'] | first }}"
 k8s_controller_lb: "{{ groups['controllers'] | first }}"
+k8s_api_url: "kube-api.{{ lan_domain }}"
 
 k8s_pod_network:
   ipv4: 10.200.0.0/16

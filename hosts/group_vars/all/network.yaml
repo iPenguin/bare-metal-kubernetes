@@ -10,21 +10,24 @@ ipv4_network: 10.1.1
 ipv6_network: "{{ vault_ipv6_network }}"
 
 network_services:
-  ingress:
+  vip:
     ipv4: "{{ ipv4_network }}.20"
     ipv6: "{{ ipv6_network }}::20"
-  s3:
+  ingress:
     ipv4: "{{ ipv4_network }}.21"
     ipv6: "{{ ipv6_network }}::21"
-  ipa-01:
+  s3:
     ipv4: "{{ ipv4_network }}.22"
     ipv6: "{{ ipv6_network }}::22"
-  ipa-02:
+  ipa-01:
     ipv4: "{{ ipv4_network }}.23"
     ipv6: "{{ ipv6_network }}::23"
-  gitea:
+  ipa-02:
     ipv4: "{{ ipv4_network }}.24"
     ipv6: "{{ ipv6_network }}::24"
+  gitea:
+    ipv4: "{{ ipv4_network }}.25"
+    ipv6: "{{ ipv6_network }}::25"
 
 network:
   ipv4:

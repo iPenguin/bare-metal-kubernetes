@@ -35,7 +35,12 @@ controllerManager:
 dns: {}
 scheduler: {}
 apiServer:
+  certSANs:
+    - "{{ network_services.vip.ipv4 }}"
+    - "{{ network_services.vip.ipv6 }}"
+    - "{{ k8s_api_url }}"
   extraArgs:
+    authorization-mode: Node,RBAC
     endpoint-reconciler-type: lease
     advertise-address: {{ ansible_default_ipv4.address }}
     bind-address: 0.0.0.0
