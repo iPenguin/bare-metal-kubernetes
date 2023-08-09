@@ -7,15 +7,25 @@
 ceph_storage:
   - name: c1.clt.milco.casa
     devices:
-      - name: "sdb"
+      - name: "nvme0n1"
         osds: 1
-
+  - name: c2.clt.milco.casa
+    devices:
+      - name: "nvme0n1"
+        osds: 1
+  - name: c3.clt.milco.casa
+    devices:
+      - name: "nvme0n1"
+        osds: 1
   - name: w1.clt.milco.casa
     devices:
-      - name: "sda"
+      - name: "nvme0n1"
         osds: 1
-
   - name: w2.clt.milco.casa
     devices:
-      - name: "sda"
+      - name: "nvme0n1"
+        osds: 1
+  - name: w3.clt.milco.casa
+    devices:
+      - name: "nvme0n1"
         osds: 1
