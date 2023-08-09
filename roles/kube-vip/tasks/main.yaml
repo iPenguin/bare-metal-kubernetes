@@ -1,0 +1,26 @@
+---
+- name: populate facts
+  ansible.builtin.setup:
+
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "/etc/kubernetes", mode: '0755' }
+    - { path: "/etc/kubernetes/manifests", mode: '0700' }
+  when:
+    - inventory_hostname in groups['controllers']
+
+- name: Install Kube VIP
+  ansible.builtin.template:
+    src: kube-vip.yaml.j2
+    dest: /etc/kubernetes/manifests/kube-vip.yaml
+    owner: root
+    group: root
+    mode: 0600
+  when:
+    - inventory_hostname in groups['controllers']

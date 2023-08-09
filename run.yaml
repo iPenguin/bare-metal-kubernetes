@@ -33,6 +33,11 @@
     - cluster
     - runtime
   roles:
+    - role: kube-vip
+      tags:
+        - vip
+      when:
+        - inventory_hostname in groups['controllers']
     - role: containerd
       when: k8s_runtime == 'containerd'
     - role: crio
