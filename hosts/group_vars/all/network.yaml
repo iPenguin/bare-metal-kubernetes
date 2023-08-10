@@ -157,3 +157,6 @@ domains:
   - name: "ipa-01.{{ lan_domain }}"
     ipv4: "{{ network_services['ipa-01'].ipv4 }}"
     ipv6: "{{ network_services['ipa-01'].ipv6 }}"
+  - name: "{{ k8s_api_url }}"
+    ipv4: "{{ network_services['vip'].ipv4 }}"
+    ipv6: "{{ network_services['vip'].ipv6 }}"
