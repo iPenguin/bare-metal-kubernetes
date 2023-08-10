@@ -3,7 +3,8 @@
 - name: kubeadm create token
   ansible.builtin.raw: |-
     kubeadm token create --print-join-command --certificate-key \
-    $(kubeadm init phase upload-certs --upload-certs 2> /dev/null | tail -n +3)
+    $(kubeadm init phase upload-certs --upload-certs \
+    --config {{ _kubeadm_config }} 2> /dev/null | tail -n +3)
   register: join_control_plane_cmd
   delegate_to: "{{ k8s_controller }}"
 
