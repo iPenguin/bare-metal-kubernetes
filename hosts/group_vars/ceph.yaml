@@ -4,28 +4,16 @@
 # sudo dd if=/dev/zero of=/dev/sda bs=512 count=34
 #
 
-ceph_storage:
-  - name: c1.clt.milco.casa
-    devices:
-      - name: "nvme0n1"
-        osds: 1
-  - name: c2.clt.milco.casa
-    devices:
-      - name: "nvme0n1"
-        osds: 1
-  - name: c3.clt.milco.casa
-    devices:
-      - name: "nvme0n1"
-        osds: 1
-  - name: w1.clt.milco.casa
-    devices:
-      - name: "nvme0n1"
-        osds: 1
-  - name: w2.clt.milco.casa
-    devices:
-      - name: "nvme0n1"
-        osds: 1
-  - name: w3.clt.milco.casa
-    devices:
-      - name: "nvme0n1"
-        osds: 1
+# ceph_storage:
+#   - name: w1.clt.milco.casa
+#     devices:
+#       - name: "nvme0n1"
+#         osds: 1
+#   - name: w2.clt.milco.casa
+#     devices:
+#       - name: "nvme0n1"
+#         osds: 1
+#   - name: w3.clt.milco.casa
+#     devices:
+#       - name: "nvme0n1"
+#         osds: 1
