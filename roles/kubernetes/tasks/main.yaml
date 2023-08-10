@@ -43,7 +43,7 @@
 
 - name: Controller config
   include_tasks: controller.yaml
-  when: inventory_hostname in groups['controllers'][0]
+  when: inventory_hostname in k8s_controller
 
 - name: check for nodes
   ansible.builtin.command: kubectl get nodes
@@ -54,7 +54,7 @@
   include_tasks: secondary-controllers.yaml
   when:
     - inventory_hostname in groups['controllers']
-    - inventory_hostname != groups['controllers'][0]
+    - inventory_hostname != k8s_controller
     - not inventory_hostname in nodelist.stdout
 
 - name: worker config
@@ -65,7 +65,7 @@
 
 - name: Generate users
   when:
-    - inventory_hostname in groups['controllers'][0]
+    - inventory_hostname in k8s_controller
     - k8s_admin_users is defined
   block:
     - name: Create admin accounts
