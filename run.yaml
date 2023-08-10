@@ -98,6 +98,7 @@
 - name: Wipe ceph drives
   hosts:
     - controllers
+    - workers
   tags:
     - never
     - yes-really-wipe-the-ceph-drives
@@ -107,6 +108,7 @@
 - name: Deploy Rook ceph
   hosts:
     - controllers
+    - workers
   tags:
     - storage
     - rook
