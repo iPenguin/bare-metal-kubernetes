@@ -15,50 +15,53 @@
       - hdparm
     state: present
 
-- name: Label node as storage node
-  ansible.builtin.command:
-    cmd: "kubectl label node {{ item.name }} {{ lan_domain }}/node-role=storage-node"
-  loop: "{{ ceph_storage }}"
+- name: Ceph admin functions
+  when:
+    - inventory_hostname in k8s_controller
+  block:
+    - name: Label node as storage node
+      ansible.builtin.command:
+        cmd: "kubectl label node {{ item.name }} {{ lan_domain }}/node-role=storage-node"
+      loop: "{{ ceph_storage }}"
 
-- name: Add rook helm repo
-  kubernetes.core.helm_repository:
-    name: rook-release
-    url: https://charts.rook.io/release
-    state: present
+    - name: Add rook helm repo
+      kubernetes.core.helm_repository:
+        name: rook-release
+        url: https://charts.rook.io/release
+        state: present
 
-- name: Deploy Rook Operator Helm chart
-  kubernetes.core.helm:
-    name: rook-ceph
-    kubeconfig: /etc/kubernetes/admin.conf
-    chart_ref: rook-release/rook-ceph
-    chart_version: "{{ rook_version }}"
-    namespace: "{{ rook_namespace }}"
-    create_namespace: true
-    values: "{{ lookup('template', 'rook-ceph.yaml.j2') | from_yaml }}"
-    state: present
+    - name: Deploy Rook Operator Helm chart
+      kubernetes.core.helm:
+        name: rook-ceph
+        kubeconfig: /etc/kubernetes/admin.conf
+        chart_ref: rook-release/rook-ceph
+        chart_version: "{{ rook_version }}"
+        namespace: "{{ rook_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'rook-ceph.yaml.j2') | from_yaml }}"
+        state: present
 
-- name: Deploy Rook Cluster Helm chart
-  kubernetes.core.helm:
-    name: rook-ceph-cluster
-    kubeconfig: /etc/kubernetes/admin.conf
-    chart_ref: rook-release/rook-ceph-cluster
-    chart_version: "{{ rook_version }}"
-    namespace: "{{ rook_namespace }}"
-    values: "{{ lookup('template', 'rook-cluster.yaml.j2') | from_yaml }}"
-    state: present
+    - name: Deploy Rook Cluster Helm chart
+      kubernetes.core.helm:
+        name: rook-ceph-cluster
+        kubeconfig: /etc/kubernetes/admin.conf
+        chart_ref: rook-release/rook-ceph-cluster
+        chart_version: "{{ rook_version }}"
+        namespace: "{{ rook_namespace }}"
+        values: "{{ lookup('template', 'rook-cluster.yaml.j2') | from_yaml }}"
+        state: present
 
-# - name: Deploy LoadBalancer for public s3 endpoint
-#   kubernetes.core.k8s:
-#     state: present
-#     template: 's3.yaml.j2'
+    # - name: Deploy LoadBalancer for public s3 endpoint
+    #   kubernetes.core.k8s:
+    #     state: present
+    #     template: 's3.yaml.j2'
 
-- name: Copy reset script to controller
-  ansible.builtin.template:
-    src: ceph-reset.sh.j2
-    dest: /root/ceph-reset.sh
-    owner: root
-    group: root
-    mode: 0700
-  delegate_to: "{{ k8s_controller }}"
+    - name: Copy reset script to controller
+      ansible.builtin.template:
+        src: ceph-reset.sh.j2
+        dest: /root/ceph-reset.sh
+        owner: root
+        group: root
+        mode: 0700
 
 ...
