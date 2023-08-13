@@ -44,6 +44,13 @@
   delay: 30    # 30 seconds
   connection: local
 
+- name: Deploy IPA PVCs for replicas
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-pvc-replicas.yaml.j2'
+  vars:
+    ipa_counter: "{{ (ipa_replicas + 1) }}"
+
 - name: Create IPA replica Secrets
   kubernetes.core.k8s:
     state: present

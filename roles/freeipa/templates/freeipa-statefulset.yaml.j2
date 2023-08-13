@@ -74,7 +74,7 @@ spec:
                 secretKeyRef:
                   name: ipa-{{ "%02d" | format( i + 1 ) }}-install-secrets
                   key: IPA_ADMIN_PASSWORD
-            args: [ "{%- if i > 0 -%}ipa-replica-install{%- endif -%}" ]
+          args: [ "{%- if i > 0 -%}ipa-replica-install{%- endif -%}" ]
           {% endif %}
 
           securityContext:
