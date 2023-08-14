@@ -1,0 +1,30 @@
+---
+
+- name: Create argocd namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: argocd
+    state: present
+
+- name: Install ArgoCD
+  kubernetes.core.k8s:
+    namespace: argocd
+    template:
+      - path: 'argocd-manifest.yaml.j2'
+
+- name: Create argo namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: argo
+    state: present
+
+- name: Install ArgoWorkflow
+  kubernetes.core.k8s:
+    namespace: argo
+    template:
+      - path: 'argo-workflow.yaml.j2'
+
+
+...

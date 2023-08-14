@@ -78,6 +78,17 @@
       when:
         - inventory_hostname in k8s_controller
 
+- name: deploy Argo Workflows and CD
+  hosts:
+    - controllers
+  tags:
+    - cd
+    - argo
+  roles:
+    - role: argo
+      when:
+        - inventory_hostname in k8s_controller
+
 - name: Deploy cert-manager
   hosts:
     - controllers
