@@ -1,6 +1,8 @@
 
 timezone: America/New_York
 
+validate_certs: false
+
 tld: casa
 domain: milco
 lan_tld: "{{ domain }}.{{ tld }}"

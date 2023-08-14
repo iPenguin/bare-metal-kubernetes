@@ -9,6 +9,10 @@
 ipv4_network: 10.1.1
 ipv6_network: "{{ vault_ipv6_network }}"
 
+#
+# IMPROVE: simplify services structure across all plays.
+# IMPROVE: remove many and use LB/Ingress IPs to create DNS entry.
+#
 network_services:
   vip:
     ipv4: "{{ ipv4_network }}.20"
@@ -25,9 +29,15 @@ network_services:
   ipa-02:
     ipv4: "{{ ipv4_network }}.24"
     ipv6: "{{ ipv6_network }}::24"
-  gitea:
+  sso:
     ipv4: "{{ ipv4_network }}.25"
     ipv6: "{{ ipv6_network }}::25"
+  argo:
+    ipv4: "{{ ipv4_network }}.26"
+    ipv6: "{{ ipv6_network }}::26"
+  gitea:
+    ipv4: "{{ ipv4_network }}.35"
+    ipv6: "{{ ipv6_network }}::35"
 
 network:
   ipv4:

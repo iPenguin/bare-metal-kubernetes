@@ -19,6 +19,7 @@ helm_version: 3.11.2
 
 ingress_nginx_version: 4.6.0
 
+keycloak_version: 22.0.1-1
 kube_vip_version: 0.6.0
 kubernetes_version: 1.26.6
 

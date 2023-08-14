@@ -1,0 +1,50 @@
+---
+
+- name: create keycloak namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: "{{ keycloak_namespace }}"
+    state: present
+
+- name: Deploy Keycloak
+  kubernetes.core.k8s:
+    namespace: "{{ keycloak_namespace }}"
+    template: 'keycloak-values.yaml.j2'
+
+- name: Wait for Keycloak
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    wait: true
+    name: "keycloak"
+    namespace: "{{ keycloak_namespace }}"
+    wait_sleep: 5
+    wait_timeout: 120
+
+- name: Create LDAP user federation
+  community.general.keycloak_user_federation:
+    auth_keycloak_url: https://sso.{{ lan_domain }}/auth
+    auth_realm: master
+    auth_username: admin
+    auth_password: "{{ keycloak_admin_password }}"
+    realm: "{{ ipa_domain | upper }}"
+    name: freeipa
+    state: present
+    provider_id: ldap
+    validate_certs: "{{ validate_certs }}"
+    config:
+      enabled: true
+      editMode: WRITABLE
+      importEnabled: true
+      syncRegistrations: true
+#      vendor: other
+      usernameLDAPAttribute: uid
+      rdnLDAPAttribute: uid
+      uuidLDAPAttribute: entryUUID
+      connectionUrl: ldaps://ldap.clt.milco.casa:636
+      usersDn: cn=ipausers,dc=auth,dn=milco,dc=casa
+      authType: simple
+      bindDn: "{{ ipa_lookup_user }}"
+      bindCredential: "{{ ipa_lookup_password }}"
+      validatePasswordPolicy: true
+
+...
