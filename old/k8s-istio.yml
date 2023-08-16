@@ -1,8 +1,0 @@
----
-
-- name: install istio
-  hosts: k8smasters
-  tasks:
-    - name: include istio
-      include_role:
-        name: istio
