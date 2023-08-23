@@ -162,6 +162,11 @@ hosts:
     ipv4: "{{ ipv4_network }}.15"
     duid: 00020000ab11d55a3eb23fba8a04
     hostid: 15
+  - name: w4
+    mac: 84:47:09:1D:2B:11
+    ipv4: "{{ ipv4_network }}.16"
+    duid: 00020000ab11e2b7d21dd313dabc
+    hostid: 16
 
 domains:
   - name: "ipa-01.{{ lan_domain }}"
