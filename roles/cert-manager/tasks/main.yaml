@@ -12,6 +12,7 @@
     chart_ref: jetstack/cert-manager
     release_namespace: "{{ cert_manager_namespace }}"
     create_namespace: true
+    update_repo_cache: true
     values: "{{ lookup('template', 'cert-manager-values.yaml.j2') | from_yaml }}"
 
 - name: Deploy solvers
@@ -19,9 +20,35 @@
     state: present
     template: solvers.yaml.j2
 
+- name: Git Porkbun webhook
+  ansible.builtin.git:
+    repo: 'https://github.com/mdonoughe/porkbun-webhook.git'
+    dest: "{{ ansible_env.PWD }}/porkbun-webhook"
+    version: v0.1.2
+
+- name: Deploy porkbun webhook
+  kubernetes.core.helm:
+    name: porkbun-webhook
+    chart_ref: "{{ ansible_env.PWD }}/porkbun-webhook/deploy/porkbun-webhook"
+    release_namespace: "{{ cert_manager_namespace }}"
+    set_values:
+      - value: groupName={{ porkbun_group }}
+        value_type: string
+
+- name: Deploy porkbun rbac
+  kubernetes.core.k8s:
+    namespace: "{{ cert_manager_namespace }}"
+    src: "{{ ansible_env.PWD }}/porkbun-webhook/rbac.yaml"
+    state: present
+
 - name: Deploy acme api keys
   kubernetes.core.k8s:
     state: present
     template: porkbun-key.yaml.j2
 
+- name: Deploy {{ lan_tld }} cert
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ cert_manager_namespace }}"
+    template: star.milco.casa.yaml.j2
 ...

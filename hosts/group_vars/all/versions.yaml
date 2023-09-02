@@ -1,7 +1,7 @@
 ---
 
 ceph_version: 17.2.5
-cert_manager_version: 1.11.1
+cert_manager_version: 1.12.4
 cilium_version: 0.15.0
 cilium_helm_version: 1.13.4
 containerd_version: 1.7.0

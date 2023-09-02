@@ -29,18 +29,6 @@ clusterResourceNamespace: ""
 # This is helpful when installing cert manager as a chart dependency (sub chart)
 namespace: "{{ cert_manager_namespace }}"
 
-# Additional command line flags to pass to cert-manager controller binary.
-# To see all available flags run docker run quay.io/jetstack/cert-manager-controller:<version> --help
-extraArgs: []
-  # When this flag is enabled, secrets will be automatically removed when the certificate resource is deleted
-  # - --enable-certificate-owner-ref=true
-  # Use this flag to enable or disable arbitrary controllers, for example, disable the CertificiateRequests approver
-  # - --controllers=*,-certificaterequests-approver
-
-extraEnv: []
-# - name: SOME_VAR
-#   value: 'some value'
-
 # Pod Security Context
 # ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 securityContext:
