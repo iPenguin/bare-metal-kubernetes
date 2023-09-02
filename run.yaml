@@ -118,6 +118,8 @@
     - certs
   roles:
     - role: cert-manager
+      when:
+        - inventory_hostname in k8s_controller
 
 - name: Deploy ingress-nginx
   hosts:
