@@ -1,0 +1,39 @@
+---
+
+- name: install and configure chronyd
+  apt:
+    name:
+      - chrony
+    state: present
+
+- name: configure local time server
+  when:
+    - inventory_hostname in k8s_controller
+  ansible.builtin.template:
+    src: 01-server.conf.j2
+    dest: /etc/chrony/conf.d/01.server.conf
+    owner: root
+    group: root
+    mode: 0640
+
+- name: configure local time clients
+  when:
+    - ! inventory_hostname in k8s_controller
+  ansible.builtin.template:
+    src: "chrony.conf.j2"
+    dest: "/etc/chrony/chrony.conf"
+    owner: root
+    group: root
+    mode: 0640
+
+- name: configure local time sources
+  when:
+    - ! inventory_hostname in k8s_controller
+  ansible.builtin.template:
+    src: "local.sources.j2"
+    dest: "/etc/chrony/conf.d/local.sources"
+    owner: root
+    group: root
+    mode: 0640
+
+...

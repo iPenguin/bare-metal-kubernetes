@@ -149,6 +149,7 @@
     - rook
     - ceph
   roles:
+    - role: chrony
     - role: rook
 
 - name: Deploy Free IPA
