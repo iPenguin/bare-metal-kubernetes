@@ -5,7 +5,7 @@
     ipa_host: "{{ ipa_hostname }}"
     ipa_user: "{{ ipa_admin_user }}"
     ipa_pass: "{{ ipa_admin_password }}"
-    zone_name: "{{ lan_domain }}."
+    zone_name: "{{ item.zone }}."
     record_type: "{{ item.type | upper }}"
     record_name: "{{ item.name }}"
     record_value: '{{ item.data }}'

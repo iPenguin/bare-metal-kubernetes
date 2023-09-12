@@ -8,6 +8,7 @@ ipa_admin_user: "admin"
 ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
 
 ipa_dns_zones:
+  - "{{ lan_tld }}."
   - "{{ lan_domain }}."
   - "{{ ceph_srv_zone }}"
 
@@ -22,21 +23,27 @@ ipa_dns_entries:
   - name: ipa-01
     type: A
     data: "{{ network_services['ipa-01'].ipv4 }}"
+    zone: "{{ lan_domain }}"
   - name: ipa-01
     type: AAAA
     data: "{{ network_services['ipa-01'].ipv6 }}"
+    zone: "{{ lan_domain }}"
   - name: ipa-02
     type: A
     data: "{{ network_services['ipa-02'].ipv4 }}"
+    zone: "{{ lan_domain }}"
   - name: ipa-02
     type: AAAA
     data: "{{ network_services['ipa-02'].ipv6 }}"
+    zone: "{{ lan_domain }}"
   - name: git
     type: CNAME
     data: "ingress.{{ lan_domain }}."
+    zone: "{{ lan_tld }}"
   - name: harbor
     type: CNAME
     data: "{{ k8s_controller }}."
+    zone: "{{ lan_tld }}"
 
 ipa_groups:
   - name: app-gitea-admins
