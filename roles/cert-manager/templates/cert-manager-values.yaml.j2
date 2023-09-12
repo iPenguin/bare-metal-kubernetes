@@ -1,7 +1,4 @@
 ---
-# Default values for cert-manager.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 global:
   rbac:
     create: true
@@ -19,14 +16,7 @@ image:
   repository: quay.io/jetstack/cert-manager-controller
   pullPolicy: IfNotPresent
 
-# Override the namespace used to store DNS provider credentials etc. for ClusterIssuer
-# resources. By default, the same namespace as cert-manager is deployed within is
-# used. This namespace will not be automatically created by the Helm chart.
 clusterResourceNamespace: ""
-
-# This namespace allows you to define where the services will be installed into
-# if not set then they will use the namespace of the release
-# This is helpful when installing cert manager as a chart dependency (sub chart)
 namespace: "{{ cert_manager_namespace }}"
 
 # Pod Security Context
@@ -88,46 +78,12 @@ cainjector:
 
   image:
     repository: quay.io/jetstack/cert-manager-cainjector
-    # You can manage a registry with
-    # registry: quay.io
-    # repository: jetstack/cert-manager-cainjector
-
-    # Override the image tag to deploy by setting this variable.
-    # If no value is set, the chart's appVersion will be used.
-    # tag: canary
-
-    # Setting a digest will override any tag
-    # digest: sha256:0e072dddd1f7f8fc8909a2ca6f65e76c5f0d2fcfb8be47935ae3457e8bbceb20
-
     pullPolicy: IfNotPresent
 
   serviceAccount:
-    # Specifies whether a service account should be created
     create: true
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    # name: ""
-    # Optional additional annotations to add to the controller's ServiceAccount
-    # annotations: {}
-    # Automount API credentials for a Service Account.
-    # Optional additional labels to add to the cainjector's ServiceAccount
-    # labels: {}
     automountServiceAccountToken: true
-
-  # Automounting API credentials for a particular pod
-  # automountServiceAccountToken: true
 
 acmesolver:
   image:
     repository: quay.io/jetstack/cert-manager-acmesolver
-    # You can manage a registry with
-    # registry: quay.io
-    # repository: jetstack/cert-manager-acmesolver
-
-    # Override the image tag to deploy by setting this variable.
-    # If no value is set, the chart's appVersion will be used.
-    # tag: canary
-
-    # Setting a digest will override any tag
-    # digest: sha256:0e072dddd1f7f8fc8909a2ca6f65e76c5f0d2fcfb8be47935ae3457e8bbceb20
-

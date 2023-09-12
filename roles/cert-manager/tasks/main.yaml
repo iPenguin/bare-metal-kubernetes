@@ -50,5 +50,5 @@
   kubernetes.core.k8s:
     state: present
     namespace: "{{ cert_manager_namespace }}"
-    template: star.milco.casa.yaml.j2
+    template: wildcard.milco.casa.yaml.j2
 ...
