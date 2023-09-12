@@ -64,4 +64,34 @@
         group: root
         mode: 0700
 
+    - name: Create ingress
+      ansible.builtin.k8s:
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: ceph-ingress
+            namespace: "{{ rook_namespace }}"
+            annotations:
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+              nginx.ingress.kubernetes.io/rewrite-target: /
+              cert-manager.io/cluster-issuer: letsencrypt
+          spec:
+            ingressClassName: nginx
+            tls:
+              - hosts:
+                  - 'ceph.{{ lan_tld }}'
+                secretName: star.{{ lan_domain }}
+            rules:
+              - host: ceph.{{ lan_tld }}
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: rook-ceph-mgr-dashboard
+                          port:
+                            number: 8443
 ...
