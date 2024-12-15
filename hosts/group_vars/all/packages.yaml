@@ -1,5 +1,4 @@
 common_utils:
-  - awscli
   - gdisk
   - git
   - htop
@@ -19,7 +18,7 @@ debian_utils:
   - lvm2
   - nfs-common
   - python3-packaging
+  - python3-kubernetes
   - xfsprogs
 
-pip_packages:
-  - kubernetes
+pip_packages: []
