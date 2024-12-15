@@ -14,8 +14,8 @@
 
 - name: download google gpg keys
   ansible.builtin.uri:
-    url: https://dl.k8s.io/apt/doc/apt-key.gpg
-    dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+    url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
+    dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
     status_code:
       - 200
       - 304
@@ -24,16 +24,16 @@
   ansible.builtin.blockinfile:
     path: /etc/apt/sources.list.d/kubernetes.list
     block: |
-      deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
     create: yes
     state: present
 
 - name: install kubectl kubeadm and kubelet
   ansible.builtin.apt:
     name:
-      - kubeadm={{ kubernetes_version }}-00
-      - kubectl={{ kubernetes_version }}-00
-      - kubelet={{ kubernetes_version }}-00
+      - kubeadm={{ kubernetes_version }}-1.1
+      - kubectl={{ kubernetes_version }}-1.1
+      - kubelet={{ kubernetes_version }}-1.1
     allow_change_held_packages: yes
     state: present
     update_cache: yes

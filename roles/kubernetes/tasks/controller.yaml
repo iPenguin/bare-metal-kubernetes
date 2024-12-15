@@ -1,9 +1,10 @@
 ---
-
 - name: create kubeadm init config
   ansible.builtin.template:
     src: kubeadm.yaml.j2
     dest: "{{ _kubeadm_config }}"
+  vars:
+    host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') }}"
   register: kube_config
 
 - name: kubeadm init
@@ -34,7 +35,7 @@
     _k8s_master_node_schedule_taint: absent
   when: k8s_master_can_run_pods | bool
 
-- name: Set if master nodes can run pods
+- name: Primary - Can master node run pods {{ _k8s_master_node_schedule_taint }}
   kubernetes.core.k8s_taint:
     state: "{{ _k8s_master_node_schedule_taint }}"
     name: "{{ inventory_hostname }}"
