@@ -4,28 +4,16 @@
 # https://github.com/cilium/cilium/blob/master/install/kubernetes/cilium/values.yaml
 #
 
-rbac:
-  # -- Enable creation of Resource-Based Access Control configuration.
-  create: true
-
-# -- Install the cilium agent resources.
-agent: true
-
-# -- Agent container name.
-name: cilium
-
 # -- Roll out cilium agent pods automatically when configmap is updated.
 rollOutCiliumPods: true
 
-kubeProxyReplacement: "strict"
+kubeProxyReplacement: true
 k8sServiceHost: "{{ k8s_controller }}"
 k8sServicePort: "6443"
 
 #
 # Settings Reference: https://yolops.net/k8s-dualstack-cilium.html
 #
-ipv4:
-  enabled: true
 ipv6:
   enabled: true
 
@@ -42,10 +30,8 @@ ipam:
 bpf:
   masquerade: true
 
-
 hubble:
   enabled: true
-
   metrics:
     enabled: ~
     serviceMonitor:
@@ -58,7 +44,6 @@ hubble:
       annotations: {}
   socketPath: /var/run/cilium/hubble.sock
 
-  redact: ~
   preferIpv6: true
 
   # -- TLS configuration for Hubble
@@ -71,49 +56,8 @@ hubble:
       # -- Generated certificates validity duration in days.
       certValidityDuration: 1095
 
-      # [Example]
-      # certManagerIssuerRef:
-      #   group: cert-manager.io
-      #   kind: ClusterIssuer
-      #   name: ca-issuer
-      # -- certmanager issuer used when hubble.tls.auto.method=certmanager.
-      certManagerIssuerRef: {}
-
-    # -- base64 encoded PEM values for the Hubble server certificate and private key
-    server:
-      cert: ""
-      key: ""
-      # -- Extra DNS names added to certificate when it's auto generated
-      extraDnsNames: []
-      # -- Extra IP addresses added to certificate when it's auto generated
-      extraIpAddresses: []
-
   relay:
     enabled: true
-    replicas: 1
-    affinity:
-      podAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-        - topologyKey: kubernetes.io/hostname
-          labelSelector:
-            matchLabels:
-              k8s-app: cilium
-
-    nodeSelector:
-      kubernetes.io/os: linux
-
-    prometheus:
-      enabled: false
-
   ui:
     enabled: true
 
-    replicas: 1
-
-    # -- Node labels for pod assignment
-    # ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
-    nodeSelector:
-      kubernetes.io/os: linux
-
-    ingress:
-      enabled: false
