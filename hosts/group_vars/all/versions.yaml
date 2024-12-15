@@ -1,18 +1,16 @@
 ---
 
-ceph_version: 17.2.5
-cert_manager_version: 1.12.4
-cilium_version: 0.15.0
-cilium_helm_version: 1.13.4
-containerd_version: 1.7.0
-crio_version: 1.27.1~0
-
-etcd_version: 3.5.9-0
-
+ceph_version: 19.2.0
+cert_manager_version: 1.16.2
+cilium_version: 0.16.22
+cilium_helm_version: 1.16.4
+containerd_version: 2.0.1
+crio_version: 1.31.3
+crun_version: 1.19
 freeipa_version: 4.10.1
 
-gitea_helm_chart_version: 8.0.2
-gitea_version: 1.19.1
+gitea_helm_chart_version: 10.6.0
+gitea_version: 1.22.4
 
 harbor_version: 2.8.1
 helm_version: 3.11.2
@@ -20,10 +18,10 @@ helm_version: 3.11.2
 ingress_nginx_version: 4.6.0
 
 keycloak_version: 22.0.1-1
-kube_vip_version: 0.6.0
-kubernetes_version: 1.26.6
+kube_vip_version: 0.8.7
+kubernetes_version: 1.31.3
 
 metallb_version: 0.13.10
 
-rook_version: 1.11.9
+rook_version: 1.15.6
 ...
