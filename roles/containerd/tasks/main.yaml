@@ -15,18 +15,19 @@
 
 - name: Download binaries
   ansible.builtin.get_url:
-    url: https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz
-    dest: "{{ tempfolder.path }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz"
-    checksum: "sha256:https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"
+    url: https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz
+    dest: "{{ tempfolder.path }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+    checksum: "sha256:https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"
 
 - name: Unarchive files
   become: yes
   ansible.builtin.unarchive:
-    src: "{{ tempfolder.path }}/cri-containerd-cni-{{ containerd_version }}-linux-amd64.tar.gz"
+    src: "{{ tempfolder.path }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
     remote_src: true
-    dest: "/"
+    dest: "/usr/local/"
 
 - name: mkdir /etc/containerd
+  become: yes
   ansible.builtin.file:
     path: /etc/containerd
     owner: root
@@ -34,13 +35,13 @@
     mode: 0755
     state: directory
 
-# - name: create config
-#   ansible.builtin.template:
-#     src: config.toml.j2
-#     dest: /etc/containerd/config.toml
-#     owner: root
-#     group: root
-#     mode: 0644
+- name: create service file
+  ansible.builtin.template:
+    src: containerd.service.j2
+    dest: /etc/systemd/system/containerd.service
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Enable containerd systemd service
   ansible.builtin.systemd:
@@ -50,4 +51,10 @@
     masked: false
     state: started
 
+- name: Install runc
+  become: yes
+  ansible.builtin.apt:
+    name:
+      - runc
+    state: present
 ...
