@@ -12,19 +12,19 @@
       - curl
     state: present
 
-- name: download google gpg keys
+- name: Download k8s gpg keys
   ansible.builtin.uri:
-    url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
+    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/Release.key
     dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
     status_code:
       - 200
       - 304
 
-- name: install google gpg keys
+- name: Configure k8s repo
   ansible.builtin.blockinfile:
     path: /etc/apt/sources.list.d/kubernetes.list
     block: |
-      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
+      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/ /
     create: yes
     state: present
 
