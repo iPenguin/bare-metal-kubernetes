@@ -21,7 +21,7 @@ keycloak_version: 22.0.1-1
 kube_vip_version: 0.8.7
 kubernetes_version: 1.31.3
 
-metallb_version: 0.13.10
+metallb_version: 0.14.8
 
 rook_version: 1.15.6
 ...
