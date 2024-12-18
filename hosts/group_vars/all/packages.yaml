@@ -1,4 +1,5 @@
 common_utils:
+  - fwupdate
   - gdisk
   - git
   - htop
@@ -9,6 +10,7 @@ common_utils:
   - sysstat
   - tmux
   - vim
+  - zip
   - zsh
 
 debian_utils:
