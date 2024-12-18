@@ -44,6 +44,22 @@
     group: root
     mode: 0755
 
+- name: Ensure container path
+  ansible.builtin.file:
+    path: /etc/containers
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Configure container policy
+  ansible.builtin.template:
+    src: policy.json.j2
+    dest: /etc/containers/policy.json
+    owner: root
+    group: root
+    mode: 0640
+
 - name: Link common binary
   ansible.builtin.file:
     src: /usr/libexec/crio/conmon 
