@@ -56,14 +56,14 @@ spec:
           name: kubeconfig
   hostAliases:
     {% for host in groups['controllers'] -%}
-    - ip: {{ lookup('dig', host ) }}
+    - ip: {{ (dns_entries | selectattr('item', 'equalto', host) | list)[0].stdout }}
       hostnames:
         - {{ host }}
     {% endfor %}
 
     - ip: 127.0.0.1
       hostnames:
-      - kubernetes
+        - kubernetes
   hostNetwork: true
   volumes:
     - hostPath:

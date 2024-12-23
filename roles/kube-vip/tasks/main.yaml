@@ -15,6 +15,12 @@
   when:
     - inventory_hostname in groups['controllers']
 
+- name: dns lookup
+  ansible.builtin.command:
+    cmd: dig +short {{ item }} @{{ network.ipv4.dns }}
+  register: dns_results
+  loop: "{{ groups['controllers'] }}"
+
 - name: Install Kube VIP
   ansible.builtin.template:
     src: kube-vip.yaml.j2
@@ -22,5 +28,7 @@
     owner: root
     group: root
     mode: 0600
+  vars:
+    dns_entries: '{{ dns_results.results }}'
   when:
     - inventory_hostname in groups['controllers']
