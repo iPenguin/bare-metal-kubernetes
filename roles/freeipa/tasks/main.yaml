@@ -42,7 +42,6 @@
   until: _ipa_result.status == 200
   retries: 40  # (30 sec x 40 tries = 20 minutes)
   delay: 30    # 30 seconds
-  connection: local
 
 - name: Deploy IPA PVCs for replicas
   kubernetes.core.k8s:
