@@ -75,19 +75,19 @@
     cmd: |-
       kubectl -n {{ ipa_namespace }} cp
       "{{ tempfolder.path }}/anon-read.ldif"
-      freeipa-0:/data/etc/openldap/anon-read.ldif
+      ipa-01-0:/data/etc/openldap/anon-read.ldif
 
 - name: Remove anonymous LDAP access
   ansible.builtin.command:
     cmd: |-
-      kubectl -n {{ ipa_namespace }} exec freeipa-0
+      kubectl -n {{ ipa_namespace }} exec ipa-01-0
       -- ldapmodify -x -D "cn=Directory Manager"
       -w {{ ipa_directory_password }} -f /data/etc/openldap/anon-read.ldif
 
 - name: Test anonymous access is removed
   ansible.builtin.command:
     cmd: |-
-      kubectl -n {{ ipa_namespace }} exec freeipa-0
+      kubectl -n {{ ipa_namespace }} exec ipa-01-0
       -- ldapsearch -x -b "dc=auth,dc={{ domain }},dc={{ tld }}"
   register: anon_access
   failed_when: "not 'Anonymous access is not allowed.' in anon_access.stdout"
