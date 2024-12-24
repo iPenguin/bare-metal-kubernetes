@@ -12,8 +12,8 @@ freeipa_version: 4.12.2
 gitea_helm_chart_version: 10.6.0
 gitea_version: 1.22.4
 
-harbor_version: 2.8.1
-helm_version: 3.11.2
+harbor_version: 2.12.1
+helm_version: 3.16.4
 
 ingress_nginx_version: 4.6.0
 
