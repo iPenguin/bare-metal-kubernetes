@@ -11,18 +11,16 @@ spec:
   - list:
       elements:
         - env: prod
-          helmVersion:
-          namespace: freeipa
         - env: dev
   template:
     metadata:
-      name: 'freeipa'
+      name: freeipa
     spec:
       syncPolicy:
         automated: {}
       project: freeipa
       destination:
-        namespace: '{{.namespace}}'
+        namespace: freeipa
       sources:
         - repoURL: helm-chart-repo
           chart: freeipa
