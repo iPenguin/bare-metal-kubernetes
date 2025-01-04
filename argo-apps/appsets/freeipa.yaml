@@ -18,9 +18,10 @@ spec:
     metadata:
       name: 'freeipa'
     spec:
+      syncPolicy:
+        automated: {}
       project: freeipa
       destination:
-        server: '{{.server}}'
         namespace: '{{.namespace}}'
       sources:
         - repoURL: helm-chart-repo
