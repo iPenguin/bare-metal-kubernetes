@@ -23,14 +23,6 @@ spec:
         namespace: freeipa
         server: https://kubernetes.default.svc
       sources:
-        - repoURL: helm-chart-repo
-          chart: freeipa
-          targetRevision: HEAD
-          helm:
-            releaseName: freeipa-server
-            valuesFiles:
-              - argo-apps/apps/freeipa-values.yaml
-
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
-          path: argo-apps/apps/additional
+          path: argo-apps/apps/freeipa
           targetRevision: HEAD
