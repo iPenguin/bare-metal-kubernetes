@@ -21,6 +21,7 @@ spec:
       project: freeipa
       destination:
         namespace: freeipa
+        server: https://kubernetes.default.svc
       sources:
         - repoURL: helm-chart-repo
           chart: freeipa
