@@ -11,5 +11,5 @@ spec:
   project: freeipa
   source:
     repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
-    path: argo-apps/appsets/base
+    path: argo-apps/appsets
     targetRevision: HEAD
