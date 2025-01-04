@@ -7,24 +7,16 @@
     name: argocd
     state: present
 
-- name: Install ArgoCD
-  kubernetes.core.k8s:
-    namespace: argocd
-    template:
-      - path: 'argocd-manifest.yaml.j2'
-
-- name: Create argo namespace
-  kubernetes.core.k8s:
-    api_version: v1
-    kind: Namespace
+- name: Add argo helm repo
+  kubernetes.core.helm_repository:
     name: argo
-    state: present
+    repo_url: https://argoproj.github.io/argo-helm
 
-- name: Install ArgoWorkflow
-  kubernetes.core.k8s:
-    namespace: argo
-    template:
-      - path: 'argo-workflow.yaml.j2'
-
+- name: Install ArgoCD
+  kubernetes.core.helm:
+    name: argocd
+    chart_ref: argo/argo-cd
+    release_namespace: argocd
+    values: "{{ lookup('template', 'argocd-values.yaml.j2') | from_yaml }}"
 
 ...
