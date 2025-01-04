@@ -89,7 +89,7 @@
     - role: nvidia
       when: has_nvidia_card
 
-- name: deploy the load balanacer
+- name: Deploy MetalLB 
   hosts:
     - controllers
   tags:
@@ -100,7 +100,18 @@
       when:
         - inventory_hostname in k8s_controller
 
-- name: deploy Argo Workflows and CD
+- name: Deploy Sealed Secrets
+  hosts:
+    - controllers
+  tags:
+    - cd
+    - secrets
+  roles:
+    - role: sealed-secrets
+      when: 
+        - inventory_hostname in k8s_controller
+
+- name: Deploy Argo CD
   hosts:
     - controllers
   tags:

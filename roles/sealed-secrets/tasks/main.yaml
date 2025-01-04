@@ -1,0 +1,17 @@
+---
+
+- name: Add helm repo for sealed secrets
+  kubernetes.core.helm_repository:
+    name: sealed-secrets
+    repo_url: https://bitnami-labs.github.io/sealed-secrets
+    state: present
+
+- name: Install sealed-secrets
+  kubernetes.core.helm:
+    name: sealed-secrets
+    chart_version: 2.17.0 
+    chart_ref: sealed-secrets/sealed-secrets
+    release_namespace: sys-sealed-secrets
+    create_namespace: true
+    update_repo_cache: true
+
