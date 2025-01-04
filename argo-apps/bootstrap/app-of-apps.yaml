@@ -10,6 +10,6 @@ spec:
     server: https://kubernetes.default.svc.cluster.local
   project: freeipa
   source:
-    repoURL: https://github.com/ipenguin/bare-metal-kubernets.git
+    repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
     path: argo-apps/appsets/base
     targetRevision: HEAD
