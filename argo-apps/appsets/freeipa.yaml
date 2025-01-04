@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: freeipa
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - list:
+      elements:
+        - env: prod
+          helmVersion:
+          namespace: freeipa
+        - env: dev
+  template:
+    metadata:
+      name: 'freeipa'
+    spec:
+      project: freeipa
+      destination:
+        server: '{{.server}}'
+        namespace: '{{.namespace}}'
+      sources:
+        - repoURL: helm-chart-repo
+          chart: freeipa
+          targetRevision: HEAD
+          helm:
+            releaseName: freeipa-server
+            valuesFiles:
+              - argo-apps/apps/freeipa-values.yaml
+
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          path: argo-apps/apps/additional
+          targetRevision: HEAD
