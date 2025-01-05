@@ -31,7 +31,20 @@ spec:
       destination:
         namespace: freeipa
         server: https://kubernetes.default.svc
+      kustomize:
+        patches:
+        - target:
+            kind: Secret
+            name: ipa-01-install-secrets
+          patch: |-
+            - op: replace
+              path: /stringData/IPA_OPTIONS
+              value: |-
+                --unattended
+                --realm={{ .values.primary_option }}
       sources:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           path: argo-apps/apps/freeipa
           targetRevision: HEAD
+
+
