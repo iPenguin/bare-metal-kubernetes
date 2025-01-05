@@ -15,9 +15,6 @@ spec:
         - path: "argo-apps/values/main.yaml"
     values:
       freeipa_domain: '{{ lan_tld.ToUpper() }}'
-      primary_option: |-
-        --unattended
-        --realm={{ .values.freeipa_domain }}
 
   template:
     metadata:
@@ -41,7 +38,7 @@ spec:
               path: /stringData/IPA_OPTIONS
               value: |-
                 --unattended
-                --realm={{ .values.primary_option }}
+                --realm={{ .values.freeipa_domain }}
       sources:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           path: argo-apps/apps/freeipa
