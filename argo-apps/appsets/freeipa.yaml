@@ -44,6 +44,6 @@ spec:
                     name: IPA_SERVER_INSTALL_OPTS
                     value: |-
                       --unattended
-                      --realm={{ .values.freeipa_domain }}
+                      --realm=test.milco.casa
 
 
