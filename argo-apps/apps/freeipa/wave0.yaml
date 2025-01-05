@@ -146,7 +146,7 @@ spec:
             topologyKey: "kubernetes.io/hostname"
       containers:
         - name: freeipa
-          image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
+          image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
           readinessProbe:
             exec:
               command: ["/usr/bin/systemctl", "is-active", "--quiet", "ipa"]

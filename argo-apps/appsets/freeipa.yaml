@@ -12,7 +12,7 @@ spec:
       repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
       revision: HEAD
       files:
-        - path: "hosts/group_vars/**.yaml"
+        - path: "argo-apps/values/main.yaml"
   template:
     metadata:
       name: freeipa
