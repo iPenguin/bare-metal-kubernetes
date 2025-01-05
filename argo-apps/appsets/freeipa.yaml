@@ -35,10 +35,12 @@ spec:
             name: ipa-01
           patch: |-
             - op: replace
-              path: /spec/template/spec/containers/0/env/4/value 
-              value: |-
-                --unattended
-                --realm={{ .values.freeipa_domain }}
+              path: /spec/template/spec/containers/0/env
+              value:
+                name: IPA_SERVER_INSTALL_OPTS
+                value: |-
+                  --unattended
+                  --realm={{ .values.freeipa_domain }}
       sources:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           path: argo-apps/apps/freeipa
