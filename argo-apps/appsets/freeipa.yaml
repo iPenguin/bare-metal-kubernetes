@@ -31,11 +31,11 @@ spec:
       kustomize:
         patches:
         - target:
-            kind: Secret
-            name: ipa-01-install-secrets
+            kind: StatefulSet
+            name: ipa-01
           patch: |-
             - op: replace
-              path: /stringData/IPA_OPTIONS
+              path: /spec/template/spec/containers/0/env/4/value 
               value: |-
                 --unattended
                 --realm={{ .values.freeipa_domain }}
