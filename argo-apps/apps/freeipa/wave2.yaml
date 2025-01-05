@@ -79,7 +79,6 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
 type: Opaque
 stringData:
-  IPA_ADMIN_PASSWORD: {{ ipa_admin_password }}
   IPA_REPLICA_OPTIONS: |-
     --unattended
     --principal=admin
@@ -150,6 +149,11 @@ spec:
               value: "{{ timezone }}"
             - name: IPA_SERVER_HOSTNAME
               value: "ipa-01.{{ lan_domain }}"
+            - name: IPA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: freeipa
+                  key: admin_password
             - name: IPA_SERVER_INSTALL_OPTS
               valueFrom:
                 secretKeyRef:
@@ -158,8 +162,8 @@ spec:
             - name: PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ipa-02-install-secrets
-                  key: IPA_ADMIN_PASSWORD
+                  name: freeipa
+                  key: admin_password
           args: [ "ipa-replica-install" ]
           securityContext:
             seccompProfile:

@@ -104,8 +104,8 @@ stringData:
     --unattended
     --realm={{ ipa_domain | upper }}
     --domain={{ ipa_domain }}
-    --ds-password={{ ipa_directory_password }}
-    --admin-password={{ ipa_admin_password }}
+    --ds-password=$IPA_DIRECTORY_PASSWORD
+    --admin-password=$IPA_ADMIN_PASSWORD
     --ntp-pool=us.pool.ntp.org
     --no-host-dns
     --setup-dns
@@ -124,14 +124,14 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: freeipa # has to match .spec.template.metadata.labels
+      app: freeipa
   serviceName: "freeipa"
   replicas: 1
-  minReadySeconds: 10 # by default is 0
+  minReadySeconds: 10
   template:
     metadata:
       labels:
-        app: freeipa # has to match .spec.selector.matchLabels
+        app: freeipa
     spec:
       terminationGracePeriodSeconds: 10
       affinity:
@@ -169,6 +169,16 @@ spec:
               value: "{{ timezone }}"
             - name: IPA_SERVER_HOSTNAME
               value: "ipa-01.{{ lan_domain }}"
+            - name: IPA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: freeipa
+                  key: admin_password
+            - name: IPA_DIRECTORY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: freeipa
+                  key: directory_password
             - name: IPA_SERVER_INSTALL_OPTS
               valueFrom:
                 secretKeyRef:
