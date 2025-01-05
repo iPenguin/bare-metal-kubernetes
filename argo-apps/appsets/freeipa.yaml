@@ -28,22 +28,22 @@ spec:
       destination:
         namespace: freeipa
         server: https://kubernetes.default.svc
-      kustomize:
-        patches:
-        - target:
-            kind: StatefulSet
-            name: ipa-01
-          patch: |-
-            - op: add
-              path: /spec/template/spec/containers/0/env
-              value: |-
-                name: IPA_SERVER_INSTALL_OPTS
-                value: |-
-                  --unattended
-                  --realm={{ .values.freeipa_domain }}
       sources:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           path: argo-apps/apps/freeipa
           targetRevision: HEAD
+          kustomize:
+            patches:
+              - target:
+                  kind: StatefulSet
+                  name: ipa-01
+                patch: |-
+                  - op: add
+                    path: /spec/template/spec/containers/0/env
+                    value: |-
+                      name: IPA_SERVER_INSTALL_OPTS
+                      value: |-
+                        --unattended
+                        --realm={{ .values.freeipa_domain }}
 
 
