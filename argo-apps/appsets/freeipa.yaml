@@ -34,8 +34,8 @@ spec:
             kind: StatefulSet
             name: ipa-01
           patch: |-
-            - op: replace
-              path: /spec/template/spec/containers/0/env
+            - op: add
+             path: /spec/template/spec/containers/0/env
               value:
                 name: IPA_SERVER_INSTALL_OPTS
                 value: |-
