@@ -7,6 +7,8 @@ metadata:
 spec:
   syncPolicy:
     automated: {}
+    syncOptions:
+      - CreateNamespace=true
   destination:
     namespace: argocd
     server: https://kubernetes.default.svc
