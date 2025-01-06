@@ -3,4 +3,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - wave0.yaml
-  - wave1.yaml
+  - wave2.yaml
