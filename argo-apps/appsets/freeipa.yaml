@@ -42,7 +42,20 @@ spec:
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
                     --unattended
-                    --realm=test.milco.casa
+                    --realm=AUTH.MILCO.CASA
+                    --domain=auth.milco.casa
+                    --ds-password=$IPA_DIRECTORY_PASSWORD
+                    --admin-password=$IPA_ADMIN_PASSWORD
+                    --ntp-pool=us.pool.ntp.org
+                    --no-host-dns
+                    --setup-dns
+                    --zonemgr=user@example.com
+                    --no-forwarders
+                    --skip-mem-check
+                    --auto-reverse
+                    --setup-kra
+                    --ssh-trust-dns
+                    --ip-address="10.1.1.10"
 
 
 

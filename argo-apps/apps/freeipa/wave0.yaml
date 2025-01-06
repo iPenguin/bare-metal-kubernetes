@@ -94,29 +94,6 @@ spec:
                 port:
                   number: 443
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ipa-01-install-secrets
-type: Opaque
-stringData:
-  IPA_OPTIONS: |-
-    --unattended
-    --realm={{ ipa_domain | upper }}
-    --domain={{ ipa_domain }}
-    --ds-password=$IPA_DIRECTORY_PASSWORD
-    --admin-password=$IPA_ADMIN_PASSWORD
-    --ntp-pool=us.pool.ntp.org
-    --no-host-dns
-    --setup-dns
-    --zonemgr="{{ ipa_server_admin_email }}"
-    --no-forwarders
-    --skip-mem-check
-    --auto-reverse
-    --setup-kra
-    --ssh-trust-dns
-    --ip-address="{{ network_services["ipa-01"].ipv4 }}"
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
