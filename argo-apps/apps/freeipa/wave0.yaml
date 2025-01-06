@@ -143,9 +143,9 @@ spec:
             periodSeconds: 30
           env:
             - name: TZ
-              value: "{{ timezone }}"
+              value: "America/New_York"
             - name: IPA_SERVER_HOSTNAME
-              value: "ipa-01.{{ lan_domain }}"
+              value: "ipa-01.clt.milco.casa"
             - name: IPA_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
