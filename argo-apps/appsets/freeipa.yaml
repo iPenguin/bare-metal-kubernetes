@@ -55,7 +55,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address="10.1.1.10"
+                    --ip-address="10.1.1.23"
 
 
 
