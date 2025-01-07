@@ -19,8 +19,7 @@ metadata:
     app: freeipa
   annotations:
     metallb.universe.tf/loadBalancerIPs: |-
-      {{ network_services[ "ipa-01" ].ipv4 }},
-      {{ network_services[ "ipa-01" ].ipv6 }}
+      placeholder
 spec:
   type: LoadBalancer
   selector:

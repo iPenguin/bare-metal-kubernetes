@@ -13,8 +13,8 @@ spec:
       revision: HEAD
       files:
         - path: "argo-apps/values/main.yaml"
-    values:
-      freeipa_domain: '{{ lan_tld.ToUpper() }}'
+          values:
+            freeipa_domain: '{{ lan_tld.ToUpper() }}'
 
   template:
     metadata:
@@ -35,6 +35,15 @@ spec:
         kustomize:
           patches:
             - target:
+                kind: Service
+                name: ipa-01-lb
+              patch:
+                - op: replace
+                  path: /metadata/annotations/metallb.universe.tf/loadBalancerIPs
+                  value: |-
+                    {{ .network_prefix_ipv4}}.23,
+                    ${NETWORK_PREFIX_IPV6}::23
+            - target:
                 kind: StatefulSet
                 name: ipa-01
               patch: |-
@@ -42,8 +51,8 @@ spec:
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
                     --unattended
-                    --realm=AUTH.MILCO.CASA
-                    --domain=auth.milco.casa
+                    --realm=AUTH.{{ .freeipa_domain }}
+                    --domain=auth.{{ .lan_tld }}
                     --ds-password=$IPA_DIRECTORY_PASSWORD
                     --admin-password=$IPA_ADMIN_PASSWORD
                     --ntp-pool=us.pool.ntp.org
