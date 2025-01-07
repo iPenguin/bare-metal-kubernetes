@@ -51,7 +51,7 @@ spec:
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
                     --unattended
-                    --realm={{ upper .ip_domain }}
+                    --realm={{ upper .ipa_domain }}
                     --domain={{ .ipa_domain }}
                     --ds-password=$IPA_DIRECTORY_PASSWORD
                     --admin-password=$IPA_ADMIN_PASSWORD
