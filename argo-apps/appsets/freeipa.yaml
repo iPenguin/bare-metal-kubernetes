@@ -41,7 +41,7 @@ spec:
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    {{ .network_prefix_ipv4 }}.23,
+                    10.1.1.23,
                     ${NETWORK_PREFIX_IPV6}::23
             - target:
                 kind: StatefulSet
