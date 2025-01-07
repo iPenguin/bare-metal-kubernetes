@@ -37,11 +37,11 @@ spec:
             - target:
                 kind: Service
                 name: ipa-01-lb
-              patch:
+              patch: |-
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    10.1.1.23,
+                    {{ .network_prefix_ipv4 }}.23,
                     ${NETWORK_PREFIX_IPV6}::23
             - target:
                 kind: StatefulSet
