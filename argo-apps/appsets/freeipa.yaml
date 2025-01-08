@@ -1,4 +1,17 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: get-ip
+  namespace: argocd
+data:
+  get-ip.yaml: |
+    command: ["sh", "-c"]
+    args:
+      - |
+        #!/bin/sh
+        echo '[{"network_prefix_ipv6": "$(dig +short $1 AAAA @10.1.1.1)"}]'
+---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -8,13 +21,20 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-  - git:
-      repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
-      revision: HEAD
-      files:
-        - path: "argo-apps/values/main.yaml"
-          values:
-            freeipa_domain: '{{ lan_tld.ToUpper() }}'
+    - plugin:
+        configMapRef:
+          name: get-ip
+          key: get-ip.yaml
+        input:
+          parameters:
+            apiUrl: "ipa-01.clt.milco.casa"
+    - git:
+        repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+        revision: HEAD
+        files:
+          - path: "argo-apps/values/main.yaml"
+            values:
+              freeipa_domain: '{{ upper .lan_tld }}'
 
   template:
     metadata:
@@ -42,7 +62,7 @@ spec:
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
                     {{ .network_prefix_ipv4 }}.23,
-                    ${NETWORK_PREFIX_IPV6}::23
+                    {{ .network_prefix_ipv6 }}::23
             - target:
                 kind: StatefulSet
                 name: ipa-01
