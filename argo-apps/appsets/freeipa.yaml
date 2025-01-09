@@ -5,14 +5,14 @@ metadata:
   name: get-ip
   namespace: argocd
 data:
-  baseUrl: "https://ipa-01.clt.milco.casa"
+  baseUrl: ""
   token: "$plugin.myplugin.token"
   get-ip.yaml: |
     command: ["sh", "-c"]
     args:
       - |
         #!/bin/sh
-        echo '[{"network_prefix_ipv6": "$(dig +short $1 AAAA @10.1.1.1)"}]'
+        echo '[{"network_prefix_ipv6": "$(dig +short ipa-01.clt.milco.casa AAAA @10.1.1.1)"}]'
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -27,9 +27,6 @@ spec:
         configMapRef:
           name: get-ip
           key: get-ip.yaml
-        input:
-          parameters:
-            apiUrl: "ipa-01.clt.milco.casa"
     - git:
         repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
         revision: HEAD
