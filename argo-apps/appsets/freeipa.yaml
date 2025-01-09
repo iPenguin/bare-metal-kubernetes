@@ -5,7 +5,7 @@ metadata:
   name: get-ip
   namespace: argocd
 data:
-  baseUrl: ""
+  baseUrl: "https://ipa-01.clt.milco.casa"
   get-ip.yaml: |
     command: ["sh", "-c"]
     args:
