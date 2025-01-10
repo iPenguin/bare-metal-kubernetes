@@ -6,6 +6,7 @@ metadata:
   namespace: argocd
 data:
   baseUrl: "https://ipa-01.clt.milco.casa/"
+  token: "$plugin.myplugin.token"
   plugin.yaml: |
     apiVersion: argoproj.io/v1alpha1
     kind: ConfigManagementPlugin
