@@ -5,14 +5,17 @@ metadata:
   name: get-ip
   namespace: argocd
 data:
-  baseUrl: ""
-  token: "$plugin.myplugin.token"
-  get-ip.yaml: |
-    command: ["sh", "-c"]
-    args:
-      - |
-        #!/bin/sh
-        echo '[{"network_prefix_ipv6": "$(dig +short ipa-01.clt.milco.casa AAAA @10.1.1.1)"}]'
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: get-ip
+    spec:
+      version: v1.0
+      init:
+        command: [sh, -c, 'echo "Initializing..."']
+      generate:
+        command: [sh, -c, 'echo "[{\"network_prefix_ipv6\": \"$(dig +short ipa-01.clt.milco.casa AAAA @10.1.1.1)\"}]"' ]
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
