@@ -5,7 +5,7 @@ metadata:
   name: get-ip
   namespace: argocd
 data:
-  baseUrl: "https://argocd-server.argocd.svc.cluster.local/"
+  baseUrl: "http://argocd-server.argocd.svc.cluster.local/"
   token: "$plugin.myplugin.token"
   plugin.yaml: |
     apiVersion: argoproj.io/v1alpha1
