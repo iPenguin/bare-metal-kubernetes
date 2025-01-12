@@ -44,7 +44,7 @@ data:
     import socket
 
     class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-        def do_GET(self):
+        def do_POST(self):
             parsed_path = urlparse(self.path)
 
             if parsed_path.path == '/api/v1/getparams.execute':
