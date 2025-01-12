@@ -5,7 +5,7 @@ metadata:
   name: get-ip
   namespace: argocd
 data:
-  baseUrl: "dns-lookup-svc.freeipa.svc.cluster.local."
+  baseUrl: "dns-lookup-svc.freeipa.svc.cluster.local"
   token: "$plugin.myplugin.token"
 ---
 apiVersion: argoproj.io/v1alpha1
