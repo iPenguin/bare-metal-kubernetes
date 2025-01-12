@@ -60,7 +60,7 @@ data:
               except Exception as e:
                   response_data = '{ "error":' + str(e) + '}'
 
-                self.wfile.write(json.dumps(response_data).encode())
+              self.wfile.write(json.dumps(response_data).encode())
             else:
                 self.send_response(404)
                 self.send_header('Content-type', 'text/plain')
