@@ -41,22 +41,28 @@ data:
     from http.server import BaseHTTPRequestHandler, HTTPServer
     import json
     from urllib.parse import urlparse
+    import socket
 
     class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             parsed_path = urlparse(self.path)
 
             if parsed_path.path == '/api/v1/getparams.execute':
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
+              self.send_response(200)
+              self.send_header('Content-type', 'application/json')
+              self.end_headers()
 
-                # Here we can add logic to handle parameters if needed
-                response_data = {
-                    "message": "Hello, this is a simple web server!",
-                    "status": "OK",
-                    "path": parsed_path.path
-                }
+              hostname = "ipa-01.clt.milco.casa"
+              try:
+                  ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
+                  response_data = {
+                      "ipv6_address": ipv6_address
+                  }
+              except Exception as e:
+                  response_data = {
+                      "error": str(e)
+                  }
+
                 self.wfile.write(json.dumps(response_data).encode())
             else:
                 self.send_response(404)
