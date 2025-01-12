@@ -1,0 +1,90 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns-lookup-deploy
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dns-lookup 
+  template:
+    metadata:
+      labels:
+        app: dns-lookup 
+    spec:
+      containers:
+      - name: dns-lookup 
+        image: python:3.11-slim
+        command: ["python"]
+        args: ["dns_lookup.py"]
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: script-volume
+          mountPath: /app
+      volumes:
+      - name: script-volume
+        configMap:
+          name: dns-lookup 
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns-lookup
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+data:
+  dns_lookup.py: |
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    import json
+    from urllib.parse import urlparse
+
+    class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            parsed_path = urlparse(self.path)
+
+            if parsed_path.path == '/api/v1/getparams.execute':
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+
+                # Here we can add logic to handle parameters if needed
+                response_data = {
+                    "message": "Hello, this is a simple web server!",
+                    "status": "OK",
+                    "path": parsed_path.path
+                }
+                self.wfile.write(json.dumps(response_data).encode())
+            else:
+                self.send_response(404)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(b"Path not found")
+
+    def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):
+        server_address = ('', port)
+        httpd = server_class(server_address, handler_class)
+        print(f"Starting httpd server on port {port}...")
+        httpd.serve_forever()
+
+    if __name__ == '__main__':
+        run()
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-lookup-svc 
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  selector:
+    app: dns-lookup
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: LoadBalancer
+
