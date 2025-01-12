@@ -21,6 +21,9 @@ spec:
         configMapRef:
           name: get-ip
           key: get-ip.yaml
+        input:
+          parameters:
+            hostname: 'ipa-01.clt.milco.casa'
     - git:
         repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
         revision: HEAD
@@ -77,7 +80,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address="10.1.1.23"
+                    --ip-address="{{ .ipv4_address }}"
 
 
 
