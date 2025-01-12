@@ -19,7 +19,7 @@ spec:
       - name: dns-lookup 
         image: python:3.11-slim
         command: ["python"]
-        args: ["dns_lookup.py"]
+        args: ["/app/dns_lookup.py"]
         ports:
         - containerPort: 8000
         volumeMounts:
