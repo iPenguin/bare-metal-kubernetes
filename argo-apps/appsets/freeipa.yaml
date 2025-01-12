@@ -55,7 +55,7 @@ spec:
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
                     {{ .network_prefix_ipv4 }}.23,
-                    {{ .network_prefix_ipv6 }}::23
+                    {{ .values.network_prefix_ipv6 }}::23
             - target:
                 kind: StatefulSet
                 name: ipa-01
