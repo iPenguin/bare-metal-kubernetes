@@ -56,13 +56,9 @@ data:
               hostname = "ipa-01.clt.milco.casa"
               try:
                   ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
-                  response_data = '{
-                      "ipv6_address": ipv6_address
-                  }'
+                  response_data = '{ "ipv6_address": ' + ipv6_address + '}'
               except Exception as e:
-                  response_data = '{
-                      "error": str(e)
-                  }'
+                  response_data = '{ "error":' + str(e) + '}'
 
                 self.wfile.write(json.dumps(response_data).encode())
             else:
