@@ -40,10 +40,22 @@ data:
   dns_lookup.py: |
     from http.server import BaseHTTPRequestHandler, HTTPServer
     import json
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, parse_qs
     import socket
 
     class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+        def get_domain(hostname):
+            parts = hostname.split('.')
+
+            # If there are less than 3 parts, return the whole hostname
+            if len(parts) < 3:
+                return hostname
+
+            # Assume the last two parts are domain and TLD for simplicity
+            domain_tld = '.'.join(parts[-2:])
+
+            return domain_tld
+
         def do_POST(self):
             parsed_path = urlparse(self.path)
 
@@ -52,7 +64,17 @@ data:
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
 
-                hostname = "ipa-01.clt.milco.casa"
+                content_type = self.headers.get('Content-Type', '').lower()
+
+                content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length).decode('utf-8')
+                parsed_params = parse_qs(post_data)
+
+                #hostname = parsed_params.get('hostname', [None])[0]
+                hostname = 'ipa-01.clt.milco.casa'
+
+                domain = get_domain(hostname)
+
                 try:
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
                     ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
@@ -61,7 +83,8 @@ data:
                             "parameters": [
                                 {
                                   "ipv4_address": ipv4_address,
-                                  "ipv6_address": ipv6_address
+                                  "ipv6_address": ipv6_address,
+                                  "domain": domain
                                 }
                             ]
                         }
