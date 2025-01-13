@@ -44,7 +44,7 @@ data:
     import socket
 
     class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-        def get_domain(hostname):
+        def get_domain(self, hostname):
             parts = hostname.split('.')
 
             # If there are less than 3 parts, return the whole hostname
@@ -53,7 +53,6 @@ data:
 
             # Assume the last two parts are domain and TLD for simplicity
             domain_tld = '.'.join(parts[-2:])
-
             return domain_tld
 
         def do_POST(self):
@@ -73,7 +72,7 @@ data:
                 #hostname = parsed_params.get('hostname', [None])[0]
                 hostname = 'ipa-01.clt.milco.casa'
 
-                domain = get_domain(hostname)
+                domain = self.get_domain(hostname)
 
                 try:
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
