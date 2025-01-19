@@ -36,8 +36,6 @@ metadata:
   name: dns-lookup
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
-    my.data: |-
-      {{ printf "Debug: %+v" . | nospace }}
 data:
   dns_lookup.py: |
     from http.server import BaseHTTPRequestHandler, HTTPServer

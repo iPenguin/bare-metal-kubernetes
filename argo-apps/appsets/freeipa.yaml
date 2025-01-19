@@ -32,6 +32,9 @@ spec:
           - path: "argo-apps/values/main.yaml"
 
   template:
+    annotations:
+      my.data: |-
+        {{ printf "Debug: %+v" . | nospace }}
     metadata:
       name: freeipa
     spec:
