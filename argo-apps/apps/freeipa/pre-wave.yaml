@@ -83,7 +83,6 @@ data:
 
                 json_data = json.loads(post_data)
                 hostname = json_data['input']['parameters']['hostname']
-                self.log_message(f"DATA ==>> {hostname}")
                 domain = self.get_domain(hostname)
                 
                 try:
@@ -95,6 +94,7 @@ data:
                                 {
                                   "ipv4_address": ipv4_address,
                                   "ipv6_address": ipv6_address,
+                                  "domain": domain,
                                 }
                             ]
                         }
@@ -104,6 +104,7 @@ data:
                         "error": str(e)
                     }
 
+                self.log_message(f"DATA ==>> {response_data}")
                 self.wfile.write(json.dumps(response_data).encode())
             else:
                 self.send_response(404)
