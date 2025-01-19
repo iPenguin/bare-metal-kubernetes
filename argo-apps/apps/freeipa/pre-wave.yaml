@@ -69,7 +69,7 @@ data:
                 post_data = self.rfile.read(content_length).decode('utf-8')
                 parsed_params = parse_qs(post_data)
 
-                print("data", parsed_params)
+                print("DATA --==>>", parsed_params)
                 hostname = parsed_params.get('hostname', [None])[0]
                
                 domain = self.get_domain(hostname)
@@ -83,7 +83,6 @@ data:
                                 {
                                   "ipv4_address": ipv4_address,
                                   "ipv6_address": ipv6_address,
-                                  "domain": domain,
                                 }
                             ]
                         }
