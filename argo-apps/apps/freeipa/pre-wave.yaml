@@ -42,6 +42,7 @@ data:
     import json
     from urllib.parse import urlparse, parse_qs
     import socket
+    import logging
 
     class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):
