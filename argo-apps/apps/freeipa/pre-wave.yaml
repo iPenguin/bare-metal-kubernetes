@@ -88,13 +88,13 @@ data:
                 try:
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
                     ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
-                    response_data = [{ "output": {
-                        "parameters": {
+                    response_data = { "output": {
+                        "parameters": [{
                             "ipv4_address": ipv4_address,
                             "ipv6_address": ipv6_address,
                             "domain": domain,
-                        }
-                    }}]
+                        }]
+                    }}
 
                 except Exception as e:
                     response_data = {
