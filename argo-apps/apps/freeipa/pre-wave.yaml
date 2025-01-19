@@ -44,6 +44,9 @@ data:
     import socket
 
     class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+        def log_message(self, format, *args):
+            # Override the default logging to use our logger
+            logger.info("%s - - [%s] %s\n" % (self.client_address[0], self.log_date_time_string(), format % args))
         def get_domain(self, hostname):
             parts = hostname.split('.')
             
@@ -69,7 +72,7 @@ data:
                 post_data = self.rfile.read(content_length).decode('utf-8')
                 parsed_params = parse_qs(post_data)
 
-                print("DATA --==>>", parsed_params)
+                self.log_message("DATA --==>> " + parsed_params)
                 hostname = parsed_params.get('hostname', [None])[0]
                
                 domain = self.get_domain(hostname)
