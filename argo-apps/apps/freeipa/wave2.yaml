@@ -22,8 +22,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     metallb.universe.tf/loadBalancerIPs: |-
-      {{ network_services[ "ipa-02" ].ipv4 }},
-      {{ network_services[ "ipa-02" ].ipv6 }}
+      placeholder
 spec:
   type: LoadBalancer
   selector:
@@ -126,7 +125,7 @@ spec:
             topologyKey: "kubernetes.io/hostname"
       containers:
         - name: freeipa
-          image: quay.io/freeipa/freeipa-server:{{ ipa_docker_os }}-{{ freeipa_version }}
+          image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
           readinessProbe:
             exec:
               command: ["/usr/bin/systemctl", "is-active", "--quiet", "ipa"]
@@ -146,19 +145,16 @@ spec:
             periodSeconds: 30
           env:
             - name: TZ
-              value: "{{ timezone }}"
+              value: "America/New_York"
             - name: IPA_SERVER_HOSTNAME
-              value: "ipa-01.{{ lan_domain }}"
+              value: "ipa-02.clt.milco.casa"
             - name: IPA_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: freeipa
                   key: admin_password
             - name: IPA_SERVER_INSTALL_OPTS
-              valueFrom:
-                secretKeyRef:
-                  name: ipa-02-install-secrets
-                  key: IPA_REPLICA_OPTIONS
+              value: placeholder
             - name: PASSWORD
               valueFrom:
                 secretKeyRef:
