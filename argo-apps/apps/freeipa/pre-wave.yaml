@@ -81,8 +81,7 @@ data:
                 content_length = int(self.headers.get('Content-Length', 0))
                 post_data = self.rfile.read(content_length).decode('utf-8')
                
-                hostname = post_data['input']['parameters']['hostname']
-
+                hostname = post_data.get('input', {}).get('parameters', {}).get('hostname')
                 self.log_message(f"DATA ==>> {hostname}")
                 domain = self.get_domain(hostname)
                 
