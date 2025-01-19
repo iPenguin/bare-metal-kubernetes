@@ -82,7 +82,7 @@ data:
                 post_data = self.rfile.read(content_length).decode('utf-8')
 
                 json_data = json.loads(post_data)
-                hostname = post_data['input']['parameters']['hostname']
+                hostname = json_data['input']['parameters']['hostname']
                 self.log_message(f"DATA ==>> {hostname}")
                 domain = self.get_domain(hostname)
                 
