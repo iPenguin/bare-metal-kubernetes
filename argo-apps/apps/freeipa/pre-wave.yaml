@@ -102,7 +102,7 @@ data:
                     }
 
                 self.log_message(f"DATA ==>> {response_data}")
-                self.wfile.write(json.dumps(response_data))
+                self.wfile.write(json.dumps(response_data).encode())
             else:
                 self.send_response(404)
                 self.send_header('Content-type', 'text/plain')
