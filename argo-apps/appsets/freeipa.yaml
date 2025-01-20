@@ -36,7 +36,7 @@ spec:
       my.data: |-
         {{ printf "Debug: %+v" . | nospace }}
     metadata:
-      name: freeipa-appset
+      name: freeipa
     spec:
       syncPolicy:
         automated: {}
