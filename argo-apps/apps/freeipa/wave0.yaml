@@ -193,7 +193,7 @@ spec:
               mountPath: /run/systemd
             - name: tmp
               mountPath: /tmp
-      hostname: "ipa-01.{{ lan_domain }}"
+      hostname: "ipa-01.clt.milco.casa"
       volumes:
         - name: ipa-data
           persistentVolumeClaim:

@@ -80,4 +80,22 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address='10.1.1.23'
-
+            - target:
+                kind: StatefulSet
+                name: ipa-02
+              patch: |-
+                - op: replace
+                  path: /spec/template/spec/containers/0/env/3/value
+                  value: |-
+                    --unattended
+                    --principal=admin
+                    --ntp-pool=us.pool.ntp.org
+                    --no-host-dns
+                    --setup-dns
+                    --no-forwarders
+                    --skip-mem-check
+                    --auto-reverse
+                    --setup-kra
+                    --ssh-trust-dns
+                    --ip-address='10.1.1.24'
+                    --server=ipa-01.clt.milco.casa
