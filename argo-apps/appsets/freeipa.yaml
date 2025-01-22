@@ -32,9 +32,6 @@ spec:
           - path: "argo-apps/values/main.yaml"
 
   template:
-    annotations:
-      my.data: |-
-        {{ printf "Debug: %+v" . | nospace }}
     metadata:
       name: freeipa
     spec:
@@ -68,6 +65,8 @@ spec:
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
                     --unattended
+                    --realm=AUTH.MILCO.CASA
+                    --domain=auth.milco.casa
                     --ds-password=$IPA_DIRECTORY_PASSWORD
                     --admin-password=$IPA_ADMIN_PASSWORD
                     --ntp-pool=us.pool.ntp.org
@@ -88,6 +87,8 @@ spec:
                   path: /spec/template/spec/containers/0/env/3/value
                   value: |-
                     --unattended
+                    --realm=AUTH.MILCO.CASA
+                    --domain=auth.milco.casa
                     --principal=admin
                     --ntp-pool=us.pool.ntp.org
                     --no-host-dns
