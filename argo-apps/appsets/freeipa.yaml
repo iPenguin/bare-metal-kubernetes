@@ -56,7 +56,8 @@ spec:
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    10.1.1.23
+                    {{ .ipv4_address }},
+                    {{ .ipv6_address }}
             - target:
                 kind: StatefulSet
                 name: ipa-01
@@ -78,7 +79,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address='10.1.1.23'
+                    --ip-address='{{ .ipv4_address }}'
             - target:
                 kind: StatefulSet
                 name: ipa-02
