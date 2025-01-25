@@ -88,7 +88,7 @@ spec:
           patches:
             - target:
                 kind: Service
-                name: {{ .list.flags }}-lb
+                name: '{{ .list.flags }}-lb'
               patch: |-
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
@@ -97,7 +97,7 @@ spec:
                     {{ .ipv6_address }}
             - target:
                 kind: StatefulSet
-                name: {{ .list.flags }} 
+                name: '{{ .list.flags }}'
               patch: |-
                 - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
