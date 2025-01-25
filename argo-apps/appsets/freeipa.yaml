@@ -18,18 +18,55 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - plugin:
-        configMapRef:
-          name: get-ip
-          key: get-ip.yaml
-        input:
-          parameters:
-            hostname: 'ipa-01.clt.milco.casa'
-    - git:
-        repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
-        revision: HEAD
-        files:
-          - path: "argo-apps/values/main.yaml"
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - server: ipa-01
+                  flags: |-
+                    --unattended
+                    --realm=AUTH.MILCO.CASA
+                    --domain=auth.milco.casa
+                    --ds-password=$IPA_DIRECTORY_PASSWORD
+                    --admin-password=$IPA_ADMIN_PASSWORD
+                    --ntp-pool=us.pool.ntp.org
+                    --no-host-dns
+                    --setup-dns
+                    --zonemgr=user@example.com
+                    --no-forwarders
+                    --skip-mem-check
+                    --auto-reverse
+                    --setup-kra
+                    --ssh-trust-dns
+                    --ip-address={{ .pluginn.ipv4_address }}
+                - server: ipa-02
+                  flags: |-
+                    --unattended
+                    --realm=AUTH.MILCO.CASA
+                    --domain=auth.milco.casa
+                    --principal=admin
+                    --ntp-pool=us.pool.ntp.org
+                    --no-host-dns
+                    --setup-dns
+                    --no-forwarders
+                    --skip-mem-check
+                    --auto-reverse
+                    --setup-kra
+                    --ssh-trust-dns
+                    --ip-address={{ .plugin.ipv4_address }}
+                    --server=ipa-01.clt.milco.casa
+          - plugin:
+              configMapRef:
+                name: get-ip
+                key: get-ip.yaml
+              input:
+                parameters:
+                  hostname: '{{ .list.server }}.clt.milco.casa'
+          - git:
+              repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+              revision: HEAD
+              files:
+                - path: "argo-apps/values/main.yaml"
 
   template:
     metadata:
@@ -51,7 +88,7 @@ spec:
           patches:
             - target:
                 kind: Service
-                name: ipa-01-lb
+                name: {{ .list.flags }}-lb
               patch: |-
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
@@ -60,44 +97,9 @@ spec:
                     {{ .ipv6_address }}
             - target:
                 kind: StatefulSet
-                name: ipa-01
+                name: {{ .list.flags }} 
               patch: |-
                 - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
-                    --unattended
-                    --realm=AUTH.MILCO.CASA
-                    --domain=auth.milco.casa
-                    --ds-password=$IPA_DIRECTORY_PASSWORD
-                    --admin-password=$IPA_ADMIN_PASSWORD
-                    --ntp-pool=us.pool.ntp.org
-                    --no-host-dns
-                    --setup-dns
-                    --zonemgr=user@example.com
-                    --no-forwarders
-                    --skip-mem-check
-                    --auto-reverse
-                    --setup-kra
-                    --ssh-trust-dns
-                    --ip-address='{{ .ipv4_address }}'
-            - target:
-                kind: StatefulSet
-                name: ipa-02
-              patch: |-
-                - op: replace
-                  path: /spec/template/spec/containers/0/env/3/value
-                  value: |-
-                    --unattended
-                    --realm=AUTH.MILCO.CASA
-                    --domain=auth.milco.casa
-                    --principal=admin
-                    --ntp-pool=us.pool.ntp.org
-                    --no-host-dns
-                    --setup-dns
-                    --no-forwarders
-                    --skip-mem-check
-                    --auto-reverse
-                    --setup-kra
-                    --ssh-trust-dns
-                    --ip-address='10.1.1.24'
-                    --server=ipa-01.clt.milco.casa
+                    {{ .list.flags }}
