@@ -112,7 +112,8 @@ spec:
                   value: {{ .host }}
                 - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
-                  value: {{ .flags }}
+                  value: >
+                    {{ .flags }}
                 - op: replace
                   path: /spec/template/spec/containers/0/command
                   value: [ "{{ .command }}" ]
