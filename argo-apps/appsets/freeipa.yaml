@@ -63,7 +63,7 @@ spec:
                 key: get-ip.yaml
               input:
                 parameters:
-                  hostname: '{{ .host }}.clt.milco.casa'
+                  hostname: 'ipa-01.clt.milco.casa'
 
   template:
     metadata:
