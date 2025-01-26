@@ -40,7 +40,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address={{ .ipv4_address }}
+                    --ip-address=placeholder
                 - host: ipa-02
                   flags: |-
                     --unattended
@@ -55,7 +55,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address={{ .ipv4_address }}
+                    --ip-address=placeholder
                     --server=ipa-01.clt.milco.casa
           - plugin:
               configMapRef:
@@ -63,7 +63,7 @@ spec:
                 key: get-ip.yaml
               input:
                 parameters:
-                  hostname: '{{ .list.server }}.clt.milco.casa'
+                  hostname: 'ipa-01.clt.milco.casa'
 
   template:
     metadata:
@@ -87,18 +87,17 @@ spec:
           patches:
             - target:
                 kind: Service
-                name: '{{ .list.flags }}-lb'
+                name: 'ipa-01-lb'
               patch: |-
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    {{ .ipv4_address }},
-                    {{ .ipv6_address }}
+                    placeholder
             - target:
                 kind: StatefulSet
-                name: '{{ .list.flags }}'
+                name: 'ipa-01'
               patch: |-
                 - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
-                    {{ .list.flags }}
+                    placeholder
