@@ -25,6 +25,7 @@ spec:
           - list:
               elements:
                 - host: ipa-01
+                  command: ipa-server-install
                   flags: |-
                     --unattended
                     --realm=AUTH.MILCO.CASA
@@ -42,6 +43,7 @@ spec:
                     --ssh-trust-dns
                     --ip-address=placeholder
                 - host: ipa-02
+                  command: ipa-replica-install
                   flags: |-
                     --unattended
                     --realm=AUTH.MILCO.CASA
@@ -99,3 +101,11 @@ spec:
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
                     {{ .flags }}
+            - target:
+                kind: StatefulSet
+                name: '{{ .host }}'
+              patch: |-
+                - op: replace
+                  path: /spec/template/spec/containers/0/command
+                  value: |-
+                    [ "{{ .command }}" ]

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ipa-01-data
+  name: ipa-data
 spec:
   storageClassName: ceph-block
   accessModes:
@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ipa-01-lb
+  name: ipa-lb
   labels:
     app: freeipa
   annotations:
@@ -96,7 +96,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ipa-01
+  name: ipa
 spec:
   selector:
     matchLabels:
@@ -140,6 +140,7 @@ spec:
             # NOTE: if initial installation fails, try increasing this value:
             failureThreshold: 50
             periodSeconds: 30
+          command: ['ipa-server-install']
           env:
             - name: TZ
               value: "America/New_York"
@@ -193,7 +194,7 @@ spec:
               mountPath: /run/systemd
             - name: tmp
               mountPath: /tmp
-      hostname: "ipa-01.clt.milco.casa"
+      hostname: placeholder
       volumes:
         - name: ipa-data
           persistentVolumeClaim:
