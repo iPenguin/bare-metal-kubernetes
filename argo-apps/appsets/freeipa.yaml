@@ -40,7 +40,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address={{ .pluginn.ipv4_address }}
+                    --ip-address={{ .plugin.ipv4_address }}
                 - server: ipa-02
                   flags: |-
                     --unattended
@@ -90,8 +90,8 @@ spec:
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    {{ .ipv4_address }},
-                    {{ .ipv6_address }}
+                    {{ .plugin.ipv4_address }},
+                    {{ .plugin.ipv6_address }}
             - target:
                 kind: StatefulSet
                 name: '{{ .list.flags }}'
