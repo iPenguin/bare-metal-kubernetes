@@ -63,7 +63,7 @@ spec:
                 key: get-ip.yaml
               input:
                 parameters:
-                  hostname: 'ipa-01.clt.milco.casa'
+                  hostname: '{{ .host }}.clt.milco.casa'
 
   template:
     metadata:
@@ -85,7 +85,7 @@ spec:
           patches:
             - target:
                 kind: Service
-                name: 'ipa-01-lb'
+                name: '{{ .host }}-lb'
               patch: |-
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
@@ -93,9 +93,9 @@ spec:
                     {{ . | toJson }}
             - target:
                 kind: StatefulSet
-                name: 'ipa-01'
+                name: '{{ .host }}'
               patch: |-
                 - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
-                    placeholder
+                    {{ .flags }}
