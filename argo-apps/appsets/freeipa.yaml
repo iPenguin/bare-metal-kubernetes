@@ -40,7 +40,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address={{ .plugin.ipv4_address }}
+                    --ip-address={{ .ipv4_address }}
                 - host: ipa-02
                   flags: |-
                     --unattended
@@ -55,7 +55,7 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address={{ .plugin.ipv4_address }}
+                    --ip-address={{ .ipv4_address }}
                     --server=ipa-01.clt.milco.casa
           - plugin:
               configMapRef:
@@ -90,8 +90,8 @@ spec:
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    {{ .plugin.ipv4_address }},
-                    {{ .plugin.ipv6_address }}
+                    {{ .ipv4_address }},
+                    {{ .ipv6_address }}
             - target:
                 kind: StatefulSet
                 name: '{{ .list.flags }}'
