@@ -20,11 +20,11 @@ spec:
   generators:
     - merge:
         mergeKeys:
-          - server
+          - host
         generators:
           - list:
               elements:
-                - server: ipa-01
+                - host: ipa-01
                   flags: |-
                     --unattended
                     --realm=AUTH.MILCO.CASA
@@ -41,7 +41,7 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .plugin.ipv4_address }}
-                - server: ipa-02
+                - host: ipa-02
                   flags: |-
                     --unattended
                     --realm=AUTH.MILCO.CASA

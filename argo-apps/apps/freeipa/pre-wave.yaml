@@ -9,14 +9,14 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: dns-lookup 
+      app: dns-lookup
   template:
     metadata:
       labels:
-        app: dns-lookup 
+        app: dns-lookup
     spec:
       containers:
-      - name: dns-lookup 
+      - name: dns-lookup
         image: python:3.11-slim
         command: ["python"]
         args: ["/app/dns_lookup.py"]
@@ -28,7 +28,7 @@ spec:
       volumes:
       - name: script-volume
         configMap:
-          name: dns-lookup 
+          name: dns-lookup
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -59,14 +59,19 @@ data:
 
         def get_domain(self, hostname):
             parts = hostname.split('.')
-            
+
             # If there are less than 3 parts, return the whole hostname
             if len(parts) < 3:
                 return hostname
-            
+
             # Assume the last two parts are domain and TLD for simplicity
             domain_tld = '.'.join(parts[-2:])
             return domain_tld
+
+        def get_host(self, hostname):
+            parts = hostname.split('.')
+
+            return parts[1]
 
         def do_POST(self):
             parsed_path = urlparse(self.path)
@@ -75,7 +80,7 @@ data:
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-           
+
                 content_type = self.headers.get('Content-Type', '').lower()
 
                 content_length = int(self.headers.get('Content-Length', 0))
@@ -83,8 +88,9 @@ data:
 
                 json_data = json.loads(post_data)
                 hostname = json_data['input']['parameters']['hostname']
+                host = self.get_host(hostname)
                 domain = self.get_domain(hostname)
-                
+
                 try:
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
                     ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
@@ -93,6 +99,7 @@ data:
                             "ipv4_address": ipv4_address,
                             "ipv6_address": ipv6_address,
                             "domain": domain,
+                            "host": host
                         }]
                     }}
 
@@ -121,7 +128,7 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: dns-lookup-svc 
+  name: dns-lookup-svc
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
 spec:
