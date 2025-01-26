@@ -68,9 +68,9 @@ spec:
   template:
     metadata:
       name: freeipa
-    annotations:
-        debug/parameters: '{{ . | toJson }}'
     spec:
+      annotations:
+          debug/parameters: '{{ . | toJson }}'
       syncPolicy:
         automated: {}
         syncOptions:
