@@ -68,8 +68,6 @@ spec:
   template:
     metadata:
       name: freeipa
-    annotations:
-      debug/parameters: '{{ . | toJson }}'
     spec:
       syncPolicy:
         automated: {}
@@ -92,7 +90,7 @@ spec:
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    placeholder
+                    {{ . | toJson }}
             - target:
                 kind: StatefulSet
                 name: 'ipa-01'
