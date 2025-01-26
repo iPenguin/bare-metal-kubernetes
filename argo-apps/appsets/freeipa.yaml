@@ -20,7 +20,7 @@ spec:
   generators:
     - merge:
         mergeKeys:
-            - server
+          - server
         generators:
           - list:
               elements:
@@ -68,7 +68,7 @@ spec:
   template:
     metadata:
       name: freeipa
-    spec:syncPolicy
+    spec:
       syncPolicy:
         automated: {}
         syncOptions:
