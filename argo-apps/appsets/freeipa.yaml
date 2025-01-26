@@ -1,4 +1,14 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: get-ip
+  namespace: argocd
+data:
+  requestTimeout: "60"
+  baseUrl: "http://dns-lookup-svc.freeipa.svc.cluster.local:8000"
+  token: "$plugin.myplugin.token"
+---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -8,13 +18,54 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-  - git:
-      repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
-      revision: HEAD
-      files:
-        - path: "argo-apps/values/main.yaml"
-          values:
-            freeipa_domain: '{{ lan_tld.ToUpper() }}'
+    - merge:
+        mergeKeys:
+          - host
+        generators:
+          - list:
+              elements:
+                - host: ipa-01
+                  command: ipa-server-install
+                  flags: |-
+                    --unattended
+                    --realm=AUTH.MILCO.CASA
+                    --domain=auth.milco.casa
+                    --ds-password=$IPA_DIRECTORY_PASSWORD
+                    --admin-password=$IPA_ADMIN_PASSWORD
+                    --ntp-pool=us.pool.ntp.org
+                    --no-host-dns
+                    --setup-dns
+                    --zonemgr=user@example.com
+                    --no-forwarders
+                    --skip-mem-check
+                    --auto-reverse
+                    --setup-kra
+                    --ssh-trust-dns
+                    --ip-address=placeholder
+                - host: ipa-02
+                  command: ipa-replica-install
+                  flags: |-
+                    --unattended
+                    --realm=AUTH.MILCO.CASA
+                    --domain=auth.milco.casa
+                    --principal=admin
+                    --ntp-pool=us.pool.ntp.org
+                    --no-host-dns
+                    --setup-dns
+                    --no-forwarders
+                    --skip-mem-check
+                    --auto-reverse
+                    --setup-kra
+                    --ssh-trust-dns
+                    --ip-address=placeholder
+                    --server=ipa-01.clt.milco.casa
+          - plugin:
+              configMapRef:
+                name: get-ip
+                key: get-ip.yaml
+              input:
+                parameters:
+                  hostname: '{{ .host }}.clt.milco.casa'
 
   template:
     metadata:
@@ -35,36 +86,34 @@ spec:
         kustomize:
           patches:
             - target:
-                kind: Service
-                name: ipa-01-lb
+                kind: PersistentVolumeClaim
+                name: ipa-data
               patch: |-
+                - op: replace
+                  path: /metadata/name
+                  value: {{ .host }}-data
+            - target:
+                kind: Service
+                name: ipa-lb
+              patch: |-
+                - op: replace
+                  path: /metadata/name
+                  value: {{ .host }}-lb
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
-                    {{ .network_prefix_ipv4 }}.23,
-                    ${NETWORK_PREFIX_IPV6}::23
+                    {{ . | toJson }}
             - target:
                 kind: StatefulSet
-                name: ipa-01
+                name: ipa
               patch: |-
                 - op: replace
+                  path: /metadata/name
+                  value: {{ .host }}
+                - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
-                  value: |-
-                    --unattended
-                    --realm=AUTH.MILCO.CASA
-                    --domain={{ .ipa_domain }}
-                    --ds-password=$IPA_DIRECTORY_PASSWORD
-                    --admin-password=$IPA_ADMIN_PASSWORD
-                    --ntp-pool=us.pool.ntp.org
-                    --no-host-dns
-                    --setup-dns
-                    --zonemgr=user@example.com
-                    --no-forwarders
-                    --skip-mem-check
-                    --auto-reverse
-                    --setup-kra
-                    --ssh-trust-dns
-                    --ip-address="10.1.1.23"
-
-
+                  value: {{ .flags }}
+                - op: replace
+                  path: /spec/template/spec/containers/0/command
+                  value: [ "{{ .command }}" ]
 

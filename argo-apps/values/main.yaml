@@ -1,7 +1,6 @@
 ---
 
-lan_tld: "milco.casa" 
-ipa_domain: auth.{{ .lan_tld }}
+ipa_domain: auth.milco.casa
 timezone: America/New_York
 
 network_prefix_ipv4: 10.1.1
