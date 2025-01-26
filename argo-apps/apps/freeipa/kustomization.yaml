@@ -5,4 +5,3 @@ resources:
   - pre-wave.yaml
   - secrets.yaml
   - wave0.yaml
-  - wave2.yaml
