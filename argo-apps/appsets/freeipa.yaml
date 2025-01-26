@@ -86,17 +86,30 @@ spec:
         kustomize:
           patches:
             - target:
-                kind: Service
-                name: '{{ .host }}-lb'
+                kind: PersistentVolumeClaim
+                name: 'ipa-data'
               patch: |-
+                - op: replace
+                  path: /metadata/name
+                  value: {{ .host }}-data
+            - target:
+                kind: Service
+                name: 'ipa-lb'
+              patch: |-
+                - op: replace
+                  path: /metadata/name
+                  value: {{ .host }}-lb
                 - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
                     {{ . | toJson }}
             - target:
                 kind: StatefulSet
-                name: '{{ .host }}'
+                name: ipa
               patch: |-
+                - op: replace
+                  path: /metadata/name
+                  value: {{ .host }}
                 - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-
@@ -104,3 +117,4 @@ spec:
                 - op: replace
                   path: /spec/template/spec/containers/0/command
                   value: [ "{{ .command }}" ]
+
