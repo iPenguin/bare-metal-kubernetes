@@ -59,6 +59,7 @@ spec:
                     --ssh-trust-dns
                     --ip-address=placeholder
                     --server=ipa-01.clt.milco.casa
+
           - plugin:
               configMapRef:
                 name: get-ip
