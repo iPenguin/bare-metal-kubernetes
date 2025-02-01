@@ -90,10 +90,12 @@ data:
                 hostname = json_data['input']['parameters']['hostname']
                 host = self.get_host(hostname)
                 domain = self.get_domain(hostname)
-
+                print(f"HOSTNAME: {hostname} ++++ HOST: {host} ++++ DOMAIN: {domain}")
                 try:
+                    print("Try to return data")
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
                     ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
+                    print(f"IPV4: {ipv4_address} ++++ IPV6 {ipv6_address}")
                     response_data = { "output": {
                         "parameters": [{
                             "ipv4_address": ipv4_address,
