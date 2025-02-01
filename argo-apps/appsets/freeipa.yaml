@@ -34,7 +34,7 @@ spec:
                 key: get-ip.yaml
               input:
                 parameters:
-                  hostname: '{{ .host }}.clt.milco.casa'
+                  hostname: '{{ .list.host }}.clt.milco.casa'
 
   template:
     metadata:
@@ -102,4 +102,7 @@ spec:
                 - op: replace
                   path: /spec/template/spec/containers/0/command
                   value: [ "{{ .command }}" ]
+                - op: replace
+                  path: /spec/template/spec/volumes/0/persistentVolumeClaim/cliamName
+                  value: {{ .host }}-data
 

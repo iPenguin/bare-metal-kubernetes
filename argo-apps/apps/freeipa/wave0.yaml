@@ -198,7 +198,7 @@ spec:
       volumes:
         - name: ipa-data
           persistentVolumeClaim:
-            claimName: ipa-01-data
+            claimName: ipa-data
         - name: cgroups
           hostPath:
             path: /sys/fs/cgroup
