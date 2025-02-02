@@ -24,7 +24,7 @@ spec:
               elements:
                 - host: ipa-01
                   command: ipa-server-install
-                  additional_args:
+                  additional_args: ""
                 - host: ipa-02
                   command: ipa-replica-install
                   additional_args: |-
@@ -105,7 +105,6 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
-                    {{ .additional_args }}
                 - op: replace
                   path: /spec/template/spec/containers/0/command
                   value: [ "{{ .command }}" ]
