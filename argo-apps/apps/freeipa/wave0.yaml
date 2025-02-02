@@ -12,6 +12,17 @@ spec:
       storage: 10Gi
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ipa-install-options
+  namespace: freeipa
+data:
+  ipa-server-options: |-
+    placeholder
+  ipa-replica-options: |-
+    placeholder
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: ipa-xx-lb
@@ -192,6 +203,10 @@ spec:
               mountPath: /run
             - name: run-systemd
               mountPath: /run/systemd
+            - name: run-ipa-server
+              mountPath: /run/ipa/ipa-server-install-options
+            - name: run-ipa-replica
+              mountPath: /run/ipa/ipa-replica-install-options
             - name: tmp
               mountPath: /tmp
       hostname: ipa-xx.clt.milco.casa
@@ -208,6 +223,12 @@ spec:
         - name: run-systemd
           emptyDir:
             medium: Memory
+        - name: run-ipa-server
+          configMap:
+            name: ipa-installer-options
+        - name: run-ipa-replica
+          configMap:
+            name: ipa-installer-options
         - name: tmp
           emptyDir:
             medium: Memory
