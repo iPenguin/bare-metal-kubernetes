@@ -25,9 +25,6 @@ spec:
           volumeMounts:
             - name: script-volume
               mountPath: /app
-          env:
-            - name: IPA_SERVER_NAME
-              value: ipa
       volumes:
       - name: script-volume
         configMap:
