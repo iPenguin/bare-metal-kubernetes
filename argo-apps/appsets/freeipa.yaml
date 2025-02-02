@@ -24,8 +24,12 @@ spec:
               elements:
                 - host: ipa-01
                   command: ipa-server-install
+                  additional_args:
                 - host: ipa-02
                   command: ipa-replica-install
+                  additional_args: |-
+                    --principal=admin
+                    --server=ipa-01.clt.milco.casa
           - plugin:
               configMapRef:
                 name: get-ip
@@ -100,9 +104,8 @@ spec:
                     --auto-reverse
                     --setup-kra
                     --ssh-trust-dns
-                    --ip-address=placeholder
-                    --principal=admin
-                    --server=ipa-01.clt.milco.casa
+                    --ip-address={{ .ipv4_address }}
+                    {{ .additional_args }}
                 - op: replace
                   path: /spec/template/spec/containers/0/command
                   value: [ "{{ .command }}" ]
