@@ -205,8 +205,10 @@ spec:
               mountPath: /run/systemd
             - name: run-ipa-server
               mountPath: /run/ipa/ipa-server-install-options
+              subPath: ipa-install-options
             - name: run-ipa-replica
               mountPath: /run/ipa/ipa-replica-install-options
+              subPath: ipa-replica-options
             - name: tmp
               mountPath: /tmp
       hostname: ipa-xx.clt.milco.casa
@@ -225,11 +227,10 @@ spec:
             medium: Memory
         - name: run-ipa-server
           configMap:
-            name: ipa-installer-options
+            name: ipa-install-options
         - name: run-ipa-replica
           configMap:
-            name: ipa-installer-options
+            name: ipa-install-options
         - name: tmp
           emptyDir:
             medium: Memory
-        - name: data
