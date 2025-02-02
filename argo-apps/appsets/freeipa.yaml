@@ -53,14 +53,14 @@ spec:
           patches:
             - target:
                 kind: PersistentVolumeClaim
-                name: ipa-data
+                name: ipa-xx-data
               patch: |-
                 - op: replace
                   path: /metadata/name
                   value: {{ .host }}-data
             - target:
                 kind: Service
-                name: ipa-lb
+                name: ipa-xx-lb
               patch: |-
                 - op: replace
                   path: /metadata/name
@@ -72,7 +72,7 @@ spec:
                     {{ .ipv6_address }}
             - target:
                 kind: StatefulSet
-                name: ipa
+                name: ipa-xx
               patch: |-
                 - op: replace
                   path: /metadata/name
