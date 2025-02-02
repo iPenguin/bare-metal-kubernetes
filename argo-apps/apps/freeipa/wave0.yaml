@@ -151,7 +151,7 @@ spec:
             # NOTE: if initial installation fails, try increasing this value:
             failureThreshold: 50
             periodSeconds: 30
-          command: ['ipa-server-install']
+          args: ['ipa-server-install']
           env:
             - name: TZ
               value: "America/New_York"
