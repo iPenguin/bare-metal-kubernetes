@@ -18,9 +18,7 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - merge:
-        mergeKeys:
-          - host
+    - matrix:
         generators:
           - list:
               elements:
@@ -34,9 +32,7 @@ spec:
                 key: get-ip.yaml
               input:
                 parameters:
-                  hostBase: 'ipa'
-                  count: 2
-                  tld: 'clt.milco.casa'
+                  hostname: '{{ .host }}.clt.milco.casa'
   template:
     metadata:
       name: freeipa
