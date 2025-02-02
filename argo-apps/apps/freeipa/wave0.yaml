@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ipa-data
+  name: ipa-xx-data
 spec:
   storageClassName: ceph-block
   accessModes:
@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ipa-lb
+  name: ipa-xx-lb
   labels:
     app: freeipa
   annotations:
@@ -96,7 +96,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ipa
+  name: ipa-xx
 spec:
   selector:
     matchLabels:
@@ -145,7 +145,7 @@ spec:
             - name: TZ
               value: "America/New_York"
             - name: IPA_SERVER_HOSTNAME
-              value: "ipa-01.clt.milco.casa"
+              value: "ipa-xx.clt.milco.casa"
             - name: IPA_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -194,11 +194,11 @@ spec:
               mountPath: /run/systemd
             - name: tmp
               mountPath: /tmp
-      hostname: placeholder
+      hostname: ipa-xx.clt.milco.casa
       volumes:
         - name: ipa-data
           persistentVolumeClaim:
-            claimName: ipa-data
+            claimName: ipa-xx-data
         - name: cgroups
           hostPath:
             path: /sys/fs/cgroup

@@ -34,8 +34,9 @@ spec:
                 key: get-ip.yaml
               input:
                 parameters:
-                  hostname: '{{ .list.host }}.clt.milco.casa'
-
+                  hostBase: 'ipa'
+                  count: 2
+                  tld: 'clt.milco.casa'
   template:
     metadata:
       name: freeipa
@@ -79,6 +80,12 @@ spec:
                 - op: replace
                   path: /metadata/name
                   value: {{ .host }}
+                - op: replace
+                  path: /spec/template/spec/containers/0/env/1/value
+                  value: {{ .host }}.clt.milco.casa
+                - op: replace
+                  path: /spec/template/spec/hostname
+                  value: {{ .host }}.clt.milco.casa
                 - op: replace
                   path: /spec/template/spec/containers/0/env/4/value
                   value: |-

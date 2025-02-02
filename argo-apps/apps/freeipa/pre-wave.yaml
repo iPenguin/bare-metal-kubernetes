@@ -16,15 +16,18 @@ spec:
         app: dns-lookup
     spec:
       containers:
-      - name: dns-lookup
-        image: python:3.11-slim
-        command: ["python"]
-        args: ["/app/dns_lookup.py"]
-        ports:
-        - containerPort: 8000
-        volumeMounts:
-        - name: script-volume
-          mountPath: /app
+        - name: dns-lookup
+          image: python:3.11-slim
+          command: ["python"]
+          args: ["/app/dns_lookup.py"]
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: script-volume
+              mountPath: /app
+          env:
+            - name: IPA_SERVER_NAME
+              value: ipa
       volumes:
       - name: script-volume
         configMap:
@@ -38,6 +41,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "-2"
 data:
   dns_lookup.py: |
+    #!/usr/bin/env python
+    #
     from http.server import BaseHTTPRequestHandler, HTTPServer
     import json
     from urllib.parse import urlparse, parse_qs
@@ -92,7 +97,6 @@ data:
                 domain = self.get_domain(hostname)
                 self.log_message(f"HOSTNAME: {hostname} ++++ HOST: {host} ++++ DOMAIN: {domain}")
                 try:
-                    self.log_message("Try to return data")
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
                     ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
                     self.log_message(f"IPV4: {ipv4_address} ++++ IPV6 {ipv6_address}")
