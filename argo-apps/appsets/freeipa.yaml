@@ -132,6 +132,6 @@ spec:
                   path: /spec/template/spec/containers/0/args
                   value: [ "{{ .command }}" ]
                 - op: replace
-                  path: /spec/template/spec/volumes/0/persistentVolumeClaim/cliamName
+                  path: /spec/template/spec/volumes/0/persistentVolumeClaim/claimName
                   value: {{ .host }}-data
 
