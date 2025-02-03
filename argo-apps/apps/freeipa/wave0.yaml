@@ -131,6 +131,13 @@ spec:
                 values:
                 - freeipa
             topologyKey: "kubernetes.io/hostname"
+      initContainers:
+        - name: init
+          image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
+          command:
+            - cp
+            - /tmp/ipa-*
+            - /run/ipa/
       containers:
         - name: freeipa
           image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
@@ -167,8 +174,6 @@ spec:
                 secretKeyRef:
                   name: freeipa
                   key: directory_password
-            - name: IPA_SERVER_INSTALL_OPTS
-              value: placeholder
           securityContext:
             seccompProfile:
               type: Unconfined
@@ -204,10 +209,10 @@ spec:
             - name: run-systemd
               mountPath: /run/systemd
             - name: run-ipa-server
-              mountPath: /run/ipa/ipa-server-install-options
+              mountPath: /tmp/ipa-server-install-options
               subPath: ipa-install-options
             - name: run-ipa-replica
-              mountPath: /run/ipa/ipa-replica-install-options
+              mountPath: /tmp/ipa-replica-install-options
               subPath: ipa-replica-options
             - name: tmp
               mountPath: /tmp
