@@ -21,6 +21,10 @@ data:
     placeholder
   ipa-replica-options: |-
     placeholder
+  startup.sh: |-
+    echo $1
+    cp /tmp/$1-options /data
+
 ---
 apiVersion: v1
 kind: Service
@@ -135,10 +139,9 @@ spec:
         - name: init
           image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
           command:
-            - cp
-            - -f
-            - /tmp/$1-options
-            - /data/
+            - sh
+            - -c
+            - /tmp/startup.sh
           volumeMounts:
             - name: ipa-data
               mountPath: /data
