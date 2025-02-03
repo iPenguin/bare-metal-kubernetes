@@ -145,6 +145,9 @@ spec:
             - name: ipa-data
               mountPath: /data
             - name: ipa-options
+              mountPath: /tmp/startup.sh
+              subPath: startup.sh
+            - name: ipa-options
               mountPath: /tmp/ipa-server-install-options
               subPath: ipa-server-options
             - name: ipa-options

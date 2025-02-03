@@ -61,7 +61,6 @@ spec:
                     --unattended
                     --realm=AUTH.MILCO.CASA
                     --domain=auth.milco.casa
-                    --hostname={{ .host }}.clt.milco.casa
                     --ds-password=$IPA_DIRECTORY_PASSWORD
                     --admin-password=$IPA_ADMIN_PASSWORD
                     --ntp-pool=us.pool.ntp.org
@@ -80,7 +79,6 @@ spec:
                     --unattended
                     --realm=AUTH.MILCO.CASA
                     --domain=auth.milco.casa
-                    --hostname={{ .host }}.clt.milco.casa
                     --ds-password=$IPA_DIRECTORY_PASSWORD
                     --admin-password=$IPA_ADMIN_PASSWORD
                     --ntp-pool=us.pool.ntp.org
