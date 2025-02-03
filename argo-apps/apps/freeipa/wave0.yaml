@@ -136,12 +136,13 @@ spec:
           image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
           command:
             - cp
+            - -f
             - /tmp/ipa-*
             - /run/ipa/
           volumeMounts:
             - name: run-ipa-server
               mountPath: /tmp/ipa-server-install-options
-              subPath: ipa-install-options
+              subPath: ipa-server-options
             - name: run-ipa-replica
               mountPath: /tmp/ipa-replica-install-options
               subPath: ipa-replica-options
