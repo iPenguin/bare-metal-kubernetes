@@ -128,6 +128,9 @@ spec:
                   path: /spec/template/spec/hostname
                   value: {{ .host }}.clt.milco.casa
                 - op: replace
+                  path: /spec/template/spec/initContainers/0/args
+                  value: [ "{{ .command }}" ]
+                - op: replace
                   path: /spec/template/spec/containers/0/args
                   value: [ "{{ .command }}" ]
                 - op: replace

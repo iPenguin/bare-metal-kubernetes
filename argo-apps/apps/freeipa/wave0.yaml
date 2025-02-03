@@ -137,8 +137,22 @@ spec:
           command:
             - cp
             - -f
-            - /tmp/ipa-*
+            - /tmp/$1-options
             - /data/
+          volumeMounts:
+            - name: ipa-data
+              mountPath: /data
+            - name: ipa-options
+              mountPath: /tmp/ipa-server-install-options
+              subPath: ipa-server-options
+            - name: ipa-options
+              mountPath: /tmp/ipa-replica-install-options
+              subPath: ipa-replica-options
+        - name: sleep
+          image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
+          command:
+            - sleep
+            - "1000000"
           volumeMounts:
             - name: ipa-data
               mountPath: /data
