@@ -138,12 +138,14 @@ spec:
             - cp
             - -f
             - /tmp/ipa-*
-            - /run/ipa/
+            - /data/
           volumeMounts:
-            - name: run-ipa-server
+            - name: ipa-data
+              mountPath: /data
+            - name: ipa-options
               mountPath: /tmp/ipa-server-install-options
               subPath: ipa-server-options
-            - name: run-ipa-replica
+            - name: ipa-options
               mountPath: /tmp/ipa-replica-install-options
               subPath: ipa-replica-options
       containers:
@@ -232,10 +234,7 @@ spec:
         - name: run-systemd
           emptyDir:
             medium: Memory
-        - name: run-ipa-server
-          configMap:
-            name: ipa-install-options
-        - name: run-ipa-replica
+        - name: ipa-options
           configMap:
             name: ipa-install-options
         - name: tmp
