@@ -104,7 +104,12 @@ data:
                             "domain": domain,
                             "host": host
                         },
-                        {}]
+                        {
+                            "ipv4_address": "",
+                            "ipv6_address": "",
+                            "domain": "",
+                            "host": ""
+                        }]
                     }}
 
                 except Exception as e:
