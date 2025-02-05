@@ -103,7 +103,8 @@ data:
                             "ipv6_address": ipv6_address,
                             "domain": domain,
                             "host": host
-                        }]
+                        },
+                        {}]
                     }}
 
                 except Exception as e:
