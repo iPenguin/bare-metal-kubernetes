@@ -105,10 +105,10 @@ data:
                             "host": host
                         },
                         {
-                            "ipv4_address": "",
-                            "ipv6_address": "",
-                            "domain": "",
-                            "host": ""
+                            "ipv4_address": ipv4_address,
+                            "ipv6_address": ipv6_address,
+                            "domain": domain,
+                            "host": host
                         }]
                     }}
 
