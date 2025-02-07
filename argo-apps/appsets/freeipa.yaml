@@ -34,7 +34,7 @@ spec:
                   hostname: '{{ .host }}.clt.milco.casa'
   template:
     metadata:
-      name: {{ .host }}
+      name: '{{ .host }}'
     spec:
       syncPolicy:
         automated: {}
