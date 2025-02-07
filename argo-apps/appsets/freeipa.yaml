@@ -29,7 +29,6 @@ spec:
           - plugin:
               configMapRef:
                 name: get-ip
-                key: get-ip.yaml
               input:
                 parameters:
                   hostname: '{{ .host }}.clt.milco.casa'
