@@ -1,10 +1,19 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: get-ip
+  namespace: argocd
+data:
+  requestTimeout: "60"
+  baseUrl: "http://dns-lookup-svc.freeipa.svc.cluster.local:8000"
+  token: "$plugin.myplugin.token"A
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dns-lookup-deploy
   annotations:
-    argocd.argoproj.io/sync-wave: "-2"
 spec:
   replicas: 1
   selector:
@@ -35,7 +44,6 @@ kind: ConfigMap
 metadata:
   name: dns-lookup
   annotations:
-    argocd.argoproj.io/sync-wave: "-2"
 data:
   dns_lookup.py: |
     #!/usr/bin/env python
@@ -133,7 +141,6 @@ kind: Service
 metadata:
   name: dns-lookup-svc
   annotations:
-    argocd.argoproj.io/sync-wave: "-2"
 spec:
   selector:
     app: dns-lookup
