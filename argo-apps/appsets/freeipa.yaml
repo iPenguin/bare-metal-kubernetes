@@ -34,7 +34,7 @@ spec:
                   hostname: '{{ .host }}.clt.milco.casa'
   template:
     metadata:
-      name: freeipa
+      name: {{ .host }}
     spec:
       syncPolicy:
         automated: {}
