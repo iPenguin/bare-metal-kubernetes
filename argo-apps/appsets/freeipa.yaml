@@ -84,7 +84,7 @@ spec:
                   value: |-
                     --unattended
                     --principal=admin
-                    --admin-password=$IPA_ADMIN_PASSWORD
+                    --password=$IPA_ADMIN_PASSWORD
                     --realm=AUTH.MILCO.CASA
                     --domain=auth.milco.casa
                     --ntp-pool=us.pool.ntp.org
