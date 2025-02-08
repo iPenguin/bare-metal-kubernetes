@@ -114,6 +114,9 @@ spec:
                   path: /metadata/name
                   value: {{ .host }}-lb
                 - op: replace
+                  path: /spec/selector/id
+                  value: {{ .host }}
+                - op: replace
                   path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
                   value: |-
                     {{ .ipv4_address }},
@@ -124,6 +127,12 @@ spec:
               patch: |-
                 - op: replace
                   path: /metadata/name
+                  value: {{ .host }}
+                - op: replace
+                  path: /spec/selector/matchLabels/id
+                  value: {{ .host }}
+                - op: replace
+                  path: /spec/template/metadata/labels/id
                   value: {{ .host }}
                 - op: replace
                   path: /spec/template/spec/containers/0/env/1/value

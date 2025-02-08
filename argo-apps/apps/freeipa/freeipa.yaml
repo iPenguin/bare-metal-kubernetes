@@ -39,6 +39,7 @@ spec:
   type: LoadBalancer
   selector:
     app: freeipa
+    id: ipa-xx 
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -90,6 +91,7 @@ spec:
   selector:
     matchLabels:
       app: freeipa
+      id: ipa-xx 
   serviceName: "freeipa"
   replicas: 1
   minReadySeconds: 10
@@ -97,6 +99,7 @@ spec:
     metadata:
       labels:
         app: freeipa
+        id: ipa-xx 
     spec:
       terminationGracePeriodSeconds: 10
       affinity:
