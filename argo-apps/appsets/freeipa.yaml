@@ -31,6 +31,7 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - Confirm=true
+        syncWave: "2"
         hooks:
           post-sync:
             on:
@@ -55,8 +56,11 @@ spec:
           patches:
             - target:
                 kind: ConfigMap
-                name: ipa-install-options
+                name: ipa-xx-install-options
               patch: |-
+                - op: replace
+                  path: /metadata/name
+                  value: {{ .host }}-install-options
                 - op: replace
                   path: /data/ipa-server-options
                   value: |-
@@ -81,12 +85,10 @@ spec:
                     --unattended
                     --realm=AUTH.MILCO.CASA
                     --domain=auth.milco.casa
-                    --ds-password=$IPA_DIRECTORY_PASSWORD
                     --admin-password=$IPA_ADMIN_PASSWORD
                     --ntp-pool=us.pool.ntp.org
                     --no-host-dns
                     --setup-dns
-                    --zonemgr=user@example.com
                     --no-forwarders
                     --skip-mem-check
                     --auto-reverse
@@ -136,4 +138,6 @@ spec:
                 - op: replace
                   path: /spec/template/spec/volumes/0/persistentVolumeClaim/claimName
                   value: {{ .host }}-data
-
+                - op: replace
+                  path: /spec/template/spec/volumes/1/configMap/name
+                  value: {{ .host }}-install-options

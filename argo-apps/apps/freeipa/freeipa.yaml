@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ipa-install-options
+  name: ipa-xx-install-options
   namespace: freeipa
 data:
   ipa-server-options: |-
@@ -204,6 +204,9 @@ spec:
         - name: ipa-data
           persistentVolumeClaim:
             claimName: ipa-xx-data
+        - name: ipa-options
+          configMap:
+            name: ipa-xx-install-options
         - name: cgroups
           hostPath:
             path: /sys/fs/cgroup
@@ -213,9 +216,6 @@ spec:
         - name: run-systemd
           emptyDir:
             medium: Memory
-        - name: ipa-options
-          configMap:
-            name: ipa-install-options
         - name: tmp
           emptyDir:
             medium: Memory
