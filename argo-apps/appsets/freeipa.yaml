@@ -83,6 +83,8 @@ spec:
                   path: /data/ipa-replica-options
                   value: |-
                     --unattended
+                    --principal=admin
+                    --password=$IPA_ADMIN_PASSWORD
                     --realm=AUTH.MILCO.CASA
                     --domain=auth.milco.casa
                     --ntp-pool=us.pool.ntp.org
@@ -94,8 +96,7 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
-                    --principal=admin
-                    --server={{ .host }}.clt.milco.casa
+                    --server=ipa-01.clt.milco.casa
             - target:
                 kind: PersistentVolumeClaim
                 name: ipa-xx-data
