@@ -72,7 +72,7 @@ spec:
                     --ntp-pool=us.pool.ntp.org
                     --no-host-dns
                     --setup-dns
-                    --zonemgr=user@example.com
+                    --zonemgr=admin@milco.casa
                     --no-forwarders
                     --skip-mem-check
                     --auto-reverse
@@ -85,7 +85,6 @@ spec:
                     --unattended
                     --realm=AUTH.MILCO.CASA
                     --domain=auth.milco.casa
-                    --admin-password=$IPA_ADMIN_PASSWORD
                     --ntp-pool=us.pool.ntp.org
                     --no-host-dns
                     --setup-dns
@@ -96,7 +95,7 @@ spec:
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
                     --principal=admin
-                    --server=ipa-01.clt.milco.casa
+                    --server={{ .host }}.clt.milco.casa
             - target:
                 kind: PersistentVolumeClaim
                 name: ipa-xx-data
