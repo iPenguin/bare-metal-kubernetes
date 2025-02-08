@@ -1,14 +1,4 @@
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: get-ip
-  namespace: argocd
-data:
-  requestTimeout: "60"
-  baseUrl: "http://dns-lookup-svc.freeipa.svc.cluster.local:8000"
-  token: "$plugin.myplugin.token"
----
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -40,6 +30,19 @@ spec:
         automated: {}
         syncOptions:
           - CreateNamespace=true
+          - Confirm=true
+        hooks:
+          post-sync:
+            on:
+              - success
+            exec:
+              command:
+                - /bin/sh
+                - "-c"
+                - |
+                  while ! curl -k -I https://ipa-01.clt.milco.casa/ | grep "OK"; do
+                    sleep 10
+                  done
       project: freeipa
       destination:
         namespace: freeipa
