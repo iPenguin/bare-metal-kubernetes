@@ -32,18 +32,6 @@ spec:
           - CreateNamespace=true
           - Confirm=true
         syncWave: "2"
-        hooks:
-          post-sync:
-            on:
-              - success
-            exec:
-              command:
-                - /bin/sh
-                - "-c"
-                - |
-                  while ! curl -k -I https://ipa-01.clt.milco.casa/ | grep "OK"; do
-                    sleep 10
-                  done
       project: freeipa
       destination:
         namespace: freeipa
@@ -79,7 +67,6 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
-                    --ip-address={{ .ipv6_address }}
                 - op: replace
                   path: /data/ipa-replica-options
                   value: |-
@@ -98,7 +85,6 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
-                    --ip-address={{ .ipv6_address }}
                     --server=ipa-01.clt.milco.casa
             - target:
                 kind: PersistentVolumeClaim
@@ -120,8 +106,7 @@ spec:
                 - op: replace
                   path: /metadata/annotations/metallb.io~1loadBalancerIPs
                   value: |-
-                    {{ .ipv4_address }},
-                    {{ .ipv6_address }}
+                    {{ .ipv4_address }}
             - target:
                 kind: StatefulSet
                 name: ipa-xx
