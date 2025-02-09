@@ -84,16 +84,17 @@ spec:
                   path: /data/ipa-replica-options
                   value: |-
                     --unattended
-                    --principal=admin
-                    --password=$IPA_ADMIN_PASSWORD
                     --realm=AUTH.MILCO.CASA
                     --domain=auth.milco.casa
+                    --principal=admin
+                    --password=$IPA_ADMIN_PASSWORD
                     --ntp-pool=us.pool.ntp.org
                     --no-host-dns
                     --setup-dns
                     --no-forwarders
                     --skip-mem-check
                     --auto-reverse
+                    --setup-ca
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
