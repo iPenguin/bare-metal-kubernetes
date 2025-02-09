@@ -9,7 +9,7 @@ This repo does basic configuration for the following components:
 - **[Ansible](https://www.ansible.com/)** - for automation of deployment
 - **[Kubernetes](https://kubernetes.io/)** - for container orchestration
 - **[Cilium](https://www.cilium.io/)** - as the CNI
-- **[MetalLB](https://metallb.universe.tf/)** - for load balancing
+- **[MetalLB](https://metallb.io/)** - for load balancing
 - **[Rook](https://rook.io/)/[Ceph](https://ceph.io/)** - for automatic provisioning of storage including s3 buckets
 - **[Helm](https://helm.sh/)** - for software management and installation
 - **[ArgoCD](https://argo-cd.readthedocs.io/)** - For deployment management

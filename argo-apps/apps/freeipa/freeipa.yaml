@@ -33,7 +33,7 @@ metadata:
   labels:
     app: freeipa
   annotations:
-    metallb.universe.tf/loadBalancerIPs: |-
+    metallb.io/loadBalancerIPs: |-
       placeholder
 spec:
   type: LoadBalancer

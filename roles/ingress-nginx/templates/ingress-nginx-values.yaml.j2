@@ -54,7 +54,7 @@ controller:
     enableHttps: true
 
     annotations:
-      metallb.universe.tf/loadBalancerIPs: "{{ network_services.ingress.ipv4 }},{{ network_services.ingress.ipv6 }}"
+      metallb.io/loadBalancerIPs: "{{ network_services.ingress.ipv4 }},{{ network_services.ingress.ipv6 }}"
 
     externalTrafficPolicy: "Local"
     ipFamilyPolicy: "PreferDualStack"

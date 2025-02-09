@@ -117,7 +117,7 @@ spec:
                   path: /spec/selector/id
                   value: {{ .host }}
                 - op: replace
-                  path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
+                  path: /metadata/annotations/metallb.io~1loadBalancerIPs
                   value: |-
                     {{ .ipv4_address }},
                     {{ .ipv6_address }}

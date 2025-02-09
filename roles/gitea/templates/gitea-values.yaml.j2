@@ -38,7 +38,7 @@ containerSecurityContext:
 service:
   http:
     annotations:
-      metallb.universe.tf/allow-shared-ip: "gitea-shared-ip"
+      metallb.io/allow-shared-ip: "gitea-shared-ip"
     type: LoadBalancer
     port: 3000
     externalTrafficPolicy: Local
@@ -48,7 +48,7 @@ service:
       - IPv6
   ssh:
     annotations:
-      metallb.universe.tf/allow-shared-ip: "gitea-shared-ip"
+      metallb.io/allow-shared-ip: "gitea-shared-ip"
     type: LoadBalancer
     port: 22
     externalTrafficPolicy: Local
