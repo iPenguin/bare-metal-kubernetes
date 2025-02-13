@@ -117,11 +117,12 @@ data:
                 self.log_message(f"HOSTNAME: {hostname} ++++ HOST: {host} ++++ DOMAIN: {domain}")
                 try:
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
-                    #ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
-                    #self.log_message(f"IPV4: {ipv4_address} ++++ IPV6 {ipv6_address}")
+                    ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
+                    self.log_message(f"IPV4: {ipv4_address} ++++ IPV6 {ipv6_address}")
                     response_data = { "output": {
                         "parameters": [{
                             "ipv4_address": ipv4_address,
+                            "ipv6_address": ipv6_address,
                             "domain": domain,
                             "host": host
                         }]
