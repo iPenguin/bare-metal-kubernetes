@@ -1,0 +1,40 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nextcloud
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+        revision: "master"
+        directories:
+          - path: "argo-apps/apps/nextcloud/*"
+  template:
+    metadata:
+      name: 'nextcloud-{{.path.basename}}'
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+      project: nextcloud
+      destination:
+        namespace: nextcloud
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: 'https://nextcloud.github.io/helm'
+          chart: nextcloud
+          targetRevision: 6.6.3
+          helm:
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/nextcloud/{{.path.basename}}/values.yaml'
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          ref: valuesSrc
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          path: argo-apps/apps/nextcloud

@@ -1,0 +1,149 @@
+image:
+  repository: nextcloud
+  flavor: fpm
+  pullPolicy: IfNotPresent
+
+ingress:
+  enabled: true
+  className: ingress-nginx
+  annotations: {}
+  #  nginx.ingress.kubernetes.io/proxy-body-size: 4G
+  #  kubernetes.io/tls-acme: "true"
+  #  cert-manager.io/cluster-issuer: letsencrypt-prod
+  #  # Keep this in sync with the README.md:
+  #  nginx.ingress.kubernetes.io/server-snippet: |-
+  #    server_tokens off;
+  #    proxy_hide_header X-Powered-By;
+  #    rewrite ^/.well-known/webfinger /index.php/.well-known/webfinger last;
+  #    rewrite ^/.well-known/nodeinfo /index.php/.well-known/nodeinfo last;
+  #    rewrite ^/.well-known/host-meta /public.php?service=host-meta last;
+  #    rewrite ^/.well-known/host-meta.json /public.php?service=host-meta-json;
+  #    location = /.well-known/carddav {
+  #      return 301 $scheme://$host/remote.php/dav;
+  #    }
+  #    location = /.well-known/caldav {
+  #      return 301 $scheme://$host/remote.php/dav;
+  #    }
+  #    location = /robots.txt {
+  #      allow all;
+  #      log_not_found off;
+  #      access_log off;
+  #    }
+  #    location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)/ {
+  #      deny all;
+  #    }
+  #    location ~ ^/(?:autotest|occ|issue|indie|db_|console) {
+  #      deny all;
+  #    }
+  # tls:
+  #   - secretName: nextcloud-tls
+  #     hosts:
+  #       - nextcloud.kube.home
+
+phpClientHttpsFix:
+  enabled: false
+  protocol: https
+
+nextcloud:
+  host: nextcloud.clt.milco.casa
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-secrets
+    usernameKey: admin_user
+    passwordKey: admin_password
+  containerPort: 8080
+  datadir: /var/www/html/data
+  trustedDomains: ['nextcloud.clt.milco.casa']
+  ## SMTP configuration
+  mail:
+    enabled: false
+  ## Primary ObjectStore options
+  objectStore:
+    s3:
+      enabled: true
+      ssl: true
+      port: "443"
+      region: "us-east-1"
+      autoCreate: true
+      existingSecret: "nextcloud-data"
+      secretKeys:
+        accessKey: "AWS_ACCESS_KEY_ID"
+        secretKey: "AWS_SECRET_ACCESS_KEY"
+
+  extraEnv:
+    - name: OBJECTSTORE_S3_HOST
+      valueFrom:
+        configMapKeyRef:
+          name: nextcloud-data
+          key: BUCKET_HOST
+    - name: OBJECTSTORE_S3_BUCKET
+      valueFrom:
+        configMapKeyRef:
+          name: nextcloud-data
+          key: BUCKET_NAME
+
+nginx:
+  enabled: true
+  image:
+    repository: nginx
+    tag: alpine
+    pullPolicy: IfNotPresent
+  containerPort: 8080
+  ipFamilies:
+    - IPv4
+    - IPv6
+
+internalDatabase:
+  enabled: false
+
+postgresql:
+  enabled: true
+  global:
+    postgresql:
+      auth:
+        existingSecret: "nextcloud-secrets"
+        secretKeys:
+          adminPasswordKey: "db_password"
+          userPasswordKey: "db_password"
+          replicationPasswordKey: "db_password"
+  primary:
+    persistence:
+      enabled: true
+      # Use an existing Persistent Volume Claim (must be created ahead of time)
+      # existingClaim: ""
+      # storageClass: ""
+
+collabora:
+  enabled: false
+cronjob:
+  enabled: true
+service:
+  type: LoadBalancer
+  port: 8080
+  loadBalancerIP: ""
+  annotations:
+    metallb.io/loadBalancerIPs: |-
+
+
+persistence:
+  enabled: true
+  annotations: {}
+  storageClass: "cephfs"
+  accessMode: ReadWriteMany
+  size: 8Gi
+
+hpa:
+  enabled: true
+  cputhreshold: 60
+  minPods: 1
+  maxPods: 7
+
+metrics:
+  enabled: false
+
+rbac:
+  enabled: true
+  serviceaccount:
+    create: true
+    name: nextcloud-serviceaccount
+

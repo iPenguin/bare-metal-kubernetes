@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nextcloud
+  namespace: argocd
+spec:
+  description: Nextcloud - Data storage
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: nextcloud
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://nextcloud.github.io/helm
+  roles:
+    - name: admin
+      description: "Admin role with project access"
+      policies:
+        - p, proj:nextcloud:admin, applications, *, nextcloud/*, allow
+      groups: []

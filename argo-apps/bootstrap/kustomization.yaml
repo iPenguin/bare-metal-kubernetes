@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - repo-secret.yaml
   - freeipa-project.yaml
+  - nextcloud.yaml
   - app-of-apps.yaml
