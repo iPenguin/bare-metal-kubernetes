@@ -1,7 +1,7 @@
 ---
 # defaults file for freeipa
 
-ipa_namespace: ipa
+ipa_namespace: freeipa
 ipa_replicas: 1
 ipa_docker_os: fedora-41
 
