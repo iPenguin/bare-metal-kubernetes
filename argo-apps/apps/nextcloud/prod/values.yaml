@@ -4,7 +4,7 @@ image:
   pullPolicy: IfNotPresent
 
 ingress:
-  enabled: false
+  enabled: true
 
 phpClientHttpsFix:
   enabled: false
@@ -17,7 +17,7 @@ nextcloud:
     secretName: nextcloud-secrets
     usernameKey: admin_user
     passwordKey: admin_password
-  containerPort: 8080
+  containerPort: 80
   datadir: /var/www/html/data
   trustedDomains: ['nextcloud.clt.milco.casa']
   ## SMTP configuration
@@ -67,29 +67,20 @@ postgresql:
   global:
     postgresql:
       auth:
+        username: nextcloud
         existingSecret: "nextcloud-secrets"
         secretKeys:
           adminPasswordKey: "db_password"
-          userPasswordKey: "db_password"
-          replicationPasswordKey: "db_password"
+          userPasswordKey: "db_user_password"
+          replicationPasswordKey: "db_replication_password"
   primary:
     persistence:
       enabled: true
-      # Use an existing Persistent Volume Claim (must be created ahead of time)
-      # existingClaim: ""
-      # storageClass: ""
 
 collabora:
   enabled: false
 cronjob:
   enabled: true
-service:
-  type: LoadBalancer
-  port: 8080
-  loadBalancerIP: ""
-  annotations:
-    metallb.io/ip-allocated-from-pool: primary-ip-pool
-    metallb.io/loadBalancerIPs:
 
 persistence:
   enabled: true
@@ -112,4 +103,3 @@ rbac:
   serviceaccount:
     create: true
     name: nextcloud-serviceaccount
-
