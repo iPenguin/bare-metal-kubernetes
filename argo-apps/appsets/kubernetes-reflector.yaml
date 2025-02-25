@@ -1,0 +1,26 @@
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kubernetes-reflector
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  template:
+    metadata:
+      name: 'kubernetes-reflector'
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+      project: kubernetes-reflector
+      destination:
+        namespace: cert-manager
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: 'https://emberstack.github.io/helm-charts'
+          chart: emberstack/reflector
+          targetRevision: 9.0.313

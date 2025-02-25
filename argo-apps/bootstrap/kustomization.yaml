@@ -5,4 +5,5 @@ resources:
   - repo-secret.yaml
   - freeipa-project.yaml
   - nextcloud.yaml
+  - kubernetes-reflector.yaml
   - app-of-apps.yaml

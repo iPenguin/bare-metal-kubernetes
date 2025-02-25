@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: kubernetes-reflector
+  namespace: argocd
+spec:
+  description: K8s reflector
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: cert-manager
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://emberstack.github.io/helm-charts 
