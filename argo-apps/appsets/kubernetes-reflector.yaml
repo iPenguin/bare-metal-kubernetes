@@ -26,5 +26,5 @@ spec:
         server: https://kubernetes.default.svc
       sources:
         - repoURL: 'https://emberstack.github.io/helm-charts'
-          chart: emberstack/reflector
+          chart: reflector
           targetRevision: 9.0.313
