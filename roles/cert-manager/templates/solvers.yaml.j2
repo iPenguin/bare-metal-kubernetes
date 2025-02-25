@@ -7,19 +7,19 @@ metadata:
 spec:
   acme:
     email: "{{ acme_account_email }}"
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
-    #server: https://acme-v02.api.letsencrypt.org/directory
+    #server: https://acme-staging-v02.api.letsencrypt.org/directory
+    server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: "letsencrypt-key-staging"
-      #name: "letsencrypt-key"
+      #name: "letsencrypt-key-staging"
+      name: "letsencrypt-key"
     solvers:
       - selector:
-          dnsNames:
-            - '{{ lan_domain }}'
-            - '*.{{ lan_domain }}'
+          dnsZones:
+            - '{{ lan_tld }}' 
         dns01:
+          cnameStrategy: Follow
           webhook:
-            groupName: "{{ porkbun_group }}"
+            groupName: {{ porkbun_group }}
             solverName: porkbun
             config:
               apiKeySecretRef:

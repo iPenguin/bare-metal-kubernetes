@@ -2,87 +2,15 @@
 global:
   rbac:
     create: true
-    # Aggregate ClusterRoles to Kubernetes default user-facing roles. Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles
     aggregateClusterRoles: true
 
-  leaderElection:
-    # Override the namespace used for the leader election lease
-    namespace: "kube-system"
+crds:
+  enabled: true
+  keep: true
 
-installCRDs: true
 replicaCount: 1
 
-image:
-  repository: quay.io/jetstack/cert-manager-controller
-  pullPolicy: IfNotPresent
-
-clusterResourceNamespace: ""
 namespace: "{{ cert_manager_namespace }}"
-
-# Pod Security Context
-# ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-securityContext:
-  runAsNonRoot: true
-  seccompProfile:
-    type: RuntimeDefault
-
-# Container Security Context to be set on the controller component container
-# ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-containerSecurityContext:
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-    - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-
-nodeSelector:
-  kubernetes.io/os: linux
-
-# prometheus:
-#   enabled: true
-#   servicemonitor:
-#     enabled: false
-#     prometheusInstance: default
-#     targetPort: 9402
-#     path: /metrics
-#     interval: 60s
-#     scrapeTimeout: 30s
-#     labels: {}
-#     annotations: {}
-#     honorLabels: false
-
-cainjector:
-  enabled: true
-  replicaCount: 1
-
-  # Pod Security Context to be set on the cainjector component Pod
-  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-  securityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
-
-  # Container Security Context to be set on the cainjector component container
-  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-  containerSecurityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-      - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-
-  nodeSelector:
-    kubernetes.io/os: linux
-
-  image:
-    repository: quay.io/jetstack/cert-manager-cainjector
-    pullPolicy: IfNotPresent
-
-  serviceAccount:
-    create: true
-    automountServiceAccountToken: true
 
 acmesolver:
   image:
