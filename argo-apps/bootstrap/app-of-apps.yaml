@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: _homelab-appsets
+  name: homelab-appsets
   namespace: argocd
 spec:
   syncPolicy:
