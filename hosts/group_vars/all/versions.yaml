@@ -2,8 +2,8 @@
 
 ceph_version: 19.2.0
 cert_manager_version: 1.17.1
-cilium_version: 0.16.22
-cilium_helm_version: 1.16.4
+cilium_version: 1.17.1
+cilium_cli_version: 0.17.0
 containerd_version: 2.0.1
 crio_version: 1.31.3
 crun_version: 1.19

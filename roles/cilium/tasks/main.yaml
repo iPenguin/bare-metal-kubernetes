@@ -15,9 +15,9 @@
 
 - name: download files
   ansible.builtin.get_url:
-    url: https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_version }}/cilium-linux-amd64.tar.gz
+    url: https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz
     dest: "{{ tempfolder.path }}/"
-    checksum: "sha256:https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_version }}/cilium-linux-amd64.tar.gz.sha256sum"
+    checksum: "sha256:https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz.sha256sum"
 
 - name: unarchive files
   ansible.builtin.unarchive:
@@ -39,7 +39,7 @@
     name: cilium
     kubeconfig: /etc/kubernetes/admin.conf
     chart_ref: cilium/cilium
-    chart_version: "{{ cilium_helm_version }}"
+    chart_version: "{{ cilium_version }}"
     namespace: kube-system
     values: "{{ lookup('template', 'cilium-values.yaml.j2') | from_yaml }}"
     state: present

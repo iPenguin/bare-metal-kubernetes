@@ -14,9 +14,14 @@ k8sServicePort: "6443"
 gatewayAPI:
   enable: true
 
-#
+ingressController:
+  enabled: true
+  default: true
+  loadbalancerMode: shared
+  defaultSecretNamespace: cert-manager
+  defaultSecretName: wildcard.clt.milco.casa
+
 # Settings Reference: https://yolops.net/k8s-dualstack-cilium.html
-#
 ipv6:
   enabled: true
 
@@ -49,14 +54,11 @@ hubble:
 
   preferIpv6: true
 
-  # -- TLS configuration for Hubble
   tls:
     enabled: true
     auto:
       enabled: true
-      # - certmanager:  This method use cert-manager to generate & rotate certificates.
       method: helm
-      # -- Generated certificates validity duration in days.
       certValidityDuration: 1095
 
   relay:
