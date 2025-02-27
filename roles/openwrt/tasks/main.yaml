@@ -3,24 +3,25 @@
   ansible.builtin.raw: opkg update
 
 # Cannot use ansible.builtin.opkg until python is installed.
+# python3-multiprocessing python3-distutils python3-logging
+# python3-urllib
 - name: Install required packages for ansible on OpenWrt
   ansible.builtin.raw: |-
-    opkg install python3-multiprocessing python3-distutils \
-      python3-logging openssh-sftp-server python3-urllib
+    opkg install openssh-sftp-server
   tags:
     - ansible
     - packages
 
-- name: Install wireguard packages
-  ansible.builtin.raw: |-
-    opkg install kmod-wireguard \
-      wireguard-tools \
-      luci-app-wireguard \
-      luci-proto-wireguard
-  tags:
-    - wireguard
-    - networking
-    - packages
+#- name: Install wireguard packages
+#  ansible.builtin.raw: |-
+#    opkg install kmod-wireguard \
+#      wireguard-tools \
+#      luci-app-wireguard \
+#      luci-proto-wireguard
+#  tags:
+#    - wireguard
+#    - networking
+#    - packages
 
 - name: Update networking
   include_tasks: update-networking.yaml

@@ -2,7 +2,7 @@
 
 - name: Install desired packages
   ansible.builtin.raw: |-
-    opkg install acme acme-dnsapi luci-app-acme
+    opkg install acme-acmesh acme-acmesh-dnsapi luci-app-acme
 
 - name: Configure acme
   ansible.builtin.template:
