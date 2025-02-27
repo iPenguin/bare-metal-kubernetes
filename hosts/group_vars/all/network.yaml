@@ -131,41 +131,38 @@ hosts:
     ipv4: "{{ ipv4_network }}.3"
   - name: c1
     mac: 1C:FD:08:7C:08:BC
-    #mac: 98:FA:9B:0A:FF:11
     ipv4: "{{ ipv4_network }}.10"
-    duid: 00020000ab11ee035c834eb2cbc1
+    duid: 00020000ab117e270d453735b4de
     hostid: 10
   - name: c2
     mac: 1C:FD:08:7C:08:E2
-    #mac: 6C:4B:90:E2:89:09
     ipv4: "{{ ipv4_network }}.11"
-    duid: 00020000ab1141e3610454d8e45d
+    duid: 00020000ab114a42b96c241d3e29
     hostid: 11
   - name: c3
     mac: 1C:FD:08:7C:08:7D
-    #mac: 98:FA:9B:F4:49:44
     ipv4: "{{ ipv4_network }}.12"
-    duid: 00020000ab11107a31861e9e07b0
+    duid: 00020000ab1180602254182e6eb6
     hostid: 12
   - name: w1
     mac: 04:7B:CB:A2:67:49
     ipv4: "{{ ipv4_network }}.13"
-    duid: 00020000ab115ab5348f3a9b65d1
+    duid: 00020000ab117ee2afe94c203ff7
     hostid: 13
   - name: w2
     mac: 04:7B:CB:A2:66:13
     ipv4: "{{ ipv4_network }}.14"
-    duid: 00020000ab11642704f6e5c98bc3
+    duid: 00020000ab11dccab35199b63f41
     hostid: 14
   - name: w3
     mac: 04:7B:CB:A2:66:FA
     ipv4: "{{ ipv4_network }}.15"
-    duid: 00020000ab11d55a3eb23fba8a04
+    duid: 00020000ab11eb87b0126a3ba008
     hostid: 15
   - name: w4
     mac: 84:47:09:1D:2B:11
     ipv4: "{{ ipv4_network }}.16"
-    duid: 00020000ab11e2b7d21dd313dabc
+    duid: 00020000ab116dc8533febf9788b
     hostid: 16
 
 domains:
