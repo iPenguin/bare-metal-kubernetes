@@ -21,11 +21,15 @@ ingressController:
   defaultSecretNamespace: cert-manager
   defaultSecretName: wildcard.clt.milco.casa
 
-# Settings Reference: https://yolops.net/k8s-dualstack-cilium.html
+ipv4:
+  enabled: true
 ipv6:
   enabled: true
 
-enableIPv6Masquerade: false
+lbIPAM:
+  enabled: true
+
+defaultLBServiceIPAM: lbipam
 
 ipam:
   mode: "cluster-pool"
