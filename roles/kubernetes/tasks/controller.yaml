@@ -5,6 +5,7 @@
     dest: "{{ _kubeadm_config }}"
   vars:
     host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') }}"
+    host_ipv6: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv6') }}"
   register: kube_config
 
 - name: kubeadm init

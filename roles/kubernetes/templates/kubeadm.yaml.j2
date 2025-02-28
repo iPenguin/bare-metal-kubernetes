@@ -22,6 +22,8 @@ nodeRegistration:
   taints:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
+  kubeletExtraArgs:
+    node-ip: "{{ host_ipv4[0] }},{{ host_ipv6[0] }}"
 
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
