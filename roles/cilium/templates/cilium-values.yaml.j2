@@ -17,14 +17,27 @@ gatewayAPI:
 ingressController:
   enabled: true
   default: true
-  loadbalancerMode: shared
+  loadbalancerMode: dedicated
   defaultSecretNamespace: cert-manager
   defaultSecretName: wildcard.clt.milco.casa
+  service:
+    enabled: true
+    ipv6: 
+      enabled: true
+    ipFamilyPolicy: PreferDualStack
+    ipFamilies:
+      - IPv4
+      - IPv6
+#    annotations:
+#      "io.cilium/lb-ipam-ips": "{{ k8s_pod_network }}::1"
 
 ipv4:
   enabled: true
 ipv6:
   enabled: true
+  clusterPool:
+    # What network are we alloc IPs from. Must be /64
+    ipv6CIDR: {{ ipv6_network }}::/64
 
 lbIPAM:
   enabled: true
@@ -32,12 +45,9 @@ lbIPAM:
 defaultLBServiceIPAM: lbipam
 
 ipam:
-  mode: "cluster-pool"
   operator:
     clusterPoolIPv4PodCIDRList: [ {{ k8s_pod_network.ipv4 }} ]
-    clusterPoolIPv4MaskSize: 24
     clusterPoolIPv6PodCIDRList: [ {{ k8s_pod_network.ipv6 }} ]
-    clusterPoolIPv6MaskSize: 112
 
 bpf:
   masquerade: true

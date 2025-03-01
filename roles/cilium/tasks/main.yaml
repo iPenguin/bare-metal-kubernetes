@@ -1,11 +1,11 @@
 ---
 
-- name: create temp folder
+- name: Create temp folder
   ansible.builtin.tempfile:
     state: directory
   register: tempfolder
 
-- name: create dest folder
+- name: Create dest folder
   ansible.builtin.file:
     path: /usr/local/bin/
     owner: root
@@ -13,13 +13,13 @@
     mode: 0755
     state: directory
 
-- name: download files
+- name: Download Cilium files
   ansible.builtin.get_url:
     url: https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz
     dest: "{{ tempfolder.path }}/"
     checksum: "sha256:https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz.sha256sum"
 
-- name: unarchive files
+- name: Extract Cilium files
   ansible.builtin.unarchive:
     src: "{{ tempfolder.path }}/cilium-linux-amd64.tar.gz"
     remote_src: true
@@ -34,14 +34,19 @@
     repo_url: https://helm.cilium.io/
     state: present
 
-- name: install cilium helm chart
+- name: Install cilium helm chart
   kubernetes.core.helm:
     name: cilium
     kubeconfig: /etc/kubernetes/admin.conf
     chart_ref: cilium/cilium
     chart_version: "{{ cilium_version }}"
-    namespace: kube-system
+    namespace: "{{ cilium_namespace }}"
     values: "{{ lookup('template', 'cilium-values.yaml.j2') | from_yaml }}"
     state: present
+
+- name: Apply Cilium Ingress ipv6 patch
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'cilium-ingress-ipv6-patch.yaml.j2') | from_yaml }}"
 
 ...
