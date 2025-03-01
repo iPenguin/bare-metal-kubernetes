@@ -132,15 +132,6 @@
       when:
         - inventory_hostname in k8s_controller
 
-- name: Deploy ingress-nginx
-  hosts:
-    - ingress
-  tags:
-    - ingress
-  roles:
-    - role: ingress-nginx
-      when: "'ingress-nginx' in ingress_controllers"
-
 - name: Wipe ceph drives
   hosts:
     - controllers
