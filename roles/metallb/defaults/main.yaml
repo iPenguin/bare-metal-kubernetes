@@ -1,3 +1,2 @@
 ---
-
-metallb_namespace: sys-metallb
+metallb_namespace: metallb
