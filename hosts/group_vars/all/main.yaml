@@ -13,7 +13,6 @@ site_admin_username: "{{ vault_site_admin_username }}"
 
 lan_domain_cert_name: "wildcard.{{ lan_domain }}"
 cert_namespaces:
-  - sys-ingress-nginx
   - argocd
 
 remote_users:
