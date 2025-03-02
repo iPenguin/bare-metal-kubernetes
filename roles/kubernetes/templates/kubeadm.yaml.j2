@@ -10,7 +10,7 @@ bootstrapTokens:
       - signing
       - authentication
 localAPIEndpoint:
-  advertiseAddress: {{ host_ipv4[0] }}
+  advertiseAddress: {{ host_ipv4 }}
   bindPort: 6443
 nodeRegistration:
   {% if k8s_runtime == 'crio' %}criSocket: unix:///run/crio/crio.sock{% endif %}
@@ -23,7 +23,8 @@ nodeRegistration:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
   kubeletExtraArgs:
-    node-ip: "{{ host_ipv4[0] }},{{ host_ipv6[0] }}"
+    - name: "node-ip"
+      value: "{{ host_ipv4 }},{{ host_ipv6 }}"
 
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -37,7 +38,7 @@ controllerManager:
     - name: node-cidr-mask-size-ipv4
       value: "24"
     - name: node-cidr-mask-size-ipv6
-      value: "112"
+      value: "96"
 apiServer:
   certSANs:
     - "{{ network_services.vip.ipv4 }}"
@@ -45,7 +46,7 @@ apiServer:
     - "{{ k8s_api_endpoint }}"
   extraArgs:
     - name: advertise-address
-      value: {{ ansible_default_ipv4.address }}
+      value: "{{ ansible_default_ipv4.address }}"
     - name: authorization-mode
       value: Node,RBAC
     - name: bind-address

@@ -46,7 +46,7 @@
   include_tasks: controller.yaml
   when: inventory_hostname in k8s_controller
 
-- name: check for nodes
+- name: Check for nodes - primary check
   ansible.builtin.command: kubectl get nodes
   register: nodelist
   delegate_to: "{{ k8s_controller }}"

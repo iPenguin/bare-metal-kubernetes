@@ -21,7 +21,7 @@
     state: started
     enabled: yes
 
-- name: check for nodes
+- name: check for nodes -- secondary
   ansible.builtin.command: kubectl get nodes
   register: nodelist
   delegate_to: "{{ k8s_controller }}"
