@@ -13,6 +13,8 @@ spec:
       env:
         - name: vip_arp
           value: "true"
+        - name: vip_ndp
+          value: "true"
         - name: port
           value: "6443"
         - name: vip_interface
@@ -43,6 +45,10 @@ spec:
           value: local
         - name: vip_address
           value: "{{ network_services.vip.ipv4 }}"
+        - name: vip_address_ipv6
+          value: "{{ network_services.vip.ipv6 }}"
+        - name: prometheus_server
+          value: ":2112"
       image: ghcr.io/kube-vip/kube-vip:v{{ kube_vip_version }}
       imagePullPolicy: Always
       name: kube-vip
