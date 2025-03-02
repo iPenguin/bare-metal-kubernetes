@@ -51,7 +51,7 @@ ipam:
       - {{ k8s_pod_network.ipv4 }}
     clusterPoolIPv6PodCIDRList:
       - "{{ k8s_pod_network.ipv6 }}"
-    clusterPoolIPv6Mask: "/96"
+    clusterPoolIPv6MaskSize: 96
 
 bpf:
   masquerade: true
