@@ -111,6 +111,16 @@
       when: 
         - inventory_hostname in k8s_controller
 
+- name: Deploy cert-manager
+  hosts:
+    - controllers
+  tags:
+    - certs
+  roles:
+    - role: cert-manager
+      when:
+        - inventory_hostname in k8s_controller
+
 - name: Deploy Argo CD
   hosts:
     - controllers
@@ -119,16 +129,6 @@
     - argo
   roles:
     - role: argo
-      when:
-        - inventory_hostname in k8s_controller
-
-- name: Deploy cert-manager
-  hosts:
-    - controllers
-  tags:
-    - certs
-  roles:
-    - role: cert-manager
       when:
         - inventory_hostname in k8s_controller
 
