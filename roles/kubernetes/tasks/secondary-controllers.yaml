@@ -8,12 +8,25 @@
   register: join_control_plane_cmd
   delegate_to: "{{ k8s_controller }}"
 
-- name: Pause 20 seconds
-  ansible.builtin.pause:
-    seconds: 20
+- name: Parse join command variables
+  ansible.builtin.set_fact:
+    api_endpoint: "{{ join_control_plane_cmd.stdout | regex_search('kubeadm join (.+?) --token', '\\1') | first }}"
+    token: "{{ join_control_plane_cmd.stdout | regex_search('--token ([^ ]+)', '\\1') | first }}"
+    ca_cert_hash: "{{ join_control_plane_cmd.stdout | regex_search('--discovery-token-ca-cert-hash (sha256:[0-9a-z]+?) ', '\\1') | first }}"
+    cert_key: "{{ join_control_plane_cmd.stdout | regex_search('--certificate-key ([0-9a-z]+)', '\\1') | first }}"
+
+- name: Template JoinConfiguration file
+  ansible.builtin.template:
+    src: node-join.yaml.j2
+    dest: /root/node-join.yaml
+    mode: '0644'
+  vars:
+    host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') | first }}"
+    host_ipv6: "{{ ipv6_network }}::{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') | first }}"
 
 - name: join cluster control plane
-  ansible.builtin.command: "{{ join_control_plane_cmd.stdout }}"
+  ansible.builtin.command:
+    cmd: kubeadm join --config /root/node-join.yaml
 
 - name: enable start kubelet
   ansible.builtin.service:
@@ -26,6 +39,11 @@
   register: nodelist
   delegate_to: "{{ k8s_controller }}"
   failed_when: not '{{ inventory_hostname }}' in nodelist.stdout
+
+- name: should we clear the taint for master nodes?
+  ansible.builtin.set_fact:
+    _k8s_master_node_schedule_taint: absent
+  when: k8s_master_can_run_pods | bool
 
 - name: Secondary -- Set if master nodes can run pods
   kubernetes.core.k8s_taint:

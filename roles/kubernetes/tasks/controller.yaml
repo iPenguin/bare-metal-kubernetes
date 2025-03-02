@@ -5,10 +5,8 @@
     src: kubeadm.yaml.j2
     dest: "{{ _kubeadm_config }}"
   vars:
-    _ipv4_list: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') }}"
-    _ipv6_id: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') }}"
-    host_ipv4: "{{ _ipv4_list[0] }}"
-    host_ipv6: "{{ ipv6_network }}::{{ _ipv6_id[0] }}"
+    host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') | first }}"
+    host_ipv6: "{{ ipv6_network }}::{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') | first }}"
   register: kube_config
 
 - name: kubeadm init
@@ -34,7 +32,7 @@
     group: root
     mode: 0600
 
-- name: should we clear the taint for master nodes?
+- name: should we clear the taint for controller nodes?
   ansible.builtin.set_fact:
     _k8s_master_node_schedule_taint: absent
   when: k8s_master_can_run_pods | bool

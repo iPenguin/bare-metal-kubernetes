@@ -8,8 +8,24 @@
   ansible.builtin.set_fact:
     k8s_join_cmd: "{{ join_cmd.stdout_lines[0] }}"
 
+- name: Parse join command variables
+  ansible.builtin.set_fact:
+    api_endpoint: "{{ join_cmd.stdout | regex_search('kubeadm join (.+?) --token', '\\1') | first }}"
+    token: "{{ join_cmd.stdout | regex_search('--token ([^ ]+)', '\\1') | first }}"
+    ca_cert_hash: "{{ join_cmd.stdout | regex_search('--discovery-token-ca-cert-hash (sha256:[0-9a-z]+?) ', '\\1') | first }}"
+
+- name: Template JoinConfiguration file
+  ansible.builtin.template:
+    src: node-join.yaml.j2
+    dest: /root/node-join.yaml
+    mode: '0644'
+  vars:
+    host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') | first }}"
+    host_ipv6: "{{ ipv6_network }}::{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') | first }}"
+
 - name: Join cluster
-  ansible.builtin.command: "{{ k8s_join_cmd }} --cri-socket unix:///run/crio/crio.sock"
+  ansible.builtin.command:
+    cmd: kubeadm join --config /root/node-join.yaml
 
 - name: Enable start kubelet
   ansible.builtin.service:
