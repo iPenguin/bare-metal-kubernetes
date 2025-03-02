@@ -8,9 +8,9 @@
   register: join_control_plane_cmd
   delegate_to: "{{ k8s_controller }}"
 
-- name: Pause 10 seconds
+- name: Pause 20 seconds
   ansible.builtin.pause:
-    seconds: 10
+    seconds: 20
 
 - name: join cluster control plane
   ansible.builtin.command: "{{ join_control_plane_cmd.stdout }}"
