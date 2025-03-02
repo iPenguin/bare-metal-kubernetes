@@ -35,9 +35,10 @@ ipv4:
   enabled: true
 ipv6:
   enabled: true
-  clusterPool:
-    # What network are we alloc IPs from. Must be /64
-    ipv6CIDR: {{ ipv6_network }}::/64
+#  clusterPool:
+#    # What network are we alloc IPs from. Must be /64
+#    ipv6CIDR: "{{ k8s_pod_network.ipv6 }}"
+#    ipv6Mask: "/112"
 
 lbIPAM:
   enabled: true
@@ -46,8 +47,11 @@ defaultLBServiceIPAM: lbipam
 
 ipam:
   operator:
-    clusterPoolIPv4PodCIDRList: [ {{ k8s_pod_network.ipv4 }} ]
-    clusterPoolIPv6PodCIDRList: [ {{ k8s_pod_network.ipv6 }} ]
+    clusterPoolIPv4PodCIDRList:
+      - {{ k8s_pod_network.ipv4 }}
+    clusterPoolIPv6PodCIDRList:
+      - "{{ k8s_pod_network.ipv6 }}"
+    clusterPoolIPv6Mask: "/96"
 
 bpf:
   masquerade: true
