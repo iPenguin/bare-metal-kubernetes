@@ -9,7 +9,7 @@ toolbox:
 monitoring:
   enabled: false
   # createPrometheusRules: true
-  # rulesNamespaceOverride: sys-monitoring
+  # rulesNamespaceOverride: monitoring
 
 pspEnable: false
 
@@ -125,11 +125,7 @@ ingress:
     host:
       name: dashboard.{{ lan_domain }}
       path: "/ceph-dashboard(/|$)(.*)"
-    ingressClassName: nginx
-    # tls:
-    # - hosts:
-    #     - dashboard.{{ lan_domain }}
-    #   secretName: star-{{ lan_domain }}
+    ingressClassName: cilium
 
 cephBlockPools:
   - name: ceph-blockpool
@@ -235,12 +231,8 @@ cephObjectStores:
       parameters:
         region: us-east-1
     ingress:
-      enabled: false
-      # host:
-      #   name: s3.{{ lan_tld }}
-      #   path: /
-      # tls:
-      #   - hosts:
-      #     - s3.{{ lan_tld }}
-      #     secretName: star-{{ lan_domain }}
-      ingressClassName: nginx
+      enabled: true
+      host:
+        name: s3.{{ lan_tld }}
+        path: /
+      ingressClassName: cilium
