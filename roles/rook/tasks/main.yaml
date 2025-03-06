@@ -1,12 +1,5 @@
 ---
 
-# - name: template
-#   become: false
-#   ansible.builtin.template:
-#     src: rook-cluster.yaml.j2
-#     dest: /home/bmilco/rook.cluster.yaml
-#   connection: local
-
 - name: install lvm2 and other fs tools
   apt:
     name:
@@ -76,7 +69,7 @@
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt
           spec:
-            ingressClassName: cilium
+            ingressClassName: traefik
             tls:
               - hosts:
                   - 'ceph.{{ lan_tld }}'

@@ -123,9 +123,9 @@ cephClusterSpec:
 ingress:
   dashboard:
     host:
-      name: dashboard.{{ lan_domain }}
+      name: dashboard.{{ lan_tld }}
       path: "/ceph-dashboard(/|$)(.*)"
-    ingressClassName: cilium
+    ingressClassName: traefik
 
 cephBlockPools:
   - name: ceph-blockpool
@@ -235,4 +235,4 @@ cephObjectStores:
       host:
         name: s3.{{ lan_tld }}
         path: /
-      ingressClassName: cilium
+      ingressClassName: traefik
