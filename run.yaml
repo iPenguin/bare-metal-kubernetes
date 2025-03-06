@@ -75,6 +75,7 @@
     has_nvidia_card: false
   tags:
     - nvidia
+    - cluster
   pre_tasks:
     - name: check for nvidia card
       ansible.builtin.command:
@@ -118,9 +119,21 @@
     - controllers
   tags:
     - certs
+    - cluster
   roles:
     - role: cert-manager
       when:
+        - inventory_hostname in k8s_controller
+
+- name: Deploy Sealed Secrets
+  hosts:
+    - controllers
+  tags:
+    - cd
+    - secrets
+  roles:
+    - role: sealed-secrets
+      when: 
         - inventory_hostname in k8s_controller
 
 - name: Deploy Argo CD
