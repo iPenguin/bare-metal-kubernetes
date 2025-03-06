@@ -1,62 +1,40 @@
-# -- Provide a name in place of `argocd`
 nameOverride: argocd
 
-# -- Create aggregated roles that extend existing cluster roles to interact with argo-cd resources
-## Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
 createAggregateRoles: false
-# -- Create cluster roles for cluster-wide installation.
-## Used when you manage applications in the same cluster where Argo CD runs
 createClusterRoles: true
 
-## Globally shared configuration
 global:
-  # -- Default domain used by all components
-  ## Used for ingresses, certificates, SSO, notifications, etc.
-  domain: argocd.example.com
+  domain: argocd.milco.casa
 
-  # Default affinity preset for all components
   affinity:
-    # -- Default pod anti-affinity rules. Either: `none`, `soft` or `hard`
     podAntiAffinity: soft
-    # Node affinity rules
     nodeAffinity:
-      # -- Default node affinity rules. Either: `none`, `soft` or `hard`
       type: hard
-      # -- Default match expressions for node affinity
       matchExpressions: []
-        # - key: topology.kubernetes.io/zone
-        #   operator: In
-        #   values:
-        #    - antarctica-east1
-        #    - antarctica-west1
+  dualStack:
+    ipFamilyPolicy: PreferDualStack
+    ipFamilies:
+      - IPv4
+      - IPv6
 
-## Argo Configs
 configs:
-  # General Argo CD configuration
-  ## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/argocd-cm.yaml
   cm:
-    # -- Create the argocd-cm configmap for [declarative setup]
     create: true
     admin.enabled: true
-    url: https://argocd.clt.milco.casa/
+    url: https://argocd.milco.casa/
 
-    # Dex configuration
     dex.config: |
       connectors:
       - type: ldap
         name: freeipa-ldap
         id: ldap
         config:
-          # Ldap server address
           host: "ldap.clt.milco.casa:123"
           insecureNoSSL: false
           insecureSkipVerify: false
-          # Variable name stores ldap bindDN in argocd-secret
           bindDN: "$ldap.bindDN"
-          # Variable name stores ldap bind password in argocd-secret
           bindPW: "$ldap.bindPW"
           usernamePrompt: Username
-          # Ldap user search attributes
           userSearch:
             baseDN: "memberOf=argo,ou=users,dc=auth,dc=milco,dc=casa"
             filter: ""
@@ -64,7 +42,6 @@ configs:
             idAttr: uid
             emailAttr: mail
             nameAttr: displayName
-          # Ldap group search attributes
           groupSearch:
             baseDN: "cn=argo,ou=groups,dc=auth,dc=milco,dc=casa"
             filter: "(objectClass=groupOfNames)"
@@ -72,135 +49,47 @@ configs:
             groupAttr: member
             nameAttr: cn
 
-  # Argo CD RBAC policy configuration
-  ## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/rbac.md
   rbac:
-    # -- Create the argocd-rbac-cm configmap with ([Argo CD RBAC policy]) definitions.
-    # If false, it is expected the configmap will be created by something else.
-    # Argo CD will not work if there is no configmap created with the name above.
     create: true
-
-    # -- Annotations to be added to argocd-rbac-cm configmap
-    annotations: {}
-
-    # -- The name of the default role which Argo CD will falls back to, when authorizing API requests (optional).
-    # If omitted or empty, users may be still be able to login, but will see no apps, projects, etc...
     policy.default: ''
-
-    # -- File containing user-defined policies and role definitions.
-    # @default -- `''` (See [values.yaml])
     policy.csv: ''
-    # Policy rules are in the form:
-    #  p, subject, resource, action, object, effect
-    # Role definitions and bindings are in the form:
-    #  g, subject, inherited-subject
-    # policy.csv: |
-    #   p, role:org-admin, applications, *, */*, allow
-    #   p, role:org-admin, clusters, get, *, allow
-    #   p, role:org-admin, repositories, *, *, allow
-    #   p, role:org-admin, logs, get, *, allow
-    #   p, role:org-admin, exec, create, */*, allow
-    #   g, your-github-org:your-team, role:org-admin
-
-    # -- OIDC scopes to examine during rbac enforcement (in addition to `sub` scope).
-    # The scope value can be a string, or a list of strings.
     scopes: "[groups]"
-
-    # -- Matcher function for Casbin, `glob` for glob matcher and `regex` for regex matcher.
     policy.matchMode: "glob"
 
-  # SSH known hosts for Git repositories
-  ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#ssh-known-host-public-keys
   ssh:
-    # -- Specifies if the argocd-ssh-known-hosts-cm configmap should be created by Helm.
     create: true
-
-    # -- Additional known hosts for private repositories
     extraHosts: ''
 
-  clusterCredentials: {}
-    # mycluster:
-    #   server: https://mycluster.example.com
-    #   labels: {}
-    #   annotations: {}
-    #   config:
-    #     bearerToken: "<authentication token>"
-    #     tlsClientConfig:
-    #       insecure: false
-    #       caData: "<base64 encoded certificate>"
-    # mycluster2:
-    #   server: https://mycluster2.example.com
-    #   labels: {}
-    #   annotations: {}
-    #   namespaces: namespace1,namespace2
-    #   clusterResources: true
-    #   config:
-    #     bearerToken: "<authentication token>"
-    #     tlsClientConfig:
-    #       insecure: false
-    #       caData: "<base64 encoded certificate>"
-    # mycluster3-project-scoped:
-    #   server: https://mycluster3.example.com
-    #   labels: {}
-    #   annotations: {}
-    #   project: my-project1
-    #   config:
-    #     bearerToken: "<authentication token>"
-    #     tlsClientConfig:
-    #       insecure: false
-    #       caData: "<base64 encoded certificate>"
-    # mycluster4-sharded:
-    #   shard: 1
-    #   server: https://mycluster4.example.com
-    #   labels: {}
-    #   annotations: {}
-    #   config:
-    #     bearerToken: "<authentication token>"
-    #     tlsClientConfig:
-    #       insecure: false
-    #       caData: "<base64 encoded certificate>"
-
-## Dex
 dex:
-  # -- Enable dex
-  enabled: true
-  # -- Dex name
+  enabled: false
   name: dex-server
-  # -- Additional command line arguments to pass to the Dex server
   extraArgs: []
 
-## Server
 server:
-  # -- Argo CD server name
   name: server
-
-  # -- The number of server pods to run
   replicas: 1
-
-  # TLS certificate configuration via cert-manager
-  ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/tls/#tls-certificates-used-by-argocd-server
+  extraArgs:
+    - --insecure
   certificate:
-    # -- Deploy a Certificate resource (requires cert-manager)
     enabled: true
-    # -- Certificate primary domain (commonName)
-    # @default -- `""` (defaults to global.domain)
-    domain: "wildcard.milco.casa"
+    domain: "argocd.milco.casa"
     issuer:
       group: "cert-manager.io"
       kind: "ClusterIssuer"
       name: "letsencrypt"
 
-  # Argo CD server ingress configuration
   ingress:
-    # -- Enable an ingress resource for the Argo CD server
     enabled: true
-    ingressClassName: "nginx"
-
-    # -- Argo CD server hostname
-    # @default -- `""` (defaults to global.domain)
-    hostname: "argo.clt.milco.casa"
-
-    # -- Enable TLS configuration for the hostname defined at `server.ingress.hostname`
-    ## TLS certificate will be retrieved from a TLS secret `argocd-server-tls`
-    ## You can create this secret via `certificate` or `certificateSecret` option
+    ingressClassName: traefik
+    hostname: "argocd.milco.casa"
+    annotations:
+      cilium.io/ingress-ssl-redirect: "true"
     tls: true
+    extraTls:
+      - hosts:
+          - "argocd.milco.com"
+        secretName: "wildcard.clt.milco.casa" 
+    ipFamilyPolicy: PreferDualStack
+    ipFamilies:
+      - IPv4
+      - IPv6
