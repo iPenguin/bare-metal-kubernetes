@@ -1,0 +1,39 @@
+---
+service:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+
+ports:
+  web:
+    port: 8000
+    exposedPort: 80
+    protocol: TCP
+  websecure:
+    port: 8443
+    exposedPort: 443
+    protocol: TCP
+  traefik:
+    port: 9000
+    expose: 
+      default: false
+
+ingressClass:
+  enabled: true
+  isDefaultClass: false
+
+dashboard:
+  enabled: true
+
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true
+pod:
+  securityContext:
+    capabilities:
+      add:
+      - NET_BIND_SERVICE

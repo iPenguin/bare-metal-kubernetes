@@ -95,20 +95,22 @@
   tags:
     - lb
     - metallb
+    - cluster
   roles:
     - role: metallb
       when:
         - inventory_hostname in k8s_controller
 
-- name: Deploy Sealed Secrets
+- name: Deploy Traefik
   hosts:
     - controllers
   tags:
-    - cd
-    - secrets
+    - ingress
+    - traefik
+    - cluster
   roles:
-    - role: sealed-secrets
-      when: 
+    - role: traefik
+      when:
         - inventory_hostname in k8s_controller
 
 - name: Deploy cert-manager
