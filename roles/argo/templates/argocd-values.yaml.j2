@@ -68,28 +68,14 @@ dex:
 server:
   name: server
   replicas: 1
-  extraArgs:
-    - --insecure
   certificate:
-    enabled: true
-    domain: "argocd.milco.casa"
-    issuer:
-      group: "cert-manager.io"
-      kind: "ClusterIssuer"
-      name: "letsencrypt"
+    enabled: false
 
   ingress:
-    enabled: true
-    ingressClassName: traefik
-    hostname: "argocd.milco.casa"
+    enabled: false
+
+  service:
+    type: LoadBalancer
     annotations:
-      cilium.io/ingress-ssl-redirect: "true"
-    tls: true
-    extraTls:
-      - hosts:
-          - "argocd.milco.com"
-        secretName: "wildcard.clt.milco.casa" 
-    ipFamilyPolicy: PreferDualStack
-    ipFamilies:
-      - IPv4
-      - IPv6
+      metallb.io/loadBalancerIPs: {{ network_services.argo.ipv4 }},{{
+      network_services.argo.ipv6 }}
