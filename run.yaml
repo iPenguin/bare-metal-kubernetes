@@ -194,6 +194,7 @@
     - controllers
   tags:
     - auth
+    - keycloak
     - config
   roles:
     - role: keycloak
