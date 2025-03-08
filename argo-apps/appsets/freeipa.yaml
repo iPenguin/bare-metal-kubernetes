@@ -67,6 +67,7 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
+                    --ip-address={{ .ipv6_address }}
                 - op: replace
                   path: /data/ipa-replica-options
                   value: |-
@@ -85,6 +86,7 @@ spec:
                     --setup-kra
                     --ssh-trust-dns
                     --ip-address={{ .ipv4_address }}
+                    --ip-address={{ .ipv6_address }}
                     --server=ipa-01.clt.milco.casa
             - target:
                 kind: PersistentVolumeClaim
