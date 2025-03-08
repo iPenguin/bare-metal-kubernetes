@@ -8,7 +8,7 @@ domain: milco
 lan_tld: "{{ domain }}.{{ tld }}"
 lan_domain: "clt.{{ domain }}.{{ tld }}"
 
-site_admin_email: "{{ vault_site_admin_email }}"
+site_admin_email: "bcmilco@gmail.com"
 site_admin_username: "{{ vault_site_admin_username }}"
 
 lan_domain_cert_name: "wildcard.{{ lan_domain }}"
