@@ -112,6 +112,10 @@ spec:
                 values:
                 - freeipa
             topologyKey: "kubernetes.io/hostname"
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 1.1.1.3
       initContainers:
         - name: init
           image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
