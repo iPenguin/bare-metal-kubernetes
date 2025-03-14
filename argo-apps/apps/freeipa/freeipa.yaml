@@ -177,6 +177,7 @@ spec:
             capabilities:
               add:
                 - SYS_TIME
+                - NET_BIND_SERVICE
           stdin: true
           tty: true
           ports:
