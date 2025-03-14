@@ -119,7 +119,7 @@ spec:
           - 10.1.1.1
       initContainers:
         - name: init
-          image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
+          image: quay.io/freeipa/freeipa-server:rocky-9-4.12.2
           command:
             - sh
             - /tmp/startup.sh
@@ -137,7 +137,7 @@ spec:
               subPath: ipa-replica-options
       containers:
         - name: freeipa
-          image: quay.io/freeipa/freeipa-server:fedora-41-4.12.2
+          image: quay.io/freeipa/freeipa-server:rocky-9-4.12.2
           readinessProbe:
             exec:
               command: ["/usr/bin/systemctl", "is-active", "--quiet", "ipa"]
