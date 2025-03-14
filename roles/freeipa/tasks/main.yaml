@@ -1,5 +1,62 @@
 ---
 
+- name: Create namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ ipa_namespace }}"
+    state: present
+
+- name: Deploy IPA PVCs for servers
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-pvc.yaml.j2'
+  vars:
+    ipa_counter: "{{ (ipa_replicas + 1) }}"
+
+- name: Deploy IPA Load Balancer
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-lb.yaml.j2'
+  vars:
+    ipa_counter: "{{ (ipa_replicas + 1) }}"
+
+- name: Create IPA master Secret
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-master-secret.yaml.j2'
+
+- name: Deploy IPA StatefulSet
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-statefulset.yaml.j2'
+  vars:
+    ipa_counter: "{{ (ipa_replicas + 1) }}"
+
+- name: Wait until {{ ipa_hostname }} is up (this could take 15+ minutes)
+  become: false
+  ansible.builtin.uri:
+    url: "https://{{ ipa_hostname }}/ipa/ui/"
+    validate_certs: "{{ ipa_validate_certs }}"
+  register: _ipa_result
+  until: _ipa_result.status == 200
+  retries: 40  # (30 sec x 40 tries = 20 minutes)
+  delay: 30    # 30 seconds
+
+- name: Deploy IPA PVCs for replicas
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-pvc-replicas.yaml.j2'
+  vars:
+    ipa_counter: "{{ (ipa_replicas + 1) }}"
+
+- name: Create IPA replica Secrets
+  kubernetes.core.k8s:
+    state: present
+    template: 'freeipa-replica-secret.yaml.j2'
+  vars:
+    ipa_counter: "{{ (ipa_replicas + 1) }}"
+
 - name: create temp folder
   ansible.builtin.tempfile:
     state: directory

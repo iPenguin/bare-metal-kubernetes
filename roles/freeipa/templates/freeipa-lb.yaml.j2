@@ -1,0 +1,60 @@
+{% for i in range( ipa_counter | int ) %}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ipa-{{ "%02d" | format( i + 1 ) }}-lb
+  namespace: {{ ipa_namespace }}
+  labels:
+    app: freeipa
+  annotations:
+    metallb.io/loadBalancerIPs: |-
+      {{ network_services[ "ipa-%02d" | format( i + 1 ) ].ipv4 }},
+      {{ network_services[ "ipa-%02d" | format( i + 1 ) ].ipv6 }}
+spec:
+  type: LoadBalancer
+  selector:
+    app: freeipa
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ports:
+    - name: "53"
+      port: 53
+      targetPort: 53
+    - name: "80"
+      port: 80
+      targetPort: 80
+    - name: "443"
+      port: 443
+      targetPort: 443
+    - name: "389"
+      port: 389
+      targetPort: 389
+    - name: "636"
+      port: 636
+      targetPort: 636
+    - name: "88"
+      port: 88
+      targetPort: 88
+    - name: "464"
+      port: 464
+      targetPort: 464
+    - name: 53-udp
+      port: 53
+      protocol: UDP
+      targetPort: 53
+    - name: 88-udp
+      port: 88
+      protocol: UDP
+      targetPort: 88
+    - name: 464-udp
+      port: 464
+      protocol: UDP
+      targetPort: 464
+    - name: "123"
+      port: 123
+      protocol: UDP
+      targetPort: 123
+{% endfor %}

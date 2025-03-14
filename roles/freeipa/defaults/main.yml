@@ -1,9 +1,9 @@
 ---
 # defaults file for freeipa
 
-ipa_namespace: freeipa
+ipa_namespace: ipa
 ipa_replicas: 1
-ipa_docker_os: fedora-41
+ipa_docker_os: rocky-9
 
 ipa_storage_dir: "{{ pod_data_path }}/ipa"
 
