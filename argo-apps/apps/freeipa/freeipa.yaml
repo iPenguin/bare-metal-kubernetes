@@ -115,6 +115,7 @@ spec:
       dnsPolicy: "None"
       dnsConfig:
         nameservers:
+          - 1.1.1.3
           - 10.1.1.1
       initContainers:
         - name: init

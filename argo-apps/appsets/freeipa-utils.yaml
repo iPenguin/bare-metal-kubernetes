@@ -17,7 +17,6 @@ spec:
         automated: {}
         syncOptions:
           - CreateNamespace=true
-        syncWave: "1"
       project: freeipa
       destination:
         namespace: freeipa
