@@ -2,7 +2,7 @@ image:
   tag: "latest"
 
 ingress:
-  enabled: false
+  enabled: true
   ingressClassName: "traefik"
 
   # -- The url to use for the ingress reverse proxy to point at this pms instance
@@ -10,20 +10,20 @@ ingress:
 
   # -- Optional secret name to provide valid https connections
   # using an existing SSL certificate
-  certificateSecret: ""
+  certificateSecret: "wildcard.clt.milco.casa"
 
   # -- Custom annotations to put on the ingress resource
   annotations: {}
 
 pms:
   storageClassName: cephfs
-  configStorage: 2Ti
+  configStorage: 2Gi
   # NOTE: When set, 'configStorage' and 'storageClassName' are ignored.
   configExistingClaim: ""
 
   gpu:
     nvidia:
-      enabled: true
+      enabled: false
 
 # -- Specify your own runtime class name eg use gpu
 runtimeClassName: ""
@@ -50,7 +50,21 @@ statefulSet:
   podAnnotations: {}
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 32400
 nodeSelector:
   clt.milco.casa/node-hardware: nvidia-gpu
+
+extraEnv:
+  PLEX_CLAIM: ""
+  PLEX_DISABLE_HWTRANSCODE: "1"
+  HOSTNAME: "plex.clt.milco.casa"
+  TZ: "Americas/New_York"
+
+extraVolumeMounts:
+  - name: data
+    mountPath: /data
+extraVolumes:
+  - name: data
+    persistentVolumeClaim:
+        claimName: plex-data
