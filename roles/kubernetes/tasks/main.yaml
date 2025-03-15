@@ -65,6 +65,8 @@
     - not inventory_hostname in nodelist.stdout
 
 - name: Generate users
+  tags:
+    - users
   when:
     - inventory_hostname in k8s_controller
     - k8s_admin_users is defined
