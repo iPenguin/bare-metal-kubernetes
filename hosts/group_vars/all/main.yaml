@@ -15,6 +15,7 @@ lan_domain_cert_name: "wildcard.{{ lan_domain }}"
 cert_namespaces:
   - argocd
   - freeipa
+  - nextcloud
   - plex
 
 
