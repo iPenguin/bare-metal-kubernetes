@@ -12,10 +12,10 @@ spec:
         generators:
           - list:
               elements:
-                - host: plex 
+                - host: plex
           - plugin:
               configMapRef:
-                name: get-ip
+                name: dig
               input:
                 parameters:
                   hostname: '{{ .host }}.clt.milco.casa'
@@ -33,13 +33,13 @@ spec:
         namespace: plex
         server: https://kubernetes.default.svc
       sources:
-        - repoURL: 'https://nextcloud.github.io/helm'
+        - repoURL: 'https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages'
           chart: plex
-          targetRevision: 6.6.3
+          targetRevision: 0.8.0
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/plex/values.yaml'
             values: |-
               service:
                 annotations:
-                  metallb.io/loadBalancerIPs: {{ network_services.plex.ipv4 }},{{ network_services.plex.ipv6 }}
+                  metallb.io/loadBalancerIPs: {{ .ipv4_address }},{{ .ipv6_address }}

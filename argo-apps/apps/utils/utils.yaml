@@ -1,0 +1,152 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dig
+  namespace: argocd
+data:
+  requestTimeout: "60"
+  baseUrl: "http://dig.kube-utils.svc.cluster.local:8000"
+  token: "$plugin.myplugin.token"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dig-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dig
+  template:
+    metadata:
+      labels:
+        app: dig
+    spec:
+      containers:
+        - name: dig
+          image: python:3.11-slim
+          command: ["python"]
+          args: ["/app/dns_lookup.py"]
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: script-volume
+              mountPath: /app
+      volumes:
+      - name: script-volume
+        configMap:
+          name: dig
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dig
+data:
+  dns_lookup.py: |
+    #!/usr/bin/env python
+    #
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    import json
+    from urllib.parse import urlparse, parse_qs
+    import socket
+    import logging
+
+    # Configure logging with custom format
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+        def log_message(self, format, *args):
+            # Override the default logging to use our logger
+            logger.info("%s - - [%s] %s\n" % (
+                self.client_address[0],
+                self.log_date_time_string(),
+                format % args
+            ))
+
+        def get_domain(self, hostname):
+            parts = hostname.split('.')
+
+            # If there are less than 3 parts, return the whole hostname
+            if len(parts) < 3:
+                return hostname
+
+            # Assume the last two parts are domain and TLD for simplicity
+            domain_tld = '.'.join(parts[-2:])
+            return domain_tld
+
+        def get_host(self, hostname):
+            parts = hostname.split('.')
+
+            return parts[0]
+
+        def do_POST(self):
+            parsed_path = urlparse(self.path)
+
+            if parsed_path.path == '/api/v1/getparams.execute':
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+
+                content_type = self.headers.get('Content-Type', '').lower()
+
+                content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length).decode('utf-8')
+
+                json_data = json.loads(post_data)
+                hostname = json_data['input']['parameters']['hostname']
+                host = self.get_host(hostname)
+                domain = self.get_domain(hostname)
+                self.log_message(f"HOSTNAME: {hostname} ++++ HOST: {host} ++++ DOMAIN: {domain}")
+                try:
+                    ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
+                    ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
+                    self.log_message(f"IPV4: {ipv4_address} ++++ IPV6 {ipv6_address}")
+                    response_data = { "output": {
+                        "parameters": [{
+                            "ipv4_address": ipv4_address,
+                            "ipv6_address": ipv6_address,
+                            "domain": domain,
+                            "host": host
+                        }]
+                    }}
+
+                except Exception as e:
+                    response_data = {
+                        "error": str(e)
+                    }
+
+                self.log_message(f"DATA ==>> {response_data}")
+                self.wfile.write(json.dumps(response_data).encode())
+            else:
+                self.send_response(404)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(b"Path not found")
+
+    def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):
+        server_address = ('', port)
+        httpd = server_class(server_address, handler_class)
+        print(f"Starting httpd server on port {port}...")
+        httpd.serve_forever()
+
+    if __name__ == '__main__':
+        run()
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dig
+spec:
+  selector:
+    app: dig
+  type: ClusterIP
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

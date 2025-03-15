@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: utils
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - host: utils
+  template:
+    metadata:
+      name: utils
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - Confirm=true
+      project: utils
+      destination:
+        namespace: kube-utils
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          path: argo-apps/apps/utils
+          targetRevision: HEAD

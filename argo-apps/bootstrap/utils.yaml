@@ -1,0 +1,18 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: utils
+  namespace: argocd
+spec:
+  description: General purpose utils
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: kube-utils
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
