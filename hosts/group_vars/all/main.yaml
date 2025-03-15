@@ -14,6 +14,9 @@ site_admin_username: "{{ vault_site_admin_username }}"
 lan_domain_cert_name: "wildcard.{{ lan_domain }}"
 cert_namespaces:
   - argocd
+  - freeipa
+  - plex
+
 
 remote_users:
   - user: ansible

@@ -1,0 +1,18 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: plex
+  namespace: argocd
+spec:
+  description: Plex Media Server
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: plex
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git

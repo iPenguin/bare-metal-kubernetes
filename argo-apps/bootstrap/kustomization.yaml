@@ -3,7 +3,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - repo-secret.yaml
-  - freeipa-project.yaml
+  - freeipa.yaml
+  - plex.yaml
   - nextcloud.yaml
   - kubernetes-reflector.yaml
   - app-of-apps.yaml

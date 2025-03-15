@@ -1,0 +1,45 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: plex
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - host: plex 
+          - plugin:
+              configMapRef:
+                name: get-ip
+              input:
+                parameters:
+                  hostname: '{{ .host }}.clt.milco.casa'
+  template:
+    metadata:
+      name: plex
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - Confirm=true
+      project: plex
+      destination:
+        namespace: plex
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: 'https://nextcloud.github.io/helm'
+          chart: plex
+          targetRevision: 6.6.3
+          helm:
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/plex/values.yaml'
+            values: |-
+              service:
+                annotations:
+                  metallb.io/loadBalancerIPs: {{ network_services.plex.ipv4 }},{{ network_services.plex.ipv6 }}
