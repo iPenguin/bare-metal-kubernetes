@@ -5,6 +5,11 @@ image:
 
 ingress:
   enabled: true
+  ingressClassName: "traefik"
+  tls:
+    - secretName: wildcard.clt.milco.casa
+      hosts:
+        - nextcloud.clt.milco.casa
 
 phpClientHttpsFix:
   enabled: false
@@ -19,7 +24,10 @@ nextcloud:
     passwordKey: admin_password
   containerPort: 8080
   datadir: /var/www/html/data
-  trustedDomains: ['nextcloud.clt.milco.casa']
+  trustedDomains:
+    - nextcloud.clt.milco.casa
+    - nextcloud.nextcloud.svc.cluster.local
+    - nextcloud.nextcloud.svc
   ## SMTP configuration
   mail:
     enabled: false
@@ -31,23 +39,11 @@ nextcloud:
       port: "443"
       region: "us-east-1"
       autoCreate: true
-      usePathStyle: false
+      usePathStyle: true
       existingSecret: "nextcloud-data"
       secretKeys:
         accessKey: "AWS_ACCESS_KEY_ID"
         secretKey: "AWS_SECRET_ACCESS_KEY"
-
-  extraEnv:
-    - name: OBJECTSTORE_S3_HOST
-      valueFrom:
-        configMapKeyRef:
-          name: nextcloud-data
-          key: BUCKET_HOST
-    - name: OBJECTSTORE_S3_BUCKET
-      valueFrom:
-        configMapKeyRef:
-          name: nextcloud-data
-          key: BUCKET_NAME
 
 nginx:
   enabled: true
@@ -64,9 +60,8 @@ internalDatabase:
   enabled: false
 externalDatabase:
   enabled: true
-  type: postgersql
-  host: "nextcloud-prod-postgresql"
-
+  type: postgresql
+  host: "nextcloud-postgresql-0"
   existingSecret:
     enabled: true
     secretName: nextcloud-secrets
@@ -84,7 +79,7 @@ postgresql:
         existingSecret: "nextcloud-secrets"
         secretKeys:
           adminPasswordKey: "db_password"
-          userPasswordKey: "db_user_password"
+          userPasswordKey: "db_password"
           replicationPasswordKey: "db_replication_password"
   primary:
     persistence:

@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - utils.yaml
   - kubernetes-reflector.yaml
+  - nextcloud.yaml
   - plex.yaml
