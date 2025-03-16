@@ -16,3 +16,4 @@ spec:
       kind: '*'
   sourceRepos:
     - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages
