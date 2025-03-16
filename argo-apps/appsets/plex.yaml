@@ -33,8 +33,11 @@ spec:
         namespace: plex
         server: https://kubernetes.default.svc
       sources:
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          ref: valuesSrc
         - repoURL: 'https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages'
-          chart: plex
+          chart: plex/plex-media-server
           targetRevision: 0.8.0
           helm:
             valueFiles:
