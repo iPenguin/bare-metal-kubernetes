@@ -4,7 +4,7 @@ createAggregateRoles: false
 createClusterRoles: true
 
 global:
-  domain: argocd.milco.casa
+  domain: argocd.clt.milco.casa
 
   affinity:
     podAntiAffinity: soft
@@ -21,7 +21,7 @@ configs:
   cm:
     create: true
     admin.enabled: true
-    url: https://argocd.milco.casa/
+    url: https://argocd.clt.milco.casa/
 
     dex.config: |
       connectors:
