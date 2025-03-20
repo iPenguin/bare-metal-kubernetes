@@ -84,6 +84,14 @@ collabora:
 cronjob:
   enabled: true
 
+service:
+  type: ClusterIP
+  port: 8080
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+
 persistence:
   enabled: true
   storageClass: "cephfs"
