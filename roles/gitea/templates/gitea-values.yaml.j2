@@ -60,15 +60,13 @@ service:
 ingress:
   enabled: true
   className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt"
   hosts:
     - host: git.{{ lan_tld }}
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: "star.clt.milco.casa"
+    - secretName: "wildcard.clt.milco.casa"
       hosts:
         - git.{{ lan_tld }}
   # Mostly for argocd or any other CI that uses `helm template | kubectl apply` or similar

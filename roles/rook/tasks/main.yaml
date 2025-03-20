@@ -66,8 +66,6 @@
           metadata:
             name: ceph-ingress
             namespace: "{{ rook_namespace }}"
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt
           spec:
             ingressClassName: traefik
             tls:
