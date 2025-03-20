@@ -11,7 +11,7 @@ spec:
   generators:
     - list:
         elements:
-        - cluster: prod 
+        - cluster: prod
   template:
     metadata:
       name: 'kubernetes-reflector-{{ .cluster }}'

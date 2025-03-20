@@ -1,3 +1,2 @@
 ---
-
-keycloak_namespace: sys-keycloak
+keycloak_namespace: keycloak

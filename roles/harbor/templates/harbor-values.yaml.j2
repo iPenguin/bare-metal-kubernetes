@@ -100,7 +100,7 @@ persistence:
       bucket: {{ harbor_bucket_name }}
       accesskey: {{ s3_access_key }}
       secretkey: {{ s3_secret_key }}
-      regionendpoint: http://rook-ceph-rgw-ceph-objectstore.sys-rook-ceph.svc.cluster.local
+      regionendpoint: http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local
       #skipverify: false
 
 imagePullPolicy: IfNotPresent

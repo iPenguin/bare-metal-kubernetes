@@ -36,7 +36,6 @@
       editMode: WRITABLE
       importEnabled: true
       syncRegistrations: true
-#      vendor: other
       usernameLDAPAttribute: uid
       rdnLDAPAttribute: uid
       uuidLDAPAttribute: entryUUID
