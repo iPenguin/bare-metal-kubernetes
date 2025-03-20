@@ -96,7 +96,7 @@ persistence:
   enabled: true
   storageClass: "cephfs"
   accessMode: ReadWriteMany
-  size: 500Gi
+  size: 1Ti
 
 hpa:
   enabled: false
