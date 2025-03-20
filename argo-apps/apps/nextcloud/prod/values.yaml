@@ -6,6 +6,10 @@ image:
 ingress:
   enabled: true
   ingressClassName: "traefik"
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
   tls:
     - secretName: wildcard.clt.milco.casa
       hosts:
@@ -34,16 +38,7 @@ nextcloud:
   ## Primary ObjectStore options
   objectStore:
     s3:
-      enabled: true
-      ssl: true
-      port: "443"
-      region: "us-east-1"
-      autoCreate: true
-      usePathStyle: true
-      existingSecret: "nextcloud-data"
-      secretKeys:
-        accessKey: "AWS_ACCESS_KEY_ID"
-        secretKey: "AWS_SECRET_ACCESS_KEY"
+      enabled: false
 
 nginx:
   enabled: true
@@ -52,6 +47,7 @@ nginx:
     tag: alpine
     pullPolicy: IfNotPresent
   containerPort: 8080
+  ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
     - IPv6
@@ -67,8 +63,6 @@ externalDatabase:
     secretName: nextcloud-secrets
     usernameKey: db_username
     passwordKey: db_password
-    # hostKey: db-hostname-or-ip
-    # databaseKey: db-name
 
 postgresql:
   enabled: true
@@ -92,16 +86,12 @@ cronjob:
 
 persistence:
   enabled: true
-  annotations: {}
   storageClass: "cephfs"
   accessMode: ReadWriteMany
-  size: 8Gi
+  size: 500Gi
 
 hpa:
-  enabled: true
-  cputhreshold: 60
-  minPods: 1
-  maxPods: 7
+  enabled: false
 
 metrics:
   enabled: false
