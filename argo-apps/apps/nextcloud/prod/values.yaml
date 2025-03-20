@@ -5,7 +5,7 @@ image:
 
 ingress:
   enabled: true
-  ingressClassName: "traefik"
+  className: "traefik"
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
