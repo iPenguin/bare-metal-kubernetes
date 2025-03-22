@@ -10,7 +10,7 @@ ingress:
 
   # -- Optional secret name to provide valid https connections
   # using an existing SSL certificate
-  certificateSecret: "wildcard.clt.milco.casa"
+  certificateSecret: "wildcard.milco.casa"
 
   # -- Custom annotations to put on the ingress resource
   annotations: {}
@@ -18,53 +18,37 @@ ingress:
 pms:
   storageClassName: cephfs
   configStorage: 2Gi
-  # NOTE: When set, 'configStorage' and 'storageClassName' are ignored.
-  configExistingClaim: ""
-
   gpu:
     nvidia:
       enabled: false
 
-# -- Specify your own runtime class name eg use gpu
-runtimeClassName: ""
+rclone:
+  enabled: true
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+  # The rclone config key must be called `rclone.conf` in the secret
+  # All keys in configSecret will be available in /etc/rclone/.
+  configSecret: "plex-rclone-config"
 
-serviceAccount:
-  # -- Specifies whether a service account should be created
-  create: true
-  # -- If the service account token should be auto mounted
-  automountServiceAccountToken: false
-  # -- Annotations to add to the service account
-  annotations: {}
-  # -- The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  # -- The remote drive that should be mounted using rclone
+  # this must be in the form of `name:[/optional/path]`
+  # this remote will be mounted at `/data/name` in the PMS container
+  remotes:
+    - "nextcloud:/shares"
 
-statefulSet:
-  # -- Optional extra annotations to add to the service resource
-  annotations: {}
-  # -- Optional extra annotations to add to the pods in the statefulset
-  podAnnotations: {}
+  readOnly: true
 
 service:
   type: ClusterIP
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
   port: 32400
 nodeSelector:
   clt.milco.casa/node-hardware: nvidia-gpu
 
 extraEnv:
-  PLEX_CLAIM: ""
+  PLEX_CLAIM: "claim-tuvdyDqs29GAzha2MuoU"
   PLEX_DISABLE_HWTRANSCODE: "1"
   HOSTNAME: "plex.clt.milco.casa"
   TZ: "Americas/New_York"
-
-extraVolumeMounts:
-  - name: data
-    mountPath: /data
-extraVolumes:
-  - name: data
-    persistentVolumeClaim:
-        claimName: plex-data
