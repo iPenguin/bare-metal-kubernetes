@@ -8,21 +8,29 @@ service:
 
 ports:
   web:
-    port: 8000
-    exposedPort: 80
-    protocol: TCP
+    redirections:
+      entryPoint:
+        to: websecure
+        scheme: https
+        permanent: true
   websecure:
+    enabled: true
     port: 8443
     exposedPort: 443
     protocol: TCP
+    tls:
+      enabled: true
+      secretName: wildcard.milco.casa 
   traefik:
     port: 9000
     expose: 
       default: false
 
+certResolvers: {}
+
 ingressClass:
   enabled: true
-  isDefaultClass: false
+  isDefaultClass: false 
 
 dashboard:
   enabled: true
