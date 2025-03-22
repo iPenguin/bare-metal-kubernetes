@@ -11,7 +11,7 @@ ingress:
     - IPv4
     - IPv6
   tls:
-    - secretName: wildcard.clt.milco.casa
+    - secretName: wildcard.milco.casa
       hosts:
         - nextcloud.clt.milco.casa
 
