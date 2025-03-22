@@ -33,7 +33,7 @@ rclone:
   # this must be in the form of `name:[/optional/path]`
   # this remote will be mounted at `/data/name` in the PMS container
   remotes:
-    - "nextcloud:/shares"
+    - "nextcloud:"
 
   readOnly: true
 
@@ -48,7 +48,8 @@ nodeSelector:
   clt.milco.casa/node-hardware: nvidia-gpu
 
 extraEnv:
-  PLEX_CLAIM: "claim-tuvdyDqs29GAzha2MuoU"
+  # https://account.plex.tv/en/claim
+  PLEX_CLAIM: "claim-kzzGpddu5wUfnewGCe_u"
   PLEX_DISABLE_HWTRANSCODE: "1"
   HOSTNAME: "plex.clt.milco.casa"
   TZ: "Americas/New_York"
