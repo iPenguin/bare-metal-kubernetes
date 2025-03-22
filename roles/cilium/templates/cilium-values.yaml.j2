@@ -19,10 +19,10 @@ ingressController:
   default: true
   loadbalancerMode: dedicated
   defaultSecretNamespace: cert-manager
-  defaultSecretName: wildcard.clt.milco.casa
+  defaultSecretName: {{ lan_domain_cert }}
   service:
     enabled: true
-    ipv6: 
+    ipv6:
       enabled: true
     ipFamilyPolicy: PreferDualStack
     ipFamilies:

@@ -24,7 +24,5 @@
   kubernetes.core.k8s:
     state: present
     namespace: "{{ cert_manager_namespace }}"
-    template: "{{ item }}"
-  loop:
-    - wildcard.milco.casa.yaml.j2
+    template: wildcard-cert.yaml.j2
 ...

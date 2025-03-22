@@ -68,8 +68,10 @@ dex:
 server:
   name: server
   replicas: 1
+  insecure: false
   certificate:
     enabled: false
+    secretName: {{ lan_domain_cert }}
 
   ingress:
     enabled: false

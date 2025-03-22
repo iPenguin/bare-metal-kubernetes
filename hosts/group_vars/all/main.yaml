@@ -11,7 +11,7 @@ lan_domain: "clt.{{ domain }}.{{ tld }}"
 site_admin_email: "bcmilco@gmail.com"
 site_admin_username: "{{ vault_site_admin_username }}"
 
-lan_domain_cert_name: "wildcard.{{ lan_domain }}"
+lan_domain_cert: "wildcard.{{ lan_tld }}"
 cert_namespaces:
   - argocd
   - freeipa

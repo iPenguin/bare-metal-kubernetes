@@ -70,10 +70,10 @@
             ingressClassName: traefik
             tls:
               - hosts:
-                  - 'ceph.{{ lan_tld }}'
-                secretName: wildcard.{{ lan_domain }}
+                  - 'ceph.{{ lan_domain }}'
+                secretName: "{{ lan_domain_cert }}"
             rules:
-              - host: ceph.{{ lan_tld }}
+              - host: ceph.{{ lan_domain }}
                 http:
                   paths:
                     - path: /
