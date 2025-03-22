@@ -4,6 +4,10 @@ global:
     create: true
     aggregateClusterRoles: true
 
+# A comma-separated string with the host and port of the recursive nameservers cert-manager should query.
+dns01RecursiveNameservers: "1.1.1.3:53,1.0.0.3:53"
+dns01RecursiveNameserversOnly: true
+
 config:
   enableGatewayAPI: false
 crds:

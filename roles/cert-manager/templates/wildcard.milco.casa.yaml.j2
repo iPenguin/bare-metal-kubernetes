@@ -1,15 +1,16 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard.{{ lan_domain }}
+  name: wildcard.{{ lan_tld }}
 spec:
   commonName: "{{ lan_tld }}"
   dnsNames:
     - '*.{{ lan_tld }}'
     - '{{ lan_tld }}'
-  secretName: wildcard.{{ lan_domain }}
+    - '*.{{ lan_domain }}'
+  secretName: wildcard.{{ lan_tld }}
   issuerRef:
-    name: letsencrypt
+    name: letsencrypt-cloudflare
     kind: ClusterIssuer
   duration: 2160h # 90d
   renewBefore: 360h # 15d

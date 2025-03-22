@@ -1,31 +1,27 @@
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-token-secret
+  namespace: cert-manager
+type: Opaque
+stringData:
+  api-token: {{ cloudflare_api_token }} 
+---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt
-  namespace: {{ cert_manager_namespace }}
+  name: letsencrypt-cloudflare
 spec:
   acme:
-    email: "{{ acme_account_email }}"
-    #server: https://acme-staging-v02.api.letsencrypt.org/directory
     server: https://acme-v02.api.letsencrypt.org/directory
+    email: {{ acme_account_email }}
     privateKeySecretRef:
-      #name: "letsencrypt-key-staging"
-      name: "letsencrypt-key"
+      name: letsencrypt-key
     solvers:
-      - selector:
-          dnsZones:
-            - '{{ lan_tld }}' 
-        dns01:
-          cnameStrategy: Follow
-          webhook:
-            groupName: {{ porkbun_group }}
-            solverName: porkbun
-            config:
-              apiKeySecretRef:
-                name: porkbun-key
-                key: api-key
-              secretKeySecretRef:
-                name: porkbun-key
-                key: secret-key
-...
+    - dns01:
+        cloudflare:
+          email: {{ acme_account_email }} 
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token

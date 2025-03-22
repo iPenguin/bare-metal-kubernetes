@@ -3,4 +3,3 @@
 cert_manager_namespace: cert-manager
 cert_manager_version: 1.12.4
 
-porkbun_group: acme.{{ lan_tld }}
