@@ -12,7 +12,7 @@ spec:
         generators:
           - list:
               elements:
-                - host: gitea
+                - host: git
           - plugin:
               configMapRef:
                 name: dig

@@ -104,6 +104,8 @@ config:
     server:
       SSH_LISTEN_PORT: 2222
 
+postgresql-ha:
+  enabled: false
 postgresql:
   enabled: true
   global:
@@ -118,3 +120,8 @@ postgresql:
   primary:
     persistence:
       size: 2Gi
+
+redis-cluster:
+  enabled: false
+redis:
+  enabled: true
