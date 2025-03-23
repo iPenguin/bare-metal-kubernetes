@@ -209,13 +209,4 @@
   roles:
     - role: harbor
 
-- name: Deploy gitea
-  hosts:
-    - gitea
-  tags:
-    - apps
-    - gitea
-  roles:
-    - role: gitea
-
 ...
