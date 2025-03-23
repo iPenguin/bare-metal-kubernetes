@@ -1,0 +1,120 @@
+---
+global:
+  storageClass: "cephfs"
+
+service:
+  http:
+    annotations:
+      metallb.io/allow-shared-ip: "gitea-shared-ip"
+    type: ClusterIP
+    port: 3000
+    ipFamilyPolicy: PreferDualStack
+    ipFamilies:
+      - IPv4
+      - IPv6
+  ssh:
+    annotations:
+      metallb.io/allow-shared-ip: "gitea-shared-ip"
+    type: ClusterIP
+    port: 22
+    ipFamilyPolicy: PreferDualStack
+    ipFamilies:
+      - IPv4
+      - IPv6
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: git.clt.milco.casa
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+   - secretName: wildcard.milco.casa
+     hosts:
+       - git.clt.milco.casa
+
+## @section ServiceAccount
+## @param serviceAccount.create Enable the creation of a ServiceAccount
+## @param serviceAccount.name Name of the created ServiceAccount, defaults to release name. Can also link to an externally provided ServiceAccount that should be used.
+## @param serviceAccount.automountServiceAccountToken Enable/disable auto mounting of the service account token
+## @param serviceAccount.imagePullSecrets Image pull secrets, available to the ServiceAccount
+## @param serviceAccount.annotations Custom annotations for the ServiceAccount
+## @param serviceAccount.labels Custom labels for the ServiceAccount
+serviceAccount:
+  create: false
+  name: ""
+  automountServiceAccountToken: false
+  imagePullSecrets: []
+  # - name: private-registry-access
+  annotations: {}
+  labels: {}
+
+persistence:
+  enabled: true
+  create: true
+  mount: true
+  claimName: gitea-shared-storage
+  size: 10Gi
+  accessModes:
+    - ReadWriteMany
+
+# Configure commit/action signing prerequisites
+## @section Signing
+#
+## @param signing.enabled Enable commit/action signing
+## @param signing.gpgHome GPG home directory
+## @param signing.privateKey Inline private gpg key for signed internal Git activity
+## @param signing.existingSecret Use an existing secret to store the value of `signing.privateKey`
+signing:
+  enabled: false
+  gpgHome: /data/git/.gnupg
+  privateKey: ""
+  # privateKey: |-
+  #   -----BEGIN PGP PRIVATE KEY BLOCK-----
+  #   ...
+  #   -----END PGP PRIVATE KEY BLOCK-----
+  existingSecret: ""
+
+gitea:
+  admin:
+    existingSecret: gitea-admin-secret
+  metrics:
+    enabled: false
+
+  ldap: []
+    # - name: "LDAP 1"
+    #  existingSecret:
+    #  securityProtocol:
+    #  host:
+    #  port:
+    #  userSearchBase:
+    #  userFilter:
+    #  adminFilter:
+    #  emailAttribute:
+    #  bindDn:
+    #  bindPassword:
+    #  usernameAttribute:
+    #  publicSSHKeyAttribute:
+
+config:
+    APP_NAME: "Milco home code repo"
+    RUN_MODE: prod
+    server:
+      SSH_LISTEN_PORT: 2222
+
+postgresql:
+  enabled: true
+  global:
+    postgresql:
+      auth:
+        password: gitea
+        database: gitea
+        username: gitea
+      service:
+        ports:
+          postgresql: 5432
+  primary:
+    persistence:
+      size: 2Gi

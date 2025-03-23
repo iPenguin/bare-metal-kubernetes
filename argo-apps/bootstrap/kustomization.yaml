@@ -7,5 +7,6 @@ resources:
   - freeipa.yaml
   - plex.yaml
   - nextcloud.yaml
+  - gitea.yaml
   - kubernetes-reflector.yaml
   - app-of-apps.yaml

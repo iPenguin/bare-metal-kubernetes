@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gitea
+  namespace: argocd
+spec:
+  description: Gitea Repo Server
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: gitea
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://dl.gitea.io/charts/

@@ -6,3 +6,4 @@ resources:
   - kubernetes-reflector.yaml
   - nextcloud.yaml
   - plex.yaml
+  - gitea.yaml
