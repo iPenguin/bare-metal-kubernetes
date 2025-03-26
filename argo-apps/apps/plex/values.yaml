@@ -38,12 +38,14 @@ rclone:
   readOnly: true
 
 service:
-  type: ClusterIP
+  type: LoadBalancer
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
     - IPv6
-  port: 32400
+  ports: 
+    - name: plex
+      port: 32400
 nodeSelector:
   clt.milco.casa/node-hardware: nvidia-gpu
 
