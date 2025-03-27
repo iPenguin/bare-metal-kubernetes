@@ -38,7 +38,7 @@ rclone:
   readOnly: true
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
