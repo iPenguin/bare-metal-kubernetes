@@ -1,0 +1,26 @@
+---
+
+- name: Get BOGOMIPS from lscpu
+  shell: "lscpu -p=BOGOMIPS | grep -v \\# | uniq"
+  register: bogomips_result
+  changed_when: false
+
+- name: Label high performance nodes
+  ansible.builtin.command:
+    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=high"
+  when: bogomips_result.stdout | float > 10000
+  delegate_to: "{{ k8s_controller }}"
+
+- name: Label medium performance nodes
+  ansible.builtin.command:
+    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=medium"
+  when:
+    - bogomips_result.stdout | float > 6000
+    - bogomips_result.stdout | float <= 10000
+  delegate_to: "{{ k8s_controller }}"
+
+- name: Label low performance nodes
+  ansible.builtin.command:
+    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=low"
+  when: bogomips_result.stdout | float <= 6000
+  delegate_to: "{{ k8s_controller }}"

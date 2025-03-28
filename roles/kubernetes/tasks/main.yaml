@@ -79,3 +79,6 @@
     - name: Generate user kube config
       include_tasks: users.yaml
       loop: "{{ k8s_admin_users }}"
+
+- name: Label nodes
+  include_tasks: label-nodes.yaml
