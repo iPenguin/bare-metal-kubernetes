@@ -28,8 +28,8 @@ ingressController:
     ipFamilies:
       - IPv4
       - IPv6
-#    annotations:
-#      "io.cilium/lb-ipam-ips": "{{ k8s_pod_network }}::1"
+    annotations:
+      "metallb.io/loadBalancerIPs": "{{ network_services.cilium.ipv4 }},{{ network_services.cilium.ipv6 }}"
 
 ipv4:
   enabled: true
