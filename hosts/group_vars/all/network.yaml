@@ -20,7 +20,7 @@ network_services:
   ingress:
     ipv4: "{{ ipv4_network }}.21"
     ipv6: "{{ ipv6_network }}::21"
-  dig:
+  cilium:
     ipv4: "{{ ipv4_network }}.22"
     ipv6: "{{ ipv6_network }}::22"
   ipa-01:
@@ -29,16 +29,9 @@ network_services:
   ipa-02:
     ipv4: "{{ ipv4_network }}.24"
     ipv6: "{{ ipv6_network }}::24"
-  sso:
-    ipv4: "{{ ipv4_network }}.25"
-    ipv6: "{{ ipv6_network }}::25"
   argo:
-    ipv4: "{{ ipv4_network }}.26"
-    ipv6: "{{ ipv6_network }}::26"
-  gitea:
-    ipv4: "{{ ipv4_network }}.35"
-    ipv6: "{{ ipv6_network }}::35"
-
+    ipv4: "{{ ipv4_network }}.30"
+    ipv6: "{{ ipv6_network }}::30"
 network:
   ipv4:
     external_dns:
