@@ -43,11 +43,11 @@ service:
   ipFamilies:
     - IPv4
     - IPv6
-  ports: 
+  ports:
     - name: plex
       port: 32400
 nodeSelector:
-  clt.milco.casa/node-hardware: nvidia-gpu
+  clt.milco.casa/node-performance: medium
 
 extraEnv:
   # https://account.plex.tv/en/claim
