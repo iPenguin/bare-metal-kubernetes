@@ -1,6 +1,8 @@
 ---
 service:
   type: LoadBalancer
+  annotations:
+    metallb.io/loadBalancerIPs: {{ network_services.ingress.ipv4 }},{{ network_services.ingress.ipv6 }}
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4

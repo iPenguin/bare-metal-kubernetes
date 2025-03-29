@@ -14,4 +14,3 @@
     release_namespace: traefik
     create_namespace: true
     values: "{{ lookup('template', 'values.yaml.j2') | from_yaml }}"
-    
