@@ -29,9 +29,9 @@ network_services:
   ipa-02:
     ipv4: "{{ ipv4_network }}.24"
     ipv6: "{{ ipv6_network }}::24"
-  argo:
-    ipv4: "{{ ipv4_network }}.30"
-    ipv6: "{{ ipv6_network }}::30"
+  plex-svc:
+    ipv4: "{{ ipv4_network }}.25"
+    ipv6: "{{ ipv6_network }}::25"
 network:
   ipv4:
     external_dns:
