@@ -96,6 +96,9 @@ data:
 
                 json_data = json.loads(post_data)
                 hostname = json_data['input']['parameters']['hostname']
+
+                secondary = json_data['input']['parameters']['secondary']
+
                 host = self.get_host(hostname)
                 domain = self.get_domain(hostname)
                 self.log_message(f"HOSTNAME: {hostname} ++++ HOST: {host} ++++ DOMAIN: {domain}")
@@ -103,10 +106,20 @@ data:
                     ipv4_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET)[0][4][0]
                     ipv6_address = socket.getaddrinfo(hostname, None, family=socket.AF_INET6)[0][4][0]
                     self.log_message(f"IPV4: {ipv4_address} ++++ IPV6 {ipv6_address}")
+
+                    secondary_ipv4 = ""
+                    secondary_ipv6 = ""
+
+                    if secondary:
+                      secondary_ipv4 = socket.getaddrinfo(secondary, None, family=socket.AF_INET)[0][4][0]
+                      secondary_ipv6 = socket.getaddrinfo(secondary, None, family=socket.AF_INET6)[0][4][0]
+
                     response_data = { "output": {
                         "parameters": [{
                             "ipv4_address": ipv4_address,
                             "ipv6_address": ipv6_address,
+                            "secondary_ipv4": secondary_ipv4,
+                            "secondary_ipv6": secondary_ipv6,
                             "domain": domain,
                             "host": host
                         }]

@@ -19,6 +19,7 @@ spec:
               input:
                 parameters:
                   hostname: '{{ .host }}.clt.milco.casa'
+                  secondary: 'plex-svc.clt.milco.casa'
   template:
     metadata:
       name: plex
@@ -36,6 +37,15 @@ spec:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           path: argo-apps/apps/plex
+          kustomize:
+            patches:
+              - target:
+                  kind: Service
+                  name: "plex-share"
+                patch: |-
+                  - op: replace
+                    path: /metadata/annotations/metallb.io~1loadBalancerIPs
+                    value: {{ .secondary_ipv4 }},{{ .secondary_ipv6 }}
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           ref: valuesSrc
