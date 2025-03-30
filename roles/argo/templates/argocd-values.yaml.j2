@@ -49,12 +49,10 @@ configs:
             groupAttr: member
             nameAttr: cn
 
+  params:
+    server.insecure: true
   rbac:
     create: true
-    policy.default: ''
-    policy.csv: ''
-    scopes: "[groups]"
-    policy.matchMode: "glob"
 
   ssh:
     create: true
@@ -68,16 +66,10 @@ dex:
 server:
   name: server
   replicas: 1
-  insecure: false
-  certificate:
-    enabled: false
-    secretName: {{ lan_domain_cert }}
-
   ingress:
-    enabled: false
+    enabled: true
+    ingressClassName: "traefik"
+    tls: true
 
   service:
-    type: LoadBalancer
-    annotations:
-      metallb.io/loadBalancerIPs: {{ network_services.argo.ipv4 }},{{
-      network_services.argo.ipv6 }}
+    type: ClusterIP
