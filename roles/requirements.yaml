@@ -12,3 +12,5 @@ collections:
     version: 2.4.0
   - name: nn708.openwrt
     version: 0.4.1
+  - name: freeipa.ansible_freeipa
+    version: 1.14.5
