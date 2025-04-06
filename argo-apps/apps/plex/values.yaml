@@ -21,6 +21,9 @@ pms:
   gpu:
     nvidia:
       enabled: false
+  requests:
+    cpu: "6"
+    memory: "4Gi"
 
 rclone:
   enabled: true
@@ -55,3 +58,13 @@ extraEnv:
   PLEX_DISABLE_HWTRANSCODE: "1"
   HOSTNAME: "plex.clt.milco.casa"
   TZ: "Americas/New_York"
+
+extraVolumeMounts:
+  - name: dev-dri
+    mountPath: /dev/dri
+
+extraVolumes:
+  - name: dev-dri
+    hostPath:
+      path: /dev/dri
+      type: Directory
