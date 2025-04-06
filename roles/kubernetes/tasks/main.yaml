@@ -80,5 +80,14 @@
       include_tasks: users.yaml
       loop: "{{ k8s_admin_users }}"
 
+- name: Install metrics services
+  tags:
+    - metrics
+  when:
+    - inventory_hostname in k8s_controller
+  kubernetes.core.k8s:
+    state: present
+    src: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
 - name: Label nodes
   include_tasks: label-nodes.yaml

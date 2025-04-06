@@ -32,6 +32,7 @@ network_services:
   plex-svc:
     ipv4: "{{ ipv4_network }}.25"
     ipv6: "{{ ipv6_network }}::25"
+
 network:
   ipv4:
     external_dns:
@@ -158,6 +159,7 @@ hosts:
     duid: 00020000ab116dc8533febf9788b
     hostid: 16
 
+# openwrt domains - glue to get FreeIPA running
 domains:
   - name: "ipa-01.{{ lan_domain }}"
     ipv4: "{{ network_services['ipa-01'].ipv4 }}"

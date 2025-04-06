@@ -25,7 +25,6 @@ nodeRegistration:
   kubeletExtraArgs:
     - name: "node-ip"
       value: "{{ host_ipv4 }},{{ host_ipv6 }}"
-
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
@@ -41,6 +40,11 @@ controllerManager:
       value: "96"
 apiServer:
   certSANs:
+{% for host in controller_info %}
+    - "{{ host.hostname }}"
+    - "{{ host.ipv4 }}"
+    - "{{ host.ipv6 }}"
+{% endfor %}
     - "{{ network_services.vip.ipv4 }}"
     - "{{ network_services.vip.ipv6 }}"
     - "{{ k8s_api_endpoint }}"
