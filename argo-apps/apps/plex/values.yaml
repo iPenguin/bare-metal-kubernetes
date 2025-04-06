@@ -68,3 +68,6 @@ extraVolumes:
     hostPath:
       path: /dev/dri
       type: Directory
+
+securityContext:
+  privileged: true
