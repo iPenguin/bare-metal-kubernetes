@@ -167,6 +167,3 @@ domains:
   - name: "{{ k8s_api_endpoint }}"
     ipv4: "{{ network_services['vip'].ipv4 }}"
     ipv6: "{{ network_services['vip'].ipv6 }}"
-  - name: "ceph.{{ lan_tld }}"
-    ipv4: "{{ network_services['ingress'].ipv4 }}"
-    ipv6: "{{ network_services['ingress'].ipv6 }}"
