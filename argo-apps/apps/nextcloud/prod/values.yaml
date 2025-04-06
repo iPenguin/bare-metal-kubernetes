@@ -21,9 +21,7 @@ phpClientHttpsFix:
 
 nextcloud:
   host: nextcloud.clt.milco.casa
-  env:
-    - name: NEXTCLOUD_TRUSTED_DOMAINS
-      value: "nextcloud.clt.milco.casa"
+  extraEnv:
     - name: OVERWRITECLIURL
       value: "https://nextcloud.clt.milco.casa"
     - name: OVERWRITEPROTOCOL
