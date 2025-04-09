@@ -4,11 +4,11 @@ credentials:
   existingSecret: velero-minio-secrets
 
 configuration:
-  defaultBackupStorageLocation: local
   backupStorageLocation:
     - name: local
       provider: aws
       bucket: velero-backups
+      default: true
       config:
         region: minio
         s3ForcePathStyle: "true"
@@ -17,7 +17,6 @@ configuration:
       provider: aws
       bucket: milco-cluster-backups
       prefix: velero
-      default: true
       config:
         region: us-west-002
         s3ForcePathStyle: true
