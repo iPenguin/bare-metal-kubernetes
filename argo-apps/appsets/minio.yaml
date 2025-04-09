@@ -1,0 +1,69 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: minio
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - host: minio
+          - plugin:
+              configMapRef:
+                name: dig
+              input:
+                parameters:
+                  hostname: '{{ .host }}.clt.milco.casa'
+  template:
+    metadata:
+      name: minio
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - Confirm=true
+      project: minio
+      destination:
+        namespace: minio
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          path: argo-apps/apps/minio
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          ref: valuesSrc
+        - repoURL: 'https://charts.min.io/'
+          chart: minio
+          targetRevision: 5.4.0
+          helm:
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/minio/values.yaml'
+          kustomize:
+            patches:
+              - target:
+                  kind: Service
+                  name: minio
+                patch: |-
+                  - op: replace
+                    path: /spec/ipFamilyPolicy
+                    value: PreferDualStack
+                  - op: add
+                    path: /spec/ipFamilies/-
+                    value: IPv6
+              - target:
+                  kind: Service
+                  name: minio-console
+                patch: |-
+                  - op: replace
+                    path: /spec/ipFamilyPolicy
+                    value: PreferDualStack
+                  - op: add
+                    path: /spec/ipFamilies/-
+                    value: IPv6

@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: minio
+  namespace: argocd
+spec:
+  description: Minio local backups
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: minio
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://charts.min.io/

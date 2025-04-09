@@ -7,3 +7,4 @@ resources:
   - nextcloud.yaml
   - plex.yaml
   - gitea.yaml
+  - minio.yaml

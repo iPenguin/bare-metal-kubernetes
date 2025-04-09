@@ -1,0 +1,29 @@
+mode: standalone
+
+image:
+  tag: RELEASE.2025-04-08T15-41-24Z
+
+# Persistence configuration using the mounted drive
+persistence:
+  enabled: true
+  existingClaim: "local-backups"
+
+existingSecret: "minio-credentials"
+buckets:
+  - name: velero-backups
+    policy: none
+    purge: false
+
+tolerations:
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: clt.milco.casa/local-backups
+          operator: In
+          values:
+          - "true"
