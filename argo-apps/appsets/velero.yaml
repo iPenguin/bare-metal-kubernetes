@@ -8,17 +8,9 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - matrix:
-        generators:
-          - list:
-              elements:
-                - host: velero
-          - plugin:
-              configMapRef:
-                name: dig
-              input:
-                parameters:
-                  hostname: '{{ .host }}.clt.milco.casa'
+    - list:
+        elements:
+          - host: velero
   template:
     metadata:
       name: velero
