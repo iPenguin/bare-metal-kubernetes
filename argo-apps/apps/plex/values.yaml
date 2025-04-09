@@ -23,7 +23,7 @@ pms:
       enabled: false
   requests:
     cpu: "6"
-    memory: "4Gi"
+    memory: "12Gi"
 
 rclone:
   enabled: true
