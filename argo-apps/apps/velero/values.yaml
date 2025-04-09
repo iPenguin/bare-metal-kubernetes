@@ -50,7 +50,9 @@ schedules:
       ttl: 720h  # 30 days (720 hours)
       includedNamespaces:
         - "*"
-      excludedNamespaces: []
+      excludedNamespaces:
+        - minio
+        - velero
       includedResources:
         - "*"
       excludedResources: []
