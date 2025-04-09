@@ -28,6 +28,17 @@ affinity:
           values:
           - "true"
 
+ingress:
+  enabled: true
+  ingressClassName: "traefik"
+  path: /
+  hosts:
+    - minio-local.clt.milco.casa
+  tls:
+    - secretName: wildcard.milco.casa
+      hosts:
+        - minio-local.clt.milco.casa
+
 consoleIngress:
   enabled: true
   ingressClassName: "traefik"
