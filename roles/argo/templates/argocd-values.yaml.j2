@@ -23,6 +23,14 @@ configs:
     admin.enabled: true
     url: https://argocd.clt.milco.casa/
 
+    resource.exclusions: |
+      - apiGroups:
+        - velero.io
+        kinds:
+        - Backup
+        clusters:
+        - "*"
+
     dex.config: |
       connectors:
       - type: ldap
