@@ -97,7 +97,11 @@ data:
                 json_data = json.loads(post_data)
                 hostname = json_data['input']['parameters']['hostname']
 
-                secondary = json_data['input']['parameters']['secondary']
+                secondary = ""
+                try:
+                  secondary = json_data['input']['parameters']['secondary']
+                except:
+                  secondary = ""
 
                 host = self.get_host(hostname)
                 domain = self.get_domain(hostname)
