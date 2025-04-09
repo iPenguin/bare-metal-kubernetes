@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: velero
+  namespace: argocd
+spec:
+  description: Velero backups
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: velero
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://vmware-tanzu.github.io/helm-charts

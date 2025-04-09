@@ -8,3 +8,4 @@ resources:
   - plex.yaml
   - gitea.yaml
   - minio.yaml
+  - velero.yaml

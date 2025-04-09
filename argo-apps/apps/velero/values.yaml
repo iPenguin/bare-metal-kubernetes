@@ -1,0 +1,57 @@
+---
+credentials:
+  useSecret: true
+  existingSecret: velero-minio-secrets
+
+configuration:
+  defaultBackupStorageLocation: local
+  backupStorageLocation:
+    - name: local
+      provider: aws
+      bucket: velero-backups
+      config:
+        region: minio
+        s3ForcePathStyle: "true"
+        s3Url: http://minio.minio.svc.cluster.local:9000
+    - name: backblaze
+      provider: aws
+      bucket: milco-cluster-backups
+      prefix: velero
+      default: true
+      config:
+        region: us-west-002
+        s3ForcePathStyle: true
+        s3Url: https://s3.us-west-002.backblazeb2.com
+      credential:
+        name: velero-backblaze-secrets
+        key: cloud
+
+  # Explicitly disable VolumeSnapshotLocation if not needed
+  volumeSnapshotLocation: []
+
+defaultVolumesToFsBackup: true
+deployNodeAgent: true
+uploaderType: kopia
+
+featureFlags:
+  - EnableUnifiedRepo
+
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.11.1
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+schedules:
+  local-backups:
+    schedule: "0 0 * * *"
+    template:
+      ttl: 720h  # 30 days (720 hours)
+      includedNamespaces:
+        - "*"
+      excludedNamespaces: []
+      includedResources:
+        - "*"
+      excludedResources: []
+      storageLocation: local
