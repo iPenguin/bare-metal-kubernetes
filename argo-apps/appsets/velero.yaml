@@ -21,6 +21,10 @@ spec:
           - CreateNamespace=true
           - Confirm=true
       project: velero
+      ignoreDifferences:
+        - group: "velero.io"
+          kind: Backup
+          namespace: velero
       destination:
         namespace: velero
         server: https://kubernetes.default.svc
