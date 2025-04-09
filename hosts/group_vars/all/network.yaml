@@ -36,9 +36,9 @@ network_services:
 network:
   ipv4:
     external_dns:
+      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv4 }}"
       - 1.1.1.3
       - 1.0.0.3
-      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv4 }}"
     subnet: "{{ ipv4_network }}.0/24"
     router: "{{ ipv4_network }}.1"
     dns: "{{ ipv4_network }}.1"
@@ -47,9 +47,9 @@ network:
       end: "{{ ipv4_network }}.100"
   ipv6:
     external_dns:
+      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv6 }}"
       - 2606:4700:4700::1113
       - 2606:4700:4700::1003
-      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv6 }}"
     subnet: "{{ ipv6_network }}::/64"
     router: "{{ ipv6_network }}::1"
     dns: "{{ ipv6_network }}::1"
