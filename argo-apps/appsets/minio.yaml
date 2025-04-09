@@ -36,15 +36,6 @@ spec:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           path: argo-apps/apps/minio
-        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
-          targetRevision: master
-          ref: valuesSrc
-        - repoURL: 'https://charts.min.io/'
-          chart: minio
-          targetRevision: 5.4.0
-          helm:
-            valueFiles:
-              - '$valuesSrc/argo-apps/apps/minio/values.yaml'
           kustomize:
             patches:
               - target:
@@ -67,3 +58,12 @@ spec:
                   - op: add
                     path: /spec/ipFamilies/-
                     value: IPv6
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          ref: valuesSrc
+        - repoURL: 'https://charts.min.io/'
+          chart: minio
+          targetRevision: 5.4.0
+          helm:
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/minio/values.yaml'
