@@ -55,4 +55,6 @@ schedules:
       includedResources:
         - "*"
       excludedResources: []
+      defaultVolumesToFsBackup: true
+      includeClusterResources: true
       storageLocation: local
