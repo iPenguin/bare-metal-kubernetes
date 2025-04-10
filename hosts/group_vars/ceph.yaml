@@ -1,19 +1,42 @@
 ---
-#
-# wipe out the gpt partition information for a completely clean disk for ceph:
-# sudo dd if=/dev/zero of=/dev/sda bs=512 count=34
-#
+# NOTE: Passing the "yes-really-wipe-the-ceph-drives" tag to
+# the ansible play will wipe the drives of any given node(s)
 
-# ceph_storage:
-#   - name: w1.clt.milco.casa
-#     devices:
-#       - name: "nvme0n1"
-#         osds: 1
-#   - name: w2.clt.milco.casa
-#     devices:
-#       - name: "nvme0n1"
-#         osds: 1
-#   - name: w3.clt.milco.casa
-#     devices:
-#       - name: "nvme0n1"
-#         osds: 1
+ceph_storage:
+  - name: c1.clt.milco.casa
+    devices:
+      - name: "nvme0n1" #1TB
+        model: "TEAM TM8FP6001T"
+        serial: "TPBF2302100011003538"
+        osds: 1
+  - name: c2.clt.milco.casa
+    devices:
+      - name: "nvme0n1" #1TB
+        model: "TEAM TM8FP6001T"
+        serial: "TPBF2302100011003017"
+        osds: 1
+  - name: c3.clt.milco.casa
+    devices:
+      - name: "nvme0n1" #1TB
+        model: "TEAM TM8FP6001T"
+        serial: "TPBF2302100011002676"
+        osds: 1
+
+  - name: w1.clt.milco.casa
+    devices:
+      - name: "nvme0n1" #1TB
+        model: "ADATA LEGEND 700 GOLD"
+        serial: "2N142LQJBBR9"
+        osds: 1
+  - name: w2.clt.milco.casa
+    devices:
+      - name: "nvme0n1" #1TB
+        model: "ADATA LEGEND 700 GOLD"
+        serial: "2N142LQJHHR1"
+        osds: 1
+  - name: w3.clt.milco.casa
+    devices:
+      - name: "nvme0n1" #1TB
+        model: "ADATA LEGEND 700 GOLD"
+        serial: "2N1429QJBHEW"
+        osds: 1
