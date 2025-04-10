@@ -36,14 +36,50 @@ ipa_dns_entries:
     type: AAAA
     data: "{{ network_services['ipa-02'].ipv6 }}"
     zone: "{{ lan_domain }}"
-  - name: git
+  - name: traefik
+    type: A
+    data: "{{ network_services['traefik'].ipv4 }}"
+    zone: "{{ lan_domain }}"
+  - name: traefik
+    type: AAAA
+    data: "{{ network_services['traefik'].ipv6 }}"
+    zone: "{{ lan_domain }}"
+  - name: argocd
     type: CNAME
-    data: "ingress.{{ lan_domain }}."
-    zone: "{{ lan_tld }}"
-  - name: harbor
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: ceph
     type: CNAME
-    data: "{{ k8s_controller }}."
-    zone: "{{ lan_tld }}"
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: minio
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: minio-local
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: nextcloud
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: plex
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: s3
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: plex-svc
+    type: A
+    data: "{{ network_services['plex-svc'].ipv4 }}"
+    zone: "{{ lan_domain }}"
+  - name: plex-svc
+    type: AAAA
+    data: "{{ network_services['plex-svc'].ipv6 }}"
+    zone: "{{ lan_domain }}"
 
 ipa_groups:
   - name: app-gitea-admins

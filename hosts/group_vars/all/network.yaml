@@ -17,7 +17,7 @@ network_services:
   vip:
     ipv4: "{{ ipv4_network }}.20"
     ipv6: "{{ ipv6_network }}::20"
-  ingress:
+  traefik:
     ipv4: "{{ ipv4_network }}.21"
     ipv6: "{{ ipv6_network }}::21"
   cilium:

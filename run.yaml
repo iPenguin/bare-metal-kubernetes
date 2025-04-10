@@ -183,6 +183,7 @@
   hosts:
     - freeipa
   tags:
+    - ipa
     - config
     - domain
   connection: local
