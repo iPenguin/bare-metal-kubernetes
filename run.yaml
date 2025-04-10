@@ -148,6 +148,18 @@
       when:
         - inventory_hostname in k8s_controller
 
+- name: Deploy ArgoCD controlled Apps
+  hosts:
+    - controllers
+  tags:
+    - cd
+    - argo
+    - argo-apps
+  tasks:
+    - name: Include deployment for ArgoCD Apps
+      include_tasks: roles/argo/tasks/deploy-apps.yaml
+      run_once: true
+
 - name: Wipe ceph drives
   hosts:
     - controllers
