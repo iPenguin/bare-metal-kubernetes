@@ -44,11 +44,6 @@
         values: "{{ lookup('template', 'rook-cluster.yaml.j2') | from_yaml }}"
         state: present
 
-    # - name: Deploy LoadBalancer for public s3 endpoint
-    #   kubernetes.core.k8s:
-    #     state: present
-    #     template: 's3.yaml.j2'
-
     - name: Copy reset script to controller
       ansible.builtin.template:
         src: ceph-reset.sh.j2

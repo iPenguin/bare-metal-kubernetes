@@ -18,6 +18,7 @@ cert_namespaces:
   - minio
   - nextcloud
   - plex
+  - rook-ceph
 
 
 remote_users:

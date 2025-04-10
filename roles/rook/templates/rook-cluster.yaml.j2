@@ -34,7 +34,7 @@ cephClusterSpec:
         enabled: true
   dashboard:
     enabled: true
-    ssl: true
+    ssl: false
   network:
     connections:
       encryption:
@@ -123,9 +123,13 @@ cephClusterSpec:
 ingress:
   dashboard:
     host:
-      name: dashboard.{{ lan_tld }}
-      path: "/ceph-dashboard(/|$)(.*)"
+      name: ceph.{{ lan_domain }}
+      path: /
     ingressClassName: traefik
+    tls:
+      - hosts:
+          - ceph.{{ lan_domain }}
+        secretName: {{ lan_domain_cert }}
 
 cephBlockPools:
   - name: ceph-blockpool
@@ -233,6 +237,10 @@ cephObjectStores:
     ingress:
       enabled: true
       host:
-        name: s3.{{ lan_tld }}
+        name: s3.{{ lan_domain }}
         path: /
       ingressClassName: traefik
+      tls:
+        - hosts:
+            - ceph.{{ lan_domain }}
+          secretName: {{ lan_domain_cert }}
