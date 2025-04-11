@@ -54,7 +54,8 @@ schedules:
         - velero
       includedResources:
         - "*"
-      excludedResources: []
+      excludedResources:
+        - persistentvolumeclaims.plex.pms-config-plex-plex-media-server-0
       defaultVolumesToFsBackup: true
       includeClusterResources: true
       storageLocation: local
