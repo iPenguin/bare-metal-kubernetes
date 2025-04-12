@@ -21,9 +21,10 @@ pms:
   gpu:
     nvidia:
       enabled: false
-  requests:
-    cpu: "6"
-    memory: "12Gi"
+  resources:
+    requests:
+      cpu: "6"
+      memory: "12Gi"
 
 rclone:
   enabled: true
