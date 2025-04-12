@@ -105,6 +105,11 @@ persistence:
   accessMode: ReadWriteMany
   size: 1Ti
 
+resources:
+  requests:
+    cpu: "6"
+    memory: "12Gi"
+
 hpa:
   enabled: false
 
