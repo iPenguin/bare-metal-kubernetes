@@ -59,19 +59,3 @@ schedules:
       defaultVolumesToFsBackup: true
       includeClusterResources: true
       storageLocation: local
-  off-site-backups:
-    schedule: "0 3 * * *"
-    template:
-      ttl: 360h  # 15 days (360 hours)
-      includedNamespaces:
-        - "*"
-      excludedNamespaces:
-        - minio
-        - velero
-      includedResources:
-        - "*"
-      excludedResources:
-        - persistentvolumeclaims.plex.pms-config-plex-plex-media-server-0
-      defaultVolumesToFsBackup: true
-      includeClusterResources: true
-      storageLocation: backblaze
