@@ -16,4 +16,17 @@ spec:
       kind: '*'
   sourceRepos:
     - https://github.com/ipenguin/bare-metal-kubernetes.git
-    - https://charts.bitnami.com/bitnami
+    - registry-1.docker.io/bitnamicharts
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    argocd.argoproj.io/secret-type: repository
+  name: bitnami-oci-charts
+  namespace: argocd
+stringData:
+  url: registry-1.docker.io/bitnamicharts
+  name: bitnamicharts
+  type: helm
+  enableOCI: "true"

@@ -36,9 +36,10 @@ spec:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           ref: valuesSrc
-        - repoURL: 'https://charts.bitnami.com/bitnami'
+        - repoURL: 'registry-1.docker.io/bitnamicharts'
           chart: keycloak
-          targetRevision: 24.5.1
+          path: keycloak
+          targetRevision: 24.5.2
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/keycloak/values.yaml'
