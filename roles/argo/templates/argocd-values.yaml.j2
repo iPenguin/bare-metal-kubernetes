@@ -31,45 +31,30 @@ configs:
         clusters:
         - "*"
 
-    dex.config: |
-      connectors:
-      - type: ldap
-        name: freeipa-ldap
-        id: ldap
-        config:
-          host: "ldap.clt.milco.casa:123"
-          insecureNoSSL: false
-          insecureSkipVerify: false
-          bindDN: "$ldap.bindDN"
-          bindPW: "$ldap.bindPW"
-          usernamePrompt: Username
-          userSearch:
-            baseDN: "memberOf=argo,ou=users,dc=auth,dc=milco,dc=casa"
-            filter: ""
-            username: uid
-            idAttr: uid
-            emailAttr: mail
-            nameAttr: displayName
-          groupSearch:
-            baseDN: "cn=argo,ou=groups,dc=auth,dc=milco,dc=casa"
-            filter: "(objectClass=groupOfNames)"
-            userAttr: DN
-            groupAttr: member
-            nameAttr: cn
+    oidc.config: |
+      name: Homelab
+      issuer: https://sso.clt.milco.casa/realms/homelab
+      clientID: argocd
+      clientSecret: u4PGDRFLnYuVpYPeGsPoxmTnWq9COphY
+      requestedScopes: ["openid", "profile", "email", "groups"]
 
   params:
     server.insecure: true
   rbac:
     create: true
+    policy.csv: |
+      p, role:org-admin, applications, *, */*, allow
+      p, role:org-admin, clusters, get, *, allow
+      p, role:org-admin, repositories, *, *, allow
+      p, role:org-admin, logs, get, *, allow
+      p, role:org-admin, exec, create, */*, allow
+      g, app-argo-admins, role:admin
+      g, app-argo-users, role:org-admin
+      g, app-argo-viewers, role:readonly
 
   ssh:
     create: true
     extraHosts: ''
-
-dex:
-  enabled: false
-  name: dex-server
-  extraArgs: []
 
 server:
   name: server
