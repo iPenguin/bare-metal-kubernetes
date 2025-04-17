@@ -1,0 +1,61 @@
+---
+auth:
+  adminUser: admin
+  existingSecret: keycloak-passwords
+  passwordSecretKey: "adminPassword"
+
+# TODO: Make this true and configure the rest of the needed pieces
+production: false
+
+extraEnvVars:
+  - name: PROXY_ADDRESS_FORWARDING
+    value: "true"
+  - name: KEYCLOAK_COOKIE_SECURE
+    value: "true"
+  - name: KEYCLOAK_HTTP_SCHEME
+    value: "https"
+
+ingress:
+  enabled: true
+  ingressClassName: "traefik"
+  hostname: sso.clt.milco.casa
+  hostnameStrict: true
+  tls: true
+  secrets:
+    - name: wildcard.milco.casa
+      key: tls.key
+      certificate: tls.crt
+
+adminIngress:
+  enabled: true
+  ingressClassName: "traefik"
+  controller: default
+  hostname: sso.clt.milco.casa
+  tls: true
+  secrets:
+    - name: wildcard.milco.casa
+      key: tls.key
+      certificate: tls.crt
+
+metrics:
+  enabled: false
+
+postgresql:
+  enabled: true
+  auth:
+    username: bn_keycloak
+    database: bitnami_keycloak
+    existingSecret: keycloak-passwords
+    secretKeys:
+      userPasswordKey: dbuser-password
+  architecture: standalone
+
+keycloakConfigCli:
+  enabled: true
+  args:
+    - --import.var-substitution.enabled=true
+  extraEnvVarsSecret: "keycloak-passwords"
+  existingConfigmap: homelab-simple
+  extraEnvVars:
+    - name: LOG_LEVEL
+      value: DEBUG

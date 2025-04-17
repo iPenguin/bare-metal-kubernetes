@@ -1,0 +1,180 @@
+{
+  "realm": "homelab",
+  "displayName": "Homelab",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>HomeLab</span></div>",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "manage-realm",
+        "description": "Allows management of the realm configuration"
+      },
+      {
+        "name": "manage-users",
+        "description": "Allows management of users"
+      },
+      {
+        "name": "view-users",
+        "description": "Allows viewing of users"
+      },
+      {
+        "name": "realm-admin",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "manage-realm",
+            "manage-users",
+            "view-users"
+          ]
+        },
+        "description": "Full administrative access to the realm"
+      }
+    ]
+  },
+  "components": {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "name": "FreeIPA",
+        "providerId": "ldap",
+        "config": {
+          "pagination": [
+            "true"
+          ],
+          "fullSyncPeriod": [
+            "-1"
+          ],
+          "connectionTrace": [
+            "false"
+          ],
+          "startTls": [
+            "false"
+          ],
+          "usersDn": [
+            "cn=users,cn=accounts,dc=auth,dc=milco,dc=casa"
+          ],
+          "connectionPooling": [
+            "true"
+          ],
+          "cachePolicy": [
+            "DEFAULT"
+          ],
+          "useKerberosForPasswordAuthentication": [
+            "false"
+          ],
+          "importEnabled": [
+            "true"
+          ],
+          "enabled": [
+            "true"
+          ],
+          "bindCredential": [
+            "$(env:BIND_PASSWORD)"
+          ],
+          "bindDn": [
+            "uid=svc_ldap,cn=users,cn=accounts,dc=auth,dc=milco,dc=casa"
+          ],
+          "changedSyncPeriod": [
+            "-1"
+          ],
+          "usernameLDAPAttribute": [
+            "uid"
+          ],
+          "vendor": [
+            "rhds"
+          ],
+          "uuidLDAPAttribute": [
+            "nsuniqueid"
+          ],
+          "allowKerberosAuthentication": [
+            "false"
+          ],
+          "connectionUrl": [
+            "ldap://ipa-01.clt.milco.casa:389"
+          ],
+          "syncRegistrations": [
+            "true"
+          ],
+          "authType": [
+            "simple"
+          ],
+          "krbPrincipalAttribute": [
+            "krbPrincipalName"
+          ],
+          "searchScope": [
+            "1"
+          ],
+          "useTruststoreSpi": [
+            "always"
+          ],
+          "usePasswordModifyExtendedOp": [
+            "false"
+          ],
+          "trustEmail": [
+            "false"
+          ],
+          "userObjectClasses": [
+            "inetOrgPerson, organizationalPerson"
+          ],
+          "rdnLDAPAttribute": [
+            "uid"
+          ],
+          "editMode": [
+            "READ_ONLY"
+          ],
+          "validatePasswordPolicy": [
+            "false"
+          ]
+        },
+        "subComponents": {
+          "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
+            {
+              "name": "freeipa-admin-group-mapper",
+              "providerId": "group-ldap-mapper",
+              "config": {
+                "mode": [
+                  "LDAP_ONLY"
+                ],
+                "membership.attribute.type": [
+                  "DN"
+                ],
+                "user.roles.retrieve.strategy": [
+                  "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
+                ],
+                "group.name.ldap.attribute": [
+                  "cn"
+                ],
+                "membership.ldap.attribute": [
+                  "member"
+                ],
+                "ignore.missing.groups": [
+                  "false"
+                ],
+                "preserve.group.inheritance": [
+                  "true"
+                ],
+                "membership.user.ldap.attribute": [
+                  "uid"
+                ],
+                "memberof.ldap.attribute": [
+                  "memberOf"
+                ],
+                "groups.dn": [
+                  "cn=groups,cn=accounts,dc=auth,dc=milco,dc=casa"
+                ],
+                "group.object.classes": [
+                  "groupOfNames"
+                ],
+                "drop.non.existing.groups.during.sync": [
+                  "false"
+                ],
+                "groups.path": [
+                  "/"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

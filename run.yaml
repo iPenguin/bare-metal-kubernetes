@@ -203,18 +203,6 @@
   roles:
     - role: domain
 
-- name: Deploy Keycloak
-  hosts:
-    - controllers
-  tags:
-    - auth
-    - keycloak
-    - config
-  roles:
-    - role: keycloak
-      when:
-      - inventory_hostname in k8s_controller
-
 - name: Deploy Harbor
   hosts:
     - harbor
