@@ -6,6 +6,7 @@ auth:
 
 # TODO: Make this true and configure the rest of the needed pieces
 production: false
+proxy: "edge"
 
 extraEnvVars:
   - name: PROXY_ADDRESS_FORWARDING
