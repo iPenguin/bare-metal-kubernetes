@@ -53,7 +53,7 @@ consoleIngress:
 oidc:
   enabled: true
   configUrl: "https://sso.clt.milco.casa/realms/homelab/.well-known/openid-configuration"
-  existingClientSecretName: "minio-oidc-client"
+  existingClientSecretName: "minio-credentials"
   existingClientIdKey: "oidc.clientId"
   existingClientSecretKey: "oidc.clientSecret"
   claimName: "policy"
