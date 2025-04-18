@@ -7,6 +7,12 @@
     name: argocd
     state: present
 
+- name: Create ArgoCD OIDC Secrets
+  kubernetes.core.k8s:
+    state: present
+    template: templates/secrets.yaml.j2
+    namespace: argocd
+
 - name: Add argo helm repo
   kubernetes.core.helm_repository:
     name: argo
