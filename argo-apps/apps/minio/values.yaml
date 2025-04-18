@@ -49,3 +49,14 @@ consoleIngress:
     - secretName: wildcard.milco.casa
       hosts:
         - minio.clt.milco.casa
+
+oidc:
+  enabled: true
+  configUrl: "https://sso.clt.milco.casa/realms/homelab/.well-known/openid-configuration"
+  existingClientSecretName: "minio-oidc-client"
+  existingClientIdKey: "oidc.clientId"
+  existingClientSecretKey: "oidc.clientSecret"
+  claimName: "policy"
+  scopes: "openid,profile,email"
+  redirectUri: "https://minio.clt.milco.casa/oauth_callback"
+  displayName: "Homelab"
