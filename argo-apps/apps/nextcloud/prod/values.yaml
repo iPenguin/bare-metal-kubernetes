@@ -6,6 +6,10 @@ image:
 ingress:
   enabled: true
   className: "traefik"
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: nextcloud-nextcloud-redirectregex@kubernetescrd,nextcloud-nextcloud-headers@kubernetescrd
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
