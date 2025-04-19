@@ -36,6 +36,16 @@ nextcloud:
       value: "nextcloud.clt.milco.casa"
     - name: NEXTCLOUD_EXEC_COMMANDS
       value: "occ app:enable user_oidc"
+  # Extra init containers that runs before pods start.
+  extraInitContainers:
+    - name: fix-permissions
+      image: busybox
+      command: ['sh', '-c', 'chown www-data:www-data /tmp/oidc.config.php']
+      volumeMounts:
+        - name: oidc-config
+          mountPath: /tmp/oidc.config.php
+          subPath: oidc.config.php
+          readOnly: true
 
   # Mount the Secret as a volume
   extraVolumes:
@@ -45,6 +55,9 @@ nextcloud:
         items:
           - key: oidc.config.php
             path: oidc.config.php
+    - name: storage
+      persistentVolumeClaim:
+        claimName: nextcloud-prod-nextcloud
 
   extraVolumeMounts:
     - name: oidc-config
