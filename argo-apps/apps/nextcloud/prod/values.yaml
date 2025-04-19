@@ -28,6 +28,26 @@ nextcloud:
       value: "https"
     - name: OVERWRITEHOST
       value: "nextcloud.clt.milco.casa"
+    - name: NEXTCLOUD_TRUSTED_DOMAINS
+      value: "nextcloud.clt.milco.casa"
+    - name: NEXTCLOUD_EXEC_COMMANDS
+      value: "occ app:enable user_oidc"
+
+  # Mount the Secret as a volume
+  extraVolumes:
+    - name: oidc-config
+      secret:
+        secretName: nextcloud-oidc-config
+        items:
+          - key: oidc.config.php
+            path: oidc.config.php
+
+  extraVolumeMounts:
+    - name: oidc-config
+      mountPath: /var/www/html/config/oidc.config.php
+      subPath: oidc.config.php
+      readOnly: true
+
   existingSecret:
     enabled: true
     secretName: nextcloud-secrets
