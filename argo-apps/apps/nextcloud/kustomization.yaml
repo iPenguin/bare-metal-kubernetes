@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - secrets.yaml
   - nextcloud-bucket.yaml
+  - traefik-middleware.yaml

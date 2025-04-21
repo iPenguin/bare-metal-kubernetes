@@ -18,6 +18,6 @@ spec:
     stsSeconds: 15552000 # 6 months
     stsIncludeSubdomains: true
     stsPreload: true
-    frameDeny: true
+    customFrameOptionsValue: "SAMEORIGIN"
     browserXssFilter: true
     contentTypeNosniff: true
