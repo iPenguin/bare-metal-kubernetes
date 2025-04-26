@@ -15,6 +15,11 @@ extraEnvVars:
     value: "true"
   - name: KEYCLOAK_HTTP_SCHEME
     value: "https"
+  - name: BIND_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-passwords
+        key: BIND_PASSWORD
 
 ingress:
   enabled: true
