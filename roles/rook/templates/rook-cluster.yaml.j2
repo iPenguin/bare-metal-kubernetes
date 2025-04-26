@@ -42,6 +42,8 @@ cephClusterSpec:
       compression:
         enabled: false
       requireMsgr2: false
+    # FIXME: figure out IPv6 settings -
+    # Currently setting these will cause a loss of communications to the pgs:
     # ipFamily: "IPv6"
     # dualStack: true
 
@@ -182,7 +184,7 @@ cephFileSystems:
       isDefault: false
       name: cephfs
       pool: "{{ lan_domain }}-data0"
-      reclaimPolicy: Delete
+      reclaimPolicy: Retain
       allowVolumeExpansion: true
       volumeBindingMode: "Immediate"
       parameters:
