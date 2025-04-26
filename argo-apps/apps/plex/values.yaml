@@ -16,7 +16,6 @@ ingress:
   annotations: {}
 
 pms:
-  storageClassName: cephfs
   configStorage: 2Gi
   gpu:
     nvidia:
