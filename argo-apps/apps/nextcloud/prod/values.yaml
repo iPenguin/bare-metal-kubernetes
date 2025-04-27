@@ -38,21 +38,11 @@ nextcloud:
       value: "nextcloud.clt.milco.casa"
     - name: NEXTCLOUD_EXEC_COMMANDS
       value: "occ app:enable user_oidc"
-
-  # Mount the Secret as a volume
-  extraVolumes:
-    - name: oidc-config
-      secret:
-        secretName: nextcloud-oidc-config
-        items:
-          - key: oidc.config.php
-            path: oidc.config.php
-
-  extraVolumeMounts:
-    - name: oidc-config
-      mountPath: /var/www/html/config/oidc.config.php
-      subPath: oidc.config.php
-      readOnly: true
+    - name: LDAP_LOOKUP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: nextcloud-secrets
+          key: ldap_lookup_password
 
   existingSecret:
     enabled: true
@@ -129,7 +119,10 @@ persistence:
   enabled: true
   storageClass: "cephfs"
   accessMode: ReadWriteMany
-  size: 1Ti
+  size: 8Gi
+  nextcloudData:
+    enabled: true
+    existingClaim: nextcloud-data
 
 resources:
   requests:
