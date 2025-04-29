@@ -1,11 +1,11 @@
 ---
 global:
   storageClass: "cephfs"
+image:
+  rootless: false
 
 service:
   http:
-    annotations:
-      metallb.io/allow-shared-ip: "gitea-shared-ip"
     type: ClusterIP
     port: 3000
     ipFamilyPolicy: PreferDualStack
@@ -13,8 +13,6 @@ service:
       - IPv4
       - IPv6
   ssh:
-    annotations:
-      metallb.io/allow-shared-ip: "gitea-shared-ip"
     type: ClusterIP
     port: 22
     ipFamilyPolicy: PreferDualStack
@@ -23,17 +21,17 @@ service:
       - IPv6
 
 ingress:
-  enabled: true
-  className: traefik
-  hosts:
-    - host: git.clt.milco.casa
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-   - secretName: wildcard.milco.casa
-     hosts:
-       - git.clt.milco.casa
+  enabled: false
+  # className: traefik
+  # hosts:
+  #   - host: git.clt.milco.casa
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  # tls:
+  #  - secretName: wildcard.milco.casa
+  #    hosts:
+  #      - git.clt.milco.casa
 
 ## @section ServiceAccount
 ## @param serviceAccount.create Enable the creation of a ServiceAccount
@@ -102,7 +100,10 @@ config:
     APP_NAME: "Milco home code repo"
     RUN_MODE: prod
     server:
-      SSH_LISTEN_PORT: 2222
+      ROOT_URL: https://git.clt.milco.casa
+      SSH_DOMAIN: git.clt.milco.casa
+      SSH_PORT: 22
+      PROTOCOL: https
 
 postgresql-ha:
   enabled: false

@@ -72,6 +72,10 @@ ipa_dns_entries:
     type: CNAME
     data: "traefik.{{ lan_domain }}."
     zone: "{{ lan_domain }}"
+  - name: git
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
   - name: plex-svc
     type: A
     data: "{{ network_services['plex-svc'].ipv4 }}"
