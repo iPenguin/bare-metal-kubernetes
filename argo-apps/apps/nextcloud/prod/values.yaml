@@ -36,13 +36,28 @@ nextcloud:
       value: "nextcloud.clt.milco.casa"
     - name: NEXTCLOUD_TRUSTED_DOMAINS
       value: "nextcloud.clt.milco.casa"
-    - name: NEXTCLOUD_EXEC_COMMANDS
-      value: "occ app:enable user_oidc"
-    - name: LDAP_LOOKUP_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: nextcloud-secrets
-          key: ldap_lookup_password
+
+  extraInitContainers:
+    - name: init-ldap
+      image: busybox
+      command: ['sh', '/opt/bin/ldap.sh']
+      env:
+        - name: LDAP_LOOKUP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-secrets
+              key: ldap_lookup_password
+      volumeMounts:
+        - name: ldap-script
+          mountPath: /opt/bin/ldap.sh
+
+  extraVolumes:
+    - name: ldap-script
+      secret:
+        secretName: nextcloud-ldap-script
+        items:
+          - key: ldap.sh
+            path: ldap.sh
 
   existingSecret:
     enabled: true

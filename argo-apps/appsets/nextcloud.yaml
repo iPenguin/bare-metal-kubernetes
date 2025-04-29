@@ -38,12 +38,3 @@ spec:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           path: argo-apps/apps/nextcloud
-          kustomize:
-          patches:
-            - target:
-                kind: PersistentVolume
-                name: nextcloud-data-pv
-              patch: |-
-                - op: replace
-                  path: /spec/persistentVolumeReclaimPolicy
-                  value: Retain
