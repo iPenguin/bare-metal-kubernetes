@@ -21,17 +21,20 @@ service:
       - IPv6
 
 ingress:
-  enabled: false
-  # className: traefik
-  # hosts:
-  #   - host: git.clt.milco.casa
-  #     paths:
-  #       - path: /
-  #         pathType: Prefix
-  # tls:
-  #  - secretName: wildcard.milco.casa
-  #    hosts:
-  #      - git.clt.milco.casa
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  className: traefik
+  hosts:
+    - host: git.clt.milco.casa
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+   - secretName: wildcard.milco.casa
+     hosts:
+       - git.clt.milco.casa
 
 ## @section ServiceAccount
 ## @param serviceAccount.create Enable the creation of a ServiceAccount
@@ -96,14 +99,44 @@ gitea:
     #  usernameAttribute:
     #  publicSSHKeyAttribute:
 
-config:
+  config:
     APP_NAME: "Milco home code repo"
     RUN_MODE: prod
     server:
+      DOMAIN: git.clt.milco.casa
       ROOT_URL: https://git.clt.milco.casa
       SSH_DOMAIN: git.clt.milco.casa
       SSH_PORT: 22
+      SSH_LISTEN_PORT: 22
+      DISABLE_SSH: false
+      OFFLINE_MODE: false
       PROTOCOL: https
+
+# SSH Service for external access
+extraObjects:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: gitea-ssh
+      labels:
+        app: gitea
+    spec:
+      type: LoadBalancer
+      ports:
+        - port: 22
+          targetPort: 22
+          protocol: TCP
+          name: ssh
+      selector:
+        app: gitea
+
+# Security context for SSH
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
 
 postgresql-ha:
   enabled: false
@@ -115,9 +148,6 @@ postgresql:
         password: gitea
         database: gitea
         username: gitea
-      service:
-        ports:
-          postgresql: 5432
   primary:
     persistence:
       size: 2Gi
