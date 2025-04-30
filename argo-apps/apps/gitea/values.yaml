@@ -1,8 +1,25 @@
 ---
 global:
-  storageClass: "cephfs"
-image:
-  rootless: false
+  storageClass: "ceph-block"
+
+podSecurityContext:
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+#   # Add the SYS_CHROOT capability on nodes that use the container runtime cri-o.
+#   # https://gitea.com/gitea/helm-gitea/issues/161
+    add:
+      - SYS_CHROOT
+  privileged: false
+  readOnlyRootFilesystem: true
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
 
 service:
   http:
@@ -22,60 +39,27 @@ service:
 
 ingress:
   enabled: true
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
   className: traefik
   hosts:
     - host: git.clt.milco.casa
       paths:
         - path: /
           pathType: Prefix
-  tls:
-   - secretName: wildcard.milco.casa
-     hosts:
-       - git.clt.milco.casa
-
-## @section ServiceAccount
-## @param serviceAccount.create Enable the creation of a ServiceAccount
-## @param serviceAccount.name Name of the created ServiceAccount, defaults to release name. Can also link to an externally provided ServiceAccount that should be used.
-## @param serviceAccount.automountServiceAccountToken Enable/disable auto mounting of the service account token
-## @param serviceAccount.imagePullSecrets Image pull secrets, available to the ServiceAccount
-## @param serviceAccount.annotations Custom annotations for the ServiceAccount
-## @param serviceAccount.labels Custom labels for the ServiceAccount
-serviceAccount:
-  create: false
-  name: ""
-  automountServiceAccountToken: false
-  imagePullSecrets: []
-  # - name: private-registry-access
-  annotations: {}
-  labels: {}
 
 persistence:
   enabled: true
   create: true
   mount: true
   claimName: gitea-shared-storage
+  storageClassName: cephfs
   size: 10Gi
   accessModes:
     - ReadWriteMany
+  annotations:
+    helm.sh/resource-policy: keep
 
-# Configure commit/action signing prerequisites
-## @section Signing
-#
-## @param signing.enabled Enable commit/action signing
-## @param signing.gpgHome GPG home directory
-## @param signing.privateKey Inline private gpg key for signed internal Git activity
-## @param signing.existingSecret Use an existing secret to store the value of `signing.privateKey`
 signing:
   enabled: false
-  gpgHome: /data/git/.gnupg
-  privateKey: ""
-  # privateKey: |-
-  #   -----BEGIN PGP PRIVATE KEY BLOCK-----
-  #   ...
-  #   -----END PGP PRIVATE KEY BLOCK-----
   existingSecret: ""
 
 gitea:
@@ -84,7 +68,8 @@ gitea:
   metrics:
     enabled: false
 
-  ldap: []
+  ldap:
+    []
     # - name: "LDAP 1"
     #  existingSecret:
     #  securityProtocol:
@@ -99,6 +84,22 @@ gitea:
     #  usernameAttribute:
     #  publicSSHKeyAttribute:
 
+  # Either specify inline `key` and `secret` or refer to them via `existingSecret`
+  ## @param gitea.oauth OAuth configuration
+  oauth:
+    []
+    # - name: 'OAuth 1'
+    #   provider:
+    #   key:
+    #   secret:
+    #   existingSecret:
+    #   autoDiscoverUrl:
+    #   useCustomUrls:
+    #   customAuthUrl:
+    #   customTokenUrl:
+    #   customProfileUrl:
+    #   customEmailUrl:
+
   config:
     APP_NAME: "Milco home code repo"
     RUN_MODE: prod
@@ -107,36 +108,30 @@ gitea:
       ROOT_URL: https://git.clt.milco.casa
       SSH_DOMAIN: git.clt.milco.casa
       SSH_PORT: 22
-      SSH_LISTEN_PORT: 22
+      SSH_LISTEN_PORT: 2222
       DISABLE_SSH: false
       OFFLINE_MODE: false
-      PROTOCOL: https
+      PROTOCOL: http
 
-# SSH Service for external access
-extraObjects:
-  - apiVersion: v1
-    kind: Service
-    metadata:
-      name: gitea-ssh
-      labels:
-        app: gitea
-    spec:
-      type: LoadBalancer
-      ports:
-        - port: 22
-          targetPort: 22
-          protocol: TCP
-          name: ssh
-      selector:
-        app: gitea
+  additionalConfigSources: []
+  #   - secret:
+  #       secretName: gitea-app-ini-oauth
+  #   - configMap:
+  #       name: gitea-app-ini-plaintext
 
-# Security context for SSH
-podSecurityContext:
-  fsGroup: 1000
+  ssh:
+    logLevel: "INFO"
 
-securityContext:
-  runAsUser: 1000
-  runAsGroup: 1000
+redis-cluster:
+  enabled: false
+redis:
+  enabled: true
+  architecture: standalone
+  global:
+    redis:
+      password: changeme
+  master:
+    count: 1
 
 postgresql-ha:
   enabled: false
@@ -145,14 +140,12 @@ postgresql:
   global:
     postgresql:
       auth:
-        password: gitea
+        password: giteapassword
         database: gitea
         username: gitea
+      service:
+        ports:
+          postgresql: 5432
   primary:
     persistence:
-      size: 2Gi
-
-redis-cluster:
-  enabled: false
-redis:
-  enabled: true
+      size: 5Gi
