@@ -14,10 +14,6 @@ ingress:
   ipFamilies:
     - IPv4
     - IPv6
-  tls:
-    - secretName: wildcard.milco.casa
-      hosts:
-        - nextcloud.clt.milco.casa
 
 phpClientHttpsFix:
   enabled: false

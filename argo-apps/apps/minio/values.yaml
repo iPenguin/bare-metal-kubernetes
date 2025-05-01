@@ -34,10 +34,6 @@ ingress:
   path: /
   hosts:
     - minio-local.clt.milco.casa
-  tls:
-    - secretName: wildcard.milco.casa
-      hosts:
-        - minio-local.clt.milco.casa
 
 consoleIngress:
   enabled: true
@@ -45,10 +41,6 @@ consoleIngress:
   path: /
   hosts:
     - minio.clt.milco.casa
-  tls:
-    - secretName: wildcard.milco.casa
-      hosts:
-        - minio.clt.milco.casa
 
 oidc:
   enabled: true
