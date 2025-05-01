@@ -27,10 +27,6 @@ ingress:
   hostname: sso.clt.milco.casa
   hostnameStrict: true
   tls: true
-  secrets:
-    - name: wildcard.milco.casa
-      key: tls.key
-      certificate: tls.crt
 
 adminIngress:
   enabled: true
@@ -38,10 +34,6 @@ adminIngress:
   controller: default
   hostname: sso.clt.milco.casa
   tls: true
-  secrets:
-    - name: wildcard.milco.casa
-      key: tls.key
-      certificate: tls.crt
 
 metrics:
   enabled: false

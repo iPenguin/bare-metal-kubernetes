@@ -5,6 +5,7 @@ ingress:
   enabled: true
   ingressClassName: "traefik"
   url: "plex.clt.milco.casa"
+  tls: []
 
 pms:
   configStorage: 2Gi
