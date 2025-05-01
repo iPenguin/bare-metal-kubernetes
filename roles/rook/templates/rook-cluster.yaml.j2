@@ -128,10 +128,6 @@ ingress:
       name: ceph.{{ lan_domain }}
       path: /
     ingressClassName: traefik
-    tls:
-      - hosts:
-          - ceph.{{ lan_domain }}
-        secretName: {{ lan_domain_cert }}
 
 cephBlockPools:
   - name: ceph-blockpool
@@ -242,7 +238,3 @@ cephObjectStores:
         name: s3.{{ lan_domain }}
         path: /
       ingressClassName: traefik
-      tls:
-        - hosts:
-            - ceph.{{ lan_domain }}
-          secretName: {{ lan_domain_cert }}

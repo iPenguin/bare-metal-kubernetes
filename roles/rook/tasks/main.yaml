@@ -63,10 +63,6 @@
             namespace: "{{ rook_namespace }}"
           spec:
             ingressClassName: traefik
-            tls:
-              - hosts:
-                  - 'ceph.{{ lan_domain }}'
-                secretName: "{{ lan_domain_cert }}"
             rules:
               - host: ceph.{{ lan_domain }}
                 http:
