@@ -103,18 +103,6 @@
       when:
         - inventory_hostname in k8s_controller
 
-- name: Deploy Traefik
-  hosts:
-    - controllers
-  tags:
-    - ingress
-    - traefik
-    - cluster
-  roles:
-    - role: traefik
-      when:
-        - inventory_hostname in k8s_controller
-
 - name: Deploy cert-manager
   hosts:
     - controllers

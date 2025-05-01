@@ -11,5 +11,6 @@ resources:
   - nextcloud.yaml
   - plex.yaml
   - repo-secret.yaml
+  - traefik.yaml
   - utils.yaml
   - velero.yaml

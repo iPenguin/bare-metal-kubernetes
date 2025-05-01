@@ -1,0 +1,51 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: traefik
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - host: traefik
+          - plugin:
+              configMapRef:
+                name: dig
+              input:
+                parameters:
+                  hostname: '{{ .host }}.clt.milco.casa'
+  template:
+    metadata:
+      name: traefik
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - Confirm=true
+      project: traefik
+      destination:
+        namespace: traefik
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          path: argo-apps/apps/traefik
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          ref: valuesSrc
+        - repoURL: 'https://helm.traefik.io/traefik'
+          chart: traefik
+          targetRevision: 35.2.0
+          helm:
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/traefik/values.yaml'
+            values: |-
+              service:
+                annotations:
+                  metallb.io/loadBalancerIPs: {{ .ipv4_address }},{{ .ipv6_address }}

@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: traefik
+  namespace: argocd
+spec:
+  description: Traefik Ingress
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: traefik
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://helm.traefik.io/traefik

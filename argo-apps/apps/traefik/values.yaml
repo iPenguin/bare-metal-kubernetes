@@ -1,8 +1,6 @@
 ---
 service:
   type: LoadBalancer
-  annotations:
-    metallb.io/loadBalancerIPs: {{ network_services.ingress.ipv4 }},{{ network_services.ingress.ipv6 }}
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -20,15 +18,10 @@ ports:
     port: 8443
     exposedPort: 443
     protocol: TCP
-    tls:
-      enabled: true
-      secretName: {{ lan_domain_cert }}
   traefik:
     port: 9000
     expose:
       default: false
-
-certResolvers: {}
 
 ingressClass:
   enabled: true
@@ -47,3 +40,8 @@ pod:
     capabilities:
       add:
       - NET_BIND_SERVICE
+
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: wildcard.milco.casa

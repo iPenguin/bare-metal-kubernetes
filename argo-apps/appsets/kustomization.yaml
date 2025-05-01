@@ -2,11 +2,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - utils.yaml
+  - gitea.yaml
   - keycloak.yaml
   - kubernetes-reflector.yaml
+  - minio.yaml
   - nextcloud.yaml
   - plex.yaml
-  - gitea.yaml
-  - minio.yaml
+  - traefik.yaml
+  - utils.yaml
   - velero.yaml
