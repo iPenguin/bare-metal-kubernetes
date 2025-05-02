@@ -51,27 +51,4 @@
         owner: root
         group: root
         mode: 0700
-
-    - name: Create ingress
-      ansible.builtin.k8s:
-        state: present
-        definition:
-          apiVersion: networking.k8s.io/v1
-          kind: Ingress
-          metadata:
-            name: ceph-ingress
-            namespace: "{{ rook_namespace }}"
-          spec:
-            ingressClassName: traefik
-            rules:
-              - host: ceph.{{ lan_domain }}
-                http:
-                  paths:
-                    - path: /
-                      pathType: Prefix
-                      backend:
-                        service:
-                          name: rook-ceph-mgr-dashboard
-                          port:
-                            number: 8443
 ...
