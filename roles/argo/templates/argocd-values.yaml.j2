@@ -63,7 +63,10 @@ server:
   ingress:
     enabled: true
     ingressClassName: "traefik"
-    tls: true
+    tls: false
+    extraTls:
+      - hosts:
+        - argocd.{{ lan_domain }}
 
   service:
     type: ClusterIP
