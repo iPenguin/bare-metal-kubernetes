@@ -64,41 +64,19 @@ signing:
 
 gitea:
   admin:
-    existingSecret: gitea-admin-secret
+    existingSecret: gitea-secrets
   metrics:
     enabled: false
-
-  ldap:
-    []
-    # - name: "LDAP 1"
-    #  existingSecret:
-    #  securityProtocol:
-    #  host:
-    #  port:
-    #  userSearchBase:
-    #  userFilter:
-    #  adminFilter:
-    #  emailAttribute:
-    #  bindDn:
-    #  bindPassword:
-    #  usernameAttribute:
-    #  publicSSHKeyAttribute:
-
-  # Either specify inline `key` and `secret` or refer to them via `existingSecret`
-  ## @param gitea.oauth OAuth configuration
+  openid:
+    ENABLE_OPENID_SIGNIN: true
+    ENABLE_OPENID_SIGNUP: false
   oauth:
-    []
-    # - name: 'OAuth 1'
-    #   provider:
-    #   key:
-    #   secret:
-    #   existingSecret:
-    #   autoDiscoverUrl:
-    #   useCustomUrls:
-    #   customAuthUrl:
-    #   customTokenUrl:
-    #   customProfileUrl:
-    #   customEmailUrl:
+    - name: "Homelab"
+      existingSecret: gitea-secrets
+      name: "homelab"
+      provider: "openidConnect"
+      autoDiscoverUrl: "https://sso.clt.milco.casa/realms/homelab/.well-known/openid-configuration"
+      scopes: "email profile openid"  # Scopes to request from the OIDC provider
 
   config:
     APP_NAME: "Milco home code repo"
