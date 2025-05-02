@@ -51,7 +51,7 @@ persistence:
   create: true
   mount: true
   claimName: gitea-shared-storage
-  storageClassName: cephfs
+  storageClass: cephfs
   size: 10Gi
   accessModes:
     - ReadWriteMany
