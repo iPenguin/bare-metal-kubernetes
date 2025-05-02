@@ -13,12 +13,7 @@ site_admin_username: "{{ vault_site_admin_username }}"
 
 lan_domain_cert: "wildcard.{{ lan_tld }}"
 cert_namespaces:
-  - argocd
-  - freeipa
-  - minio
-  - nextcloud
-  - plex
-  - rook-ceph
+  - traefik
 
 
 remote_users:
