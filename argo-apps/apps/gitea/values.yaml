@@ -76,8 +76,13 @@ gitea:
       name: "homelab"
       provider: "openidConnect"
       autoDiscoverUrl: "https://sso.clt.milco.casa/realms/homelab/.well-known/openid-configuration"
-      scopes: "email profile openid"  # Scopes to request from the OIDC provider
-
+      scopes: "email profile openid groups"
+      adminGroup: "app-gitea-admins"
+      restricted-group: "app-gitea-users"
+      groupClaimName: "group-names"
+  service:
+    DISABLE_REGISTRATION: true
+    REQUIRE_SIGNIN_VIEW: true
   config:
     APP_NAME: "Milco home code repo"
     RUN_MODE: prod
