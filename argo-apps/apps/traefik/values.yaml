@@ -21,6 +21,9 @@ ports:
         to: websecure
         scheme: https
         permanent: true
+    expose:
+      default: true
+      ssh: true
   websecure:
     enabled: true
     port: 8443
@@ -48,14 +51,10 @@ ingressClass:
   enabled: true
   isDefaultClass: false
 
-
 additionalIngressClasses:
   - enabled: true
     name: traefik-ssh
     isDefaultClass: false
-    annotations:
-      ingressclass.kubernetes.io/is-default-class: "false"
-      traefik.ingress.kubernetes.io/service: traefik-ssh
 
 dashboard:
   enabled: true

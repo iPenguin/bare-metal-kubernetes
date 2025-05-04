@@ -38,7 +38,7 @@ service:
 
 ingress:
   enabled: true
-  className: traefik-ssh
+  className: traefik
   hosts:
     - host: git.clt.milco.casa
       paths:

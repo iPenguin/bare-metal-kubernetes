@@ -32,6 +32,9 @@ network_services:
   plex-svc:
     ipv4: "{{ ipv4_network }}.25"
     ipv6: "{{ ipv6_network }}::25"
+  traefik-ssh:
+    ipv4: "{{ ipv4_network }}.26"
+    ipv6: "{{ ipv6_network }}::26"
 
 network:
   ipv4:

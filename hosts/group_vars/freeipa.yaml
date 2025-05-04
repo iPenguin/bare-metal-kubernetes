@@ -44,6 +44,14 @@ ipa_dns_entries:
     type: AAAA
     data: "{{ network_services['traefik'].ipv6 }}"
     zone: "{{ lan_domain }}"
+  - name: traefik-ssh
+    type: A
+    data: "{{ network_services['traefik-ssh'].ipv4 }}"
+    zone: "{{ lan_domain }}"
+  - name: traefik-ssh
+    type: AAAA
+    data: "{{ network_services['traefik-ssh'].ipv6 }}"
+    zone: "{{ lan_domain }}"
   - name: argocd
     type: CNAME
     data: "traefik.{{ lan_domain }}."
@@ -74,7 +82,7 @@ ipa_dns_entries:
     zone: "{{ lan_domain }}"
   - name: git
     type: CNAME
-    data: "traefik.{{ lan_domain }}."
+    data: "traefik-ssh.{{ lan_domain }}."
     zone: "{{ lan_domain }}"
   - name: plex-svc
     type: A
