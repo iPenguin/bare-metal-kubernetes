@@ -5,6 +5,14 @@ service:
   ipFamilies:
     - IPv4
     - IPv6
+  additionalServices:
+    ssh:
+      enabled: true
+      type: LoadBalancer
+      ipFamilyPolicy: PreferDualStack
+      ipFamilies:
+        - IPv4
+        - IPv6
 
 ports:
   web:
@@ -17,15 +25,37 @@ ports:
     enabled: true
     port: 8443
     exposedPort: 443
+    expose:
+      default: true
+      ssh: true
     protocol: TCP
   traefik:
     port: 9000
     expose:
       default: false
+  ssh:
+    port: 2222
+    expose:
+      ssh: true
+    exposedPort: 22
+    protocol: TCP
+
+entryPoints:
+  ssh:
+    address: ":22"
 
 ingressClass:
   enabled: true
   isDefaultClass: false
+
+
+additionalIngressClasses:
+  - enabled: true
+    name: traefik-ssh
+    isDefaultClass: false
+    annotations:
+      ingressclass.kubernetes.io/is-default-class: "false"
+      traefik.ingress.kubernetes.io/service: traefik-ssh
 
 dashboard:
   enabled: true
