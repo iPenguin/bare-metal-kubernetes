@@ -1,6 +1,0 @@
----
-
-harbor_namespace: harbor
-harbor_version: 1.12.0
-
-harbor_bucket_name: harbor-storage

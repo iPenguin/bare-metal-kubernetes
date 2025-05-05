@@ -191,12 +191,4 @@
   roles:
     - role: domain
 
-- name: Deploy Harbor
-  hosts:
-    - harbor
-  tags:
-    - harbor
-  roles:
-    - role: harbor
-
 ...
