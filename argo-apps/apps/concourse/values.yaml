@@ -1,0 +1,239 @@
+---
+
+concourse:
+  web:
+    clusterName: Homelab
+    clientConfig:
+      enabled: false
+
+    componentRunnerInterval: 10s
+    defaultGetTimeout: 10m
+    defaultPutTimeout: 30m
+    defaultTaskTimeout: 8h
+    numGoroutineThreshold: 50000
+
+    ## Minimum level of logs to see. Possible options: debug, info, error.
+    ##
+    logLevel: info
+
+    bindIp: 0.0.0.0
+    bindPort: 8080
+
+    tls:
+      enabled: false
+      bindPort: 443
+
+    externalUrl: https://concourse.clt.milco.casa
+
+    ## Ref: https://concourse-ci.org/encryption.html
+    encryption:
+      enabled: false
+
+    localAuth:
+      enabled: false
+
+    ## IP address on which to listen for the pprof debugger endpoints.
+    debugBindIp: 127.0.0.1
+    debugBindPort: 8079
+
+    postgres:
+      host:
+      port: 5432
+      socket:
+      sslmode: disable
+      database: atc
+
+    kubernetes:
+      enabled: true
+
+      createTeamNamespaces: true
+      teams:
+        - main
+
+    prometheus:
+      enabled: false
+
+    auth:
+      mainTeam:
+
+        ## Configuration file for specifying the main teams params.
+        ## Ref: https://concourse-ci.org/managing-teams.html#setting-roles
+        ## Example:
+        ## config: |
+        ##   roles:
+        ##   - name: owner
+        ##     local:
+        ##       users: ["admin"]
+        ##   - name: member
+        ##     local:
+        ##       users: ["test"]
+        ##
+        config: ""
+        oidc:
+          group: app-concourse-users,app-concourse-admins
+      # oauth:
+      #   enabled: true
+      #   # Generic OAuth provider configuration (e.g., GitHub, GitLab)
+      #   genericOauth:
+      #     clientIdSecret:
+      #       name: concourse-secrets
+      #       key: oidc-client-id
+      #     clientSecretSecret:
+      #       name: concourse-secrets
+      #       key: oidc-client-secret
+      #     authUrl: "https://<provider>/oauth/authorize"
+      #     tokenUrl: "https://<provider>/oauth/token"
+      #     userInfoUrl: "https://<provider>/api/user"
+      #     scope: "openid profile email groups"
+      #     displayName: "Homelab"
+      oidc:
+        enabled: true
+        clientIdSecret:
+          name: concourse-secrets
+          key: oidc-client-id
+        clientSecretSecret:
+          name: concourse-secrets
+          key: oidc-client-secret
+        issuer: "https://sso.clt.milco.casa/realms/homelab"
+        scope: "openid profile email groups"
+        displayName: "Homelab"
+
+  worker:
+    ephemeral: true
+    workDir: /data
+    runtime: containerd
+    tsa:
+      hosts: []
+      publicKey:
+      workerPrivateKey:
+
+    containerd:
+      ## Path to a config file to use for the Containerd daemon.
+      config:
+
+      ## Allows containers to reach host network.
+      allowHostAccess:
+
+      ## Network range to use for dynamically allocated container subnets
+      ## defaults to "10.80.0.0/16"
+      networkPool:
+      ipv6:
+        enabled: true
+        ## Disables masquerading of container traffic with the workers address
+        # disableMasquerade:
+
+web:
+  enabled: true
+  replicas: 1
+  args: ["web"]
+
+  ## Pod priority class to assign to web pods.
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
+  priorityClassName:
+
+  ## Enable or disable the process namespace sharing for the web nodes.
+  ## This allows signaling the concourse process from a sidecar container.
+  ## eg.: signal concourse web to reload the team authorized keys file.
+  ##
+  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+  ##
+  shareProcessNamespace: false
+
+  ##   - name: CONCOURSE_LOG_LEVEL
+  ##     value: "debug"
+  env:
+
+  ## Where secrets should be mounted for the web container.
+  ##
+  keySecretsPath: "/concourse-keys"
+  teamSecretsPath: "/team-authorized-keys"
+  authSecretsPath: "/concourse-auth"
+  vaultSecretsPath: "/concourse-vault"
+  credhubSecretsPath: "/concourse-credhub"
+  postgresqlSecretsPath: "/concourse-postgresql"
+  syslogSecretsPath: "/concourse-syslog"
+  tlsSecretsPath: "/concourse-web-tls"
+  conjurSecretsPath: "/concourse-conjur"
+
+  service:
+    api:
+      type: LoadBalancer
+
+    workerGateway:
+      type: LoadBalancer
+
+    prometheus:
+      type: ClusterIP
+
+  ingress:
+    enabled: true
+    hosts:
+      - concourse.clt.milco.casa
+    ingressClassName: traefik
+    tls:
+      - hosts:
+        - concourse.clt.milco.casa
+
+worker:
+  enabled: true
+  ## StatefulSet / Deployment. Deployment = ephemeral workers.
+  kind: Deployment
+  replicas: 2
+  minAvailable: 1
+  ##   - name: CONCOURSE_NAME
+  ##     value: "anything"
+  env: []
+
+  ## For managing where secrets should be mounted for worker agents
+  ##
+  keySecretsPath: "/concourse-keys"
+
+  ## For managing where additional certs should be added into a worker.
+  ## You can add additional certs with secrets.workerAdditionalCerts
+  ##
+  certsPath: "/etc/ssl/certs"
+
+  hardAntiAffinity: false
+  ##   hardAntiAffinity: true
+  ##   hardAntiAffinityLabels:
+  ##     application: concourse
+  hardAntiAffinityLabels: {}
+  emptyDirSize: 20Gi
+
+## Persistent Volume Storage configuration.
+## Ref: https://kubernetes.io/docs/user-guide/persistent-volumes
+##
+persistence:
+  enabled: false
+  worker:
+    storageClass:
+    accessMode: ReadWriteOnce
+    size: 20Gi
+
+postgresql:
+  enabled: true
+  auth:
+    username: concourse
+    password: concourse
+    database: concourse
+
+  service:
+    clusterIP:
+
+  ## Configuration for the primary database of the PostgreSQL subchart,
+  ## i.e. the instance used by the web component.
+  ##
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ceph-block
+      accessModes:
+        - ReadWriteOnce
+      size: 8Gi
+
+secrets:
+  create: true
+  # oauthClientId: concourse
+  # oauthClientSecret: GsRSUVkAY9yV16s6COaCOpBlK37Jj9JB
+  oidcClientId: concourse
+  oidcClientSecret: GsRSUVkAY9yV16s6COaCOpBlK37Jj9JB
