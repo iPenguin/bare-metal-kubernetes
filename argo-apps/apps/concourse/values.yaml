@@ -55,38 +55,19 @@ concourse:
 
     auth:
       mainTeam:
-
-        ## Configuration file for specifying the main teams params.
-        ## Ref: https://concourse-ci.org/managing-teams.html#setting-roles
-        ## Example:
-        ## config: |
-        ##   roles:
-        ##   - name: owner
-        ##     local:
-        ##       users: ["admin"]
-        ##   - name: member
-        ##     local:
-        ##       users: ["test"]
-        ##
-        config: ""
+        # config: |
+        #   roles:
+        #     - name: owner
+        #       oidc:
+        #         groups:
+        #           - "/app-concourse-admins"
+        #     - name: member
+        #       oidc:
+        #         groups:
+        #           - "/app-concourse-admins"
+        #           - "/app-concourse-users"
         oidc:
-          group:
-            - app-concourse-admins
-      # oauth:
-      #   enabled: true
-      #   # Generic OAuth provider configuration (e.g., GitHub, GitLab)
-      #   genericOauth:
-      #     clientIdSecret:
-      #       name: concourse-secrets
-      #       key: oidc-client-id
-      #     clientSecretSecret:
-      #       name: concourse-secrets
-      #       key: oidc-client-secret
-      #     authUrl: "https://<provider>/oauth/authorize"
-      #     tokenUrl: "https://<provider>/oauth/token"
-      #     userInfoUrl: "https://<provider>/api/user"
-      #     scope: "openid profile email groups"
-      #     displayName: "Homelab"
+          group: "/app-concourse-admins"
       oidc:
         enabled: true
         clientIdSecret:
@@ -97,6 +78,7 @@ concourse:
           key: oidc-client-secret
         issuer: "https://sso.clt.milco.casa/realms/homelab"
         scope: "openid profile email groups"
+        groupsKey: "groups"
         displayName: "Homelab"
 
   worker:
@@ -234,7 +216,5 @@ postgresql:
 
 secrets:
   create: true
-  # oauthClientId: concourse
-  # oauthClientSecret: GsRSUVkAY9yV16s6COaCOpBlK37Jj9JB
   oidcClientId: concourse
   oidcClientSecret: GsRSUVkAY9yV16s6COaCOpBlK37Jj9JB
