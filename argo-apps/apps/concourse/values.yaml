@@ -70,7 +70,8 @@ concourse:
         ##
         config: ""
         oidc:
-          group: app-concourse-users,app-concourse-admins
+          group:
+            - app-concourse-admins
       # oauth:
       #   enabled: true
       #   # Generic OAuth provider configuration (e.g., GitHub, GitLab)
