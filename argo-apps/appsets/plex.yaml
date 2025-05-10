@@ -51,7 +51,7 @@ spec:
           ref: valuesSrc
         - repoURL: 'https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages'
           chart: plex-media-server
-          targetRevision: 0.9.1
+          targetRevision: 1.0.2
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/plex/values.yaml'
