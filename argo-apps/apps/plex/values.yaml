@@ -26,7 +26,11 @@ rclone:
   # this must be in the form of `name:[/optional/path]`
   # this remote will be mounted at `/data/name` in the PMS container
   remotes:
-    - "nextcloud:"
+    - "nextcloud:/Shared"
+  additionalArgs:
+    - "--vfs-cache-mode=full"
+    - "--vfs-cache-max-age=3d"
+    - "--vfs-cache-max-size=10G"
   readOnly: true
 
 service:
