@@ -46,7 +46,7 @@ network:
     router: "{{ ipv4_network }}.1"
     dns: "{{ ipv4_network }}.1"
     server_pool:
-      start: "{{ ipv4_network }}.20"
+      start: "{{ ipv4_network }}.21"
       end: "{{ ipv4_network }}.100"
   ipv6:
     external_dns:
@@ -57,7 +57,7 @@ network:
     router: "{{ ipv6_network }}::1"
     dns: "{{ ipv6_network }}::1"
     server_pool:
-      start: "{{ ipv6_network }}::20"
+      start: "{{ ipv6_network }}::21"
       end: "{{ ipv6_network }}::100"
 
 router:
