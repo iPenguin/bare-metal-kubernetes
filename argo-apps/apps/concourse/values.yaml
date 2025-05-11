@@ -1,5 +1,4 @@
 ---
-
 concourse:
   web:
     clusterName: Homelab
@@ -12,8 +11,6 @@ concourse:
     defaultTaskTimeout: 8h
     numGoroutineThreshold: 50000
 
-    ## Minimum level of logs to see. Possible options: debug, info, error.
-    ##
     logLevel: info
 
     bindIp: 0.0.0.0
@@ -55,17 +52,6 @@ concourse:
 
     auth:
       mainTeam:
-        # config: |
-        #   roles:
-        #     - name: owner
-        #       oidc:
-        #         groups:
-        #           - "/app-concourse-admins"
-        #     - name: member
-        #       oidc:
-        #         groups:
-        #           - "/app-concourse-admins"
-        #           - "/app-concourse-users"
         oidc:
           group: "/app-concourse-admins"
       oidc:
@@ -91,40 +77,19 @@ concourse:
       workerPrivateKey:
 
     containerd:
-      ## Path to a config file to use for the Containerd daemon.
-      config:
-
-      ## Allows containers to reach host network.
-      allowHostAccess:
-
       ## Network range to use for dynamically allocated container subnets
       ## defaults to "10.80.0.0/16"
       networkPool:
       ipv6:
         enabled: true
-        ## Disables masquerading of container traffic with the workers address
-        # disableMasquerade:
 
 web:
   enabled: true
   replicas: 1
   args: ["web"]
-
-  ## Pod priority class to assign to web pods.
-  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
-  priorityClassName:
-
-  ## Enable or disable the process namespace sharing for the web nodes.
-  ## This allows signaling the concourse process from a sidecar container.
-  ## eg.: signal concourse web to reload the team authorized keys file.
-  ##
-  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
-  ##
-  shareProcessNamespace: false
-
-  ##   - name: CONCOURSE_LOG_LEVEL
-  ##     value: "debug"
   env:
+    - name: CONCOURSE_KUBERNETES_IN_CLUSTER
+      value: "true"
 
   ## Where secrets should be mounted for the web container.
   ##
@@ -160,7 +125,7 @@ web:
 worker:
   enabled: true
   ## StatefulSet / Deployment. Deployment = ephemeral workers.
-  kind: Deployment
+  kind: StatefulSet
   replicas: 2
   minAvailable: 1
   ##   - name: CONCOURSE_NAME
@@ -187,19 +152,10 @@ worker:
 ## Ref: https://kubernetes.io/docs/user-guide/persistent-volumes
 ##
 persistence:
-  enabled: false
-  worker:
-    storageClass:
-    accessMode: ReadWriteOnce
-    size: 20Gi
+  enabled: true
 
 postgresql:
   enabled: true
-  auth:
-    username: concourse
-    password: concourse
-    database: concourse
-
   service:
     clusterIP:
 
