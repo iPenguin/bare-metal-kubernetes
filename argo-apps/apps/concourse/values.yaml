@@ -1,6 +1,7 @@
 ---
 concourse:
   web:
+    fullname: concourse-web
     clusterName: Homelab
     clientConfig:
       enabled: false
@@ -56,12 +57,6 @@ concourse:
           group: "/app-concourse-admins"
       oidc:
         enabled: true
-        clientIdSecret:
-          name: concourse-secrets
-          key: oidc-client-id
-        clientSecretSecret:
-          name: concourse-secrets
-          key: oidc-client-secret
         issuer: "https://sso.clt.milco.casa/realms/homelab"
         scope: "openid profile email groups"
         groupsKey: "groups"
@@ -171,6 +166,4 @@ postgresql:
       size: 8Gi
 
 secrets:
-  create: true
-  oidcClientId: concourse
-  oidcClientSecret: GsRSUVkAY9yV16s6COaCOpBlK37Jj9JB
+  create: false
