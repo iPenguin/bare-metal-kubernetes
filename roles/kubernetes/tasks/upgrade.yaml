@@ -1,0 +1,37 @@
+---
+
+- name: Kubeadm upgrade
+  when:
+    - inventory_hostname in k8s_controller
+  block:
+    - name: Update apt packages
+      ansible.builtin.apt:
+        name:
+          - kubeadm={{ kubernetes_version }}-1.1
+        update_cache: yes
+
+    - name: Upgrade kubernetes
+      ansible.builtin.command:
+        cmd: kubeadm upgrade apply -y v{{ kubernetes_version }}
+
+- name: Upgrade kubelet
+  block:
+    - name: Install kubectl kubeadm and kubelet
+      ansible.builtin.apt:
+        name:
+          - kubeadm={{ kubernetes_version }}-1.1
+          - kubectl={{ kubernetes_version }}-1.1
+          - kubelet={{ kubernetes_version }}-1.1
+        allow_change_held_packages: yes
+        state: present
+        update_cache: yes
+
+    - name: Mark k8s packages as hold
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubeadm
+        - kubectl
+        - kubelet
+

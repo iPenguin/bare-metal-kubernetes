@@ -1,0 +1,9 @@
+---
+
+- name: Kubernetes Upgrades
+  hosts:
+    - controllers
+    - workers
+  serial: true
+  tasks:
+    - include_tasks: roles/kubernetes/tasks/upgrade.yaml
