@@ -1,5 +1,5 @@
 image:
-  tag: "1.41.6.9685-d301f511a"
+  tag: "1.41.7.9799-5bce000f7"
 
 ingress:
   enabled: true
