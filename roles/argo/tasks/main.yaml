@@ -23,7 +23,7 @@
     name: argocd
     chart_ref: argo/argo-cd
     release_namespace: argocd
-    chart_version: 7.8.2
+    chart_version: "{{ argocd_chart_version }}"
     update_repo_cache: true
     values: "{{ lookup('template', 'argocd-values.yaml.j2') | from_yaml }}"
 

@@ -1,5 +1,7 @@
 ---
 
+argocd_chart_version: 8.0.9
+
 ceph_version: 19.2.0
 cert_manager_version: 1.17.1
 cilium_version: 1.17.2
