@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: concourse
+  name: concourse-worker-secret-access
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+    resourceNames: ["dockerhub-secrets"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: concourse
+  name: concourse-worker-secret-binding
+subjects:
+  - kind: ServiceAccount
+    name: concourse-worker
+    namespace: concourse
+roleRef:
+  kind: Role
+  name: concourse-worker-secret-access
+  apiGroup: rbac.authorization.k8s.io
