@@ -1,0 +1,50 @@
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: UpgradeConfiguration
+node:
+  kubernetesVersion: v{{ kubernetes_version }}
+  imageRepository: registry.k8s.io
+  criSocket: {% if k8s_runtime == 'crio' %}unix:///run/crio/crio.sock{% endif %}{% if k8s_runtime == 'containerd' %}unix:///run/containerd/containerd.sock{% endif %}
+
+  imagePullPolicy: IfNotPresent
+  imagePullSerial: true
+cluster:
+  kubernetesVersion: v{{ kubernetes_version }}
+  controlPlaneEndpoint: {{ k8s_api_endpoint }}
+  certificatesDir: /etc/kubernetes/pki
+  clusterName: {{ k8s_cluster_name }}
+  caCertificateValidityPeriod: 87600h0m0s
+  certificateValidityPeriod: 8760h0m0s
+  encryptionAlgorithm: RSA-2048
+  etcd:
+    local:
+      dataDir: /var/lib/etcd
+  networking:
+    dnsDomain: cluster.local
+    podSubnet: {{ k8s_pod_network.ipv4 }},{{ k8s_pod_network.ipv6 }}
+    serviceSubnet: {{ k8s_service_network.ipv4 }},{{ k8s_service_network.ipv6 }}
+  apiServer:
+    certSANs:
+{% for host in controller_info %}
+    - "{{ host.hostname }}"
+    - "{{ host.ipv4 }}"
+    - "{{ host.ipv6 }}"
+{% endfor %}
+    - "{{ network_services.vip.ipv4 }}"
+    - "{{ network_services.vip.ipv6 }}"
+    - "{{ k8s_api_endpoint }}"
+    extraArgs:
+    - name: advertise-address
+      value: "{{ ansible_default_ipv4.address }}"
+    - name: authorization-mode
+      value: Node,RBAC
+    - name: bind-address
+      value: 0.0.0.0
+    - name: endpoint-reconciler-type
+      value: lease
+  controllerManager:
+    extraArgs:
+    - name: node-cidr-mask-size-ipv4
+      value: "24"
+    - name: node-cidr-mask-size-ipv6
+      value: "96"

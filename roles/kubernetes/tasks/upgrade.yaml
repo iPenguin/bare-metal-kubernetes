@@ -4,15 +4,37 @@
   when:
     - inventory_hostname in k8s_controller
   block:
+    - name: Create controller info list
+      set_fact:
+        controller_info: "{{ controller_info | default([]) + [h] }}"
+      loop: "{{ groups['controllers'] }}"
+      vars:
+        raw_ipv6: "{{ lookup('dig', item, 'qtype=AAAA', wantlist=True) }}"
+        filtered_ipv6: "{{ raw_ipv6 | reject('match', '^(fe80::|fd)') | list }}"
+        h:
+          hostname: "{{ item }}"
+          ipv4: "{{ lookup('dig', item, 'qtype=A') }}"
+          ipv6: "{{ filtered_ipv6[0] }}"
+
     - name: Update apt packages
       ansible.builtin.apt:
         name:
           - kubeadm={{ kubernetes_version }}-1.1
+        allow_change_held_packages: yes
+        state: present
         update_cache: yes
+
+    - name: Upload kubeadm upgrade configuration
+      ansible.builtin.template:
+        src: ../templates/kubeadm-upgrade.yaml.j2
+        dest: /root/kubeadm-upgrade.yaml
+        owner: root
+        group: root
+        mode: 0640
 
     - name: Upgrade kubernetes
       ansible.builtin.command:
-        cmd: kubeadm upgrade apply -y v{{ kubernetes_version }}
+        cmd: kubeadm upgrade apply --config /root/kubeadm-upgrade.yaml -y v{{ kubernetes_version }}
 
 - name: Upgrade kubelet
   block:
