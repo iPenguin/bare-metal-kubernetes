@@ -2,7 +2,7 @@
 
 - name: Kubeadm upgrade
   when:
-    - inventory_hostname in k8s_controller
+    - inventory_hostname in groups['controllers']
   block:
     - name: Create controller info list
       set_fact:

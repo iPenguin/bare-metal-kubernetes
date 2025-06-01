@@ -8,6 +8,8 @@ node:
 
   imagePullPolicy: IfNotPresent
   imagePullSerial: true
+  certificateRenewal: true
+  etcdUpgrade: true
 cluster:
   kubernetesVersion: v{{ kubernetes_version }}
   controlPlaneEndpoint: {{ k8s_api_endpoint }}
