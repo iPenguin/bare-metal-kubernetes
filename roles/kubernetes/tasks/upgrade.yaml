@@ -1,4 +1,29 @@
 ---
+- name: Remove existing k8s gpg key
+  ansible.builtin.file:
+    path: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
+    state: absent
+
+- name: Download k8s gpg keys
+  ansible.builtin.uri:
+    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/Release.key
+    dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
+    status_code:
+      - 200
+      - 304
+
+- name: Remove existing k8s repo
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    state: absent
+
+- name: Configure k8s repo
+  ansible.builtin.blockinfile:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    block: |
+      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/ /
+    create: yes
+    state: present
 
 - name: Kubeadm upgrade
   when:
@@ -35,6 +60,7 @@
     - name: Upgrade kubernetes
       ansible.builtin.command:
         cmd: kubeadm upgrade apply --config /root/kubeadm-upgrade.yaml -y v{{ kubernetes_version }}
+      changed_when: false
 
 - name: Upgrade kubelet
   block:
@@ -57,3 +83,19 @@
         - kubectl
         - kubelet
 
+    - name: Upgrade all nodes
+      ansible.builtin.command:
+        cmd: kubeadm upgrade node
+      notify: restart_kubelet
+
+- name: Get cluster status
+  connection: local
+  become: false
+  ansible.builtin.command:
+    cmd: kubectl get nodes
+  changed_when: false
+  register: cluster_status
+
+- name: Show cluster status
+  ansible.builtin.debug:
+    msg: "{{ cluster_status.stdout }}"
