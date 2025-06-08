@@ -104,7 +104,16 @@
       ansible.builtin.command:
         cmd: kubectl certificate approve {{ node_cert.stdout }}
       when: node_cert.stdout != ""
-      notify: Restart kubelet
+
+    - name: Delay before kubelet restart
+      ansible.builtin.pause:
+        seconds: 5
+      when: node_cert.stdout != ""
+
+    - name: Restart kubelet
+      ansible.builtin.service:
+        name: kubelet
+        state: restarted
 
 - name: Get cluster status
   connection: local

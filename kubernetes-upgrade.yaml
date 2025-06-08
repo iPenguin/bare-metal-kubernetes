@@ -7,8 +7,3 @@
   serial: true
   tasks:
     - include_tasks: roles/kubernetes/tasks/upgrade.yaml
-  handlers:
-    - name: Restart kubelet
-      ansible.builtin.service:
-        name: kubelet
-        state: restarted
