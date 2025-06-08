@@ -86,7 +86,25 @@
     - name: Upgrade all nodes
       ansible.builtin.command:
         cmd: kubeadm upgrade node
-      notify: restart_kubelet
+
+    - name: Get list of certs
+      connection: local
+      become: false
+      ansible.builtin.shell: |
+        kubectl get csr -o json |
+        jq -r '.items[] | select(.spec.username=="system:node:w4.clt.milco.casa") |
+        select(.status.conditions[0].type==null) | .metadata.name' | \
+        sort -r | head -n 1
+      changed_when: false
+      register: node_cert
+
+    - name: NOT FOR PRODUCTION USE - Blindly approve node certs without checking them
+      connection: local
+      become: false
+      ansible.builtin.command:
+        cmd: kubectl certificate approve {{ node_cert.stdout }}
+      when: node_cert.stdout != ""
+      notify: Restart kubelet
 
 - name: Get cluster status
   connection: local
