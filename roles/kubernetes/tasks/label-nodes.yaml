@@ -1,26 +1,26 @@
 ---
 
 - name: Get BOGOMIPS from lscpu
-  shell: "lscpu -p=BOGOMIPS | grep -v \\# | uniq"
+  shell: "lscpu -p=BOGOMIPS | grep -v \\# | awk '{ sum += $1 } END { print sum }'"
   register: bogomips_result
   changed_when: false
 
 - name: Label high performance nodes
   ansible.builtin.command:
-    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=high"
-  when: bogomips_result.stdout | float > 10000
+    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=high --overwrite"
+  when: bogomips_result.stdout | float > 100000
   delegate_to: "{{ k8s_controller }}"
 
 - name: Label medium performance nodes
   ansible.builtin.command:
-    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=medium"
+    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=medium --overwrite"
   when:
-    - bogomips_result.stdout | float > 6000
-    - bogomips_result.stdout | float <= 10000
+    - bogomips_result.stdout | float > 60000
+    - bogomips_result.stdout | float <= 100000
   delegate_to: "{{ k8s_controller }}"
 
 - name: Label low performance nodes
   ansible.builtin.command:
-    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=low"
-  when: bogomips_result.stdout | float <= 6000
+    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=low --overwrite"
+  when: bogomips_result.stdout | float <= 60000
   delegate_to: "{{ k8s_controller }}"
