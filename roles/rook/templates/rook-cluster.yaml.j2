@@ -137,7 +137,7 @@ cephBlockPools:
     spec:
       failureDomain: host
       replicated:
-        size: 3
+        size: 2
     storageClass:
       enabled: true
       name: ceph-block
@@ -168,11 +168,11 @@ cephFileSystems:
     spec:
       metadataPool:
         replicated:
-          size: 3
+          size: 2
       dataPools:
         - failureDomain: host
           replicated:
-            size: 3
+            size: 2
           name: "{{ lan_domain }}-data0"
       metadataServer:
         activeCount: 1
@@ -216,11 +216,11 @@ cephObjectStores:
       metadataPool:
         failureDomain: host
         replicated:
-          size: 3
+          size: 2
       dataPool:
         failureDomain: host
         replicated:
-          size: 3
+          size: 2
       preservePoolsOnDelete: true
       gateway:
         port: 80
