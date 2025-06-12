@@ -5,7 +5,15 @@ ipa_directory_password: "{{ vault_ipa_directory_password }}"
 ipa_admin_password: "{{ vault_ipa_admin_password }}"
 ipa_admin_user: "admin"
 
-ipa_new_user_password: "{{ vault_ipa_new_user_password }}"
+ipa_new_user_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  35333861323134666139306436333363653130623864313139336266653466663636313564626135
+  3263343730656562633533313666643631346234313664330a346138363439313932653537343537
+  35393434633561636662656564306630633332353337346436353034363638306338303137303436
+  3664383662646664320a356639346238653134633632623839326162656663306432663362653236
+  63383864313032626235653431376265353839626638303831323336353638303434633063356132
+  61393433353135616261663632633736366165633032306165633162633932363736363639363335
+  646334383562313466636438353463336465
 
 ipa_dns_zones:
   - "{{ lan_tld }}."
@@ -80,6 +88,10 @@ ipa_dns_entries:
     type: CNAME
     data: "traefik.{{ lan_domain }}."
     zone: "{{ lan_domain }}"
+  - name: sso
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
   - name: git
     type: CNAME
     data: "traefik-ssh.{{ lan_domain }}."
@@ -94,8 +106,14 @@ ipa_dns_entries:
     zone: "{{ lan_domain }}"
 
 ipa_groups:
+  - name: app-argocd-admins
+  - name: app-argocd-users
+  - name: app-concourse-admins
+  - name: app-concourse-users
   - name: app-gitea-admins
   - name: app-gitea-users
+  - name: app-nextcloud-admins
+  - name: app-nextcloud-users
 
 ipa_users:
   - name: bmilco
@@ -104,10 +122,21 @@ ipa_users:
     loginshell: /usr/bin/zsh
     groups:
       - name: admins
+      - name: app-argocd-admins
+      - name: app-concourse-admins
       - name: app-gitea-admins
+      - name: app-nextcloud-admins
+
     emails:
       - "{{ site_admin_email }}"
     ssh_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPQGjMgHnJcTrRNNSFLFbiBFIf4LeG1R4rxq7mBuhWGk {{ site_admin_email }}
-
+  - name: svc_ldap
+    first_name: Ldap
+    last_name: Lookup
+    loginshell: /usr/sbin/nologin
+    groups:
+      - name: admins
+    emails: []
+    ssh_keys: []
 ...
