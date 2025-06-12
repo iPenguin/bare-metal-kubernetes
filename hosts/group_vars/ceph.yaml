@@ -40,3 +40,9 @@ ceph_storage:
         model: "ADATA LEGEND 700 GOLD"
         serial: "2N1429QJBHEW"
         osds: 1
+  - name: w5.clt.milco.casa
+    devices:
+      - name: "nvme1n1" #1TB
+        model: "CT1000P310SSD8"
+        serial: "25034D81F778"
+        osds: 1
