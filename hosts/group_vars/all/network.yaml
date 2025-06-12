@@ -161,6 +161,11 @@ hosts:
     ipv4: "{{ ipv4_network }}.16"
     duid: 00020000ab116dc8533febf9788b
     hostid: 16
+  - name: w5
+    mac: 58:47:CA:7D:4D:B5
+    ipv4: "{{ ipv4_network }}.17"
+    duid: 00020000ab11ffb8728dad0bbf9c
+    hostid: 17
 
 # openwrt domains - glue to get FreeIPA running
 domains:

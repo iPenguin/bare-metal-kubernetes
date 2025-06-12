@@ -83,4 +83,6 @@ remote:
           ansible_host: 10.1.1.15
         w4.clt.milco.casa:
           ansible_host: 10.1.1.16
+        w5.clt.milco.casa:
+          ansible_host: 10.1.1.17
 
