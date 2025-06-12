@@ -5,16 +5,32 @@
     url: https://dl.k8s.io/apt/doc/apt-key.gpg
     state: present
 
-- name: Add crio signing key 
+- name: Add crio signing key
   get_url:
     url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/Release.key
     dest: /etc/apt/trusted.gpg.d/crio.asc
     mode: '0644'
-    force: true 
+    force: true
 
 - name: Add cri-o repo
   ansible.builtin.apt_repository:
     repo: deb [signed-by=/etc/apt/trusted.gpg.d/crio.asc] https://pkgs.k8s.io/addons:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/ /
+    state: present
+
+- name: Download k8s gpg keys
+  ansible.builtin.uri:
+    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/Release.key
+    dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
+    status_code:
+      - 200
+      - 304
+
+- name: Configure k8s repo - needed for cri-o tools
+  ansible.builtin.blockinfile:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    block: |
+      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/ /
+    create: yes
     state: present
 
 - name: Install cri-o packages
@@ -38,7 +54,7 @@
 
 - name: Download crun
   ansible.builtin.get_url:
-    url: https://github.com/containers/crun/releases/download/{{ crun_version }}/crun-{{ crun_version }}-linux-amd64 
+    url: https://github.com/containers/crun/releases/download/{{ crun_version }}/crun-{{ crun_version }}-linux-amd64
     dest: "/usr/local/bin/crun"
     owner: root
     group: root
@@ -62,7 +78,7 @@
 
 - name: Link common binary
   ansible.builtin.file:
-    src: /usr/libexec/crio/conmon 
+    src: /usr/libexec/crio/conmon
     dest: /usr/local/bin/conmon
     state: link
 
