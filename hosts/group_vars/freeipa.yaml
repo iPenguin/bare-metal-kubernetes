@@ -68,6 +68,10 @@ ipa_dns_entries:
     type: CNAME
     data: "traefik.{{ lan_domain }}."
     zone: "{{ lan_domain }}"
+  - name: concourse
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
   - name: minio
     type: CNAME
     data: "traefik.{{ lan_domain }}."
