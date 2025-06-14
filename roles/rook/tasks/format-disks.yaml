@@ -1,10 +1,10 @@
-
 - name: erase drives
   command: "sgdisk -Z /dev/{{ item.1.name }}"
   delegate_to: "{{ item.0.name }}"
   with_subelements:
     - "{{ ceph_storage }}"
     - devices
+  when: item.0.name == inventory_hostname
 
 - name: delete rook configuration folder
   file:
@@ -13,3 +13,4 @@
   delegate_to: "{{ item.name }}"
   loop: "{{ ceph_storage }}"
   ignore_errors: yes
+  when: item.0.name == inventory_hostname
