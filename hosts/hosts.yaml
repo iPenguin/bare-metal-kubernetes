@@ -43,6 +43,7 @@ ceph:
         w1.clt.milco.casa:
         w2.clt.milco.casa:
         w3.clt.milco.casa:
+        w5.clt.milco.casa:
 
 apps:
   children:
