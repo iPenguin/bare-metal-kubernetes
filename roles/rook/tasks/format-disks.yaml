@@ -1,5 +1,19 @@
-- name: erase drives
-  command: "sgdisk -Z /dev/{{ item.1.name }}"
+- name: install utils
+  ansible.builtin.apt:
+    name:
+      - ceph-volume
+    state: present
+
+- name: Zap ceph lvm
+  command: "ceph-volume lvm zap --destroy /dev/{{ item.1.name }}"
+  delegate_to: "{{ item.0.name }}"
+  with_subelements:
+    - "{{ ceph_storage }}"
+    - devices
+  when: item.0.name == inventory_hostname
+
+- name: Wipe drive
+  command: "blkdiscard /dev/{{ item.1.name }}"
   delegate_to: "{{ item.0.name }}"
   with_subelements:
     - "{{ ceph_storage }}"
@@ -10,7 +24,9 @@
   file:
     path: "/var/lib/rook"
     state: absent
-  delegate_to: "{{ item.name }}"
-  loop: "{{ ceph_storage }}"
+  delegate_to: "{{ item.0.name }}"
+  with_subelements:
+    - "{{ ceph_storage }}"
+    - devices
   ignore_errors: yes
   when: item.0.name == inventory_hostname
