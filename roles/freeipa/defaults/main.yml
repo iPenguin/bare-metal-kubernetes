@@ -3,7 +3,7 @@
 
 ipa_namespace: ipa
 ipa_replicas: 1
-ipa_docker_os: rocky-9
+ipa_docker_os: almalinux-10
 
 ipa_storage_dir: "{{ pod_data_path }}/ipa"
 
