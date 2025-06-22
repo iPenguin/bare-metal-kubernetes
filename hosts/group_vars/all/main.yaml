@@ -15,7 +15,6 @@ lan_domain_cert: "wildcard.{{ lan_tld }}"
 cert_namespaces:
   - traefik
 
-
 remote_users:
   - user: ansible
     ssh_pub_key: ~/.ssh/id_ed25519.pub

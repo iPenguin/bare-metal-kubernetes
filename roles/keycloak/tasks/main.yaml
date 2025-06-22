@@ -1,0 +1,112 @@
+---
+- name: Get Keycloak passwords
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: keycloak-passwords
+    namespace: keycloak
+  register: keycloak_secrets
+
+- name: Get Keycloak admin password
+  ansible.builtin.set_fact:
+    keycloak_admin_password: "{{ keycloak_secrets.resources[0].data['adminPassword'] | b64decode }}"
+    svc_ldap_password: "{{ keycloak_secrets.resources[0].data['BIND_PASSWORD'] | b64decode }}"
+
+- name: Create a new realm in Keycloak
+  community.general.keycloak_realm:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    enabled: true
+  register: realm_result
+
+- name: Create LDAP user federation for FreeIPA in Keycloak
+  delegate_to: localhost
+  community.general.keycloak_user_federation:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    name: "freeipa-ldap"
+    provider_id: "ldap"
+    config:
+      connectionUrl: "ldap://ipa-01.{{ lan_domain }}:389"
+      usersDn: "cn=users,cn=accounts,{{ ldap_base_dn }}"
+      bindDn: "uid=svc_ldap,cn=users,cn=accounts,{{ ldap_base_dn }}"
+      bindCredential: "{{ svc_ldap_password }}"
+      vendor: "other"
+      authType: "simple"
+      usernameLDAPAttribute: "uid"
+      rdnLDAPAttribute: "uid"
+      uuidLDAPAttribute: "nsUniqueId"
+      userObjectClasses: "inetOrgPerson, organizationalPerson, person, top"
+      searchScope: 2
+      editMode: "READ_ONLY"
+      syncRegistrations: false
+      trustEmail: true
+      pagination: true
+    mappers:
+      - name: "username"
+        providerId: "user-attribute-ldap-mapper"
+        config:
+          ldap.attribute: "uid"
+          user.model.attribute: "username"
+          read.only: "true"
+          alwaysReadValueFromLDAP: "true"
+          isMandatory: "true"
+          is.binary.attribute: "false"
+      - name: "email"
+        providerId: "user-attribute-ldap-mapper"
+        config:
+          ldap.attribute: "mail"
+          user.model.attribute: "email"
+          read.only: "true"
+          alwaysReadValueFromLDAP: "true"
+          isMandatory: "true"
+          is.binary.attribute: "false"
+      - name: "first name"
+        providerId: "user-attribute-ldap-mapper"
+        config:
+          ldap.attribute: "givenName"
+          user.model.attribute: "firstName"
+          read.only: "true"
+          alwaysReadValueFromLDAP: "true"
+          isMandatory: "false"
+          is.binary.attribute: "false"
+      - name: "last name"
+        providerId: "user-attribute-ldap-mapper"
+        config:
+          ldap.attribute: "sn"
+          user.model.attribute: "lastName"
+          read.only: "true"
+          alwaysReadValueFromLDAP: "true"
+          isMandatory: "false"
+          is.binary.attribute: "false"
+      - name: "group"
+        providerId: "group-ldap-mapper"
+        config:
+          groups.dn: "cn=groups,cn=accounts,{{ ldap_base_dn }}"
+          group.name.ldap.attribute: "cn"
+          group.object.classes: "groupOfNames"
+          membership.ldap.attribute: "member"
+          membership.attribute.type: "DN"
+          groups.path: "/"
+          mode: "READ_ONLY"
+          drop.non.existing.groups.during.sync: "false"
+          preserve.group.inheritance: "true"
+          alwaysReadValueFromLDAP: "true"
+      - name: "role"
+        providerId: "role-ldap-mapper"
+        config:
+          roles.dn: "cn=roles,cn=accounts,{{ ldap_base_dn }}"
+          role.name.ldap.attribute: "cn"
+          role.object.classes: "groupOfNames"
+          membership.ldap.attribute: "member"
+          membership.attribute.type: "DN"
+          mode: "READ_ONLY"
+          alwaysReadValueFromLDAP: "true"

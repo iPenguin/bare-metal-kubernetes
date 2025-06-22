@@ -191,4 +191,16 @@
   roles:
     - role: domain
 
+- name: Deploy Keycloak realm config
+  hosts:
+    - controllers
+  run_once: true
+  tags:
+    - keycloak
+    - realm
+    - domain
+  connection: local
+  become: false
+  roles:
+    - role: keycloak
 ...

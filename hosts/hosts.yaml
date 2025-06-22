@@ -61,10 +61,9 @@ workstations:
   hosts:
     localhost:
 
-
 remote:
   vars:
-    #    ansible_ssh_common_args: '-o ProxyCommand="ssh -p 2221 -W %h:%p -q {{ remote_host }}"'
+    ansible_ssh_common_args: '-o ProxyCommand="ssh -p 2221 -W %h:%p -q ansible@{{ remote_host }}"'
   children:
     controllers:
       hosts:
