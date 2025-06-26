@@ -6,6 +6,6 @@ ipa_server_admin_email: "{{ site_admin_email }}"
 ipa_hostname: ipa-01.{{ lan_domain }}
 
 ldap_base_dn: "dc=auth,dc={{ domain }},dc={{ tld }}"
-ipa_lookup_user: "uid=svc_ldaplookup,cn=groups,cn=accounts,{{ ldap_base_dn }}"
+ipa_lookup_user: "uid=svc_ldap,cn=groups,cn=accounts,{{ ldap_base_dn }}"
 
 ipa_validate_certs: false
