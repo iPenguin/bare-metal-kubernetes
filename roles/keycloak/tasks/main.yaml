@@ -51,62 +51,128 @@
       trustEmail: true
       pagination: true
     mappers:
-      - name: "username"
+      - name: "creation date"
         providerId: "user-attribute-ldap-mapper"
         config:
-          ldap.attribute: "uid"
-          user.model.attribute: "username"
+          user.model.attribute: "createTimestamp"
+          ldap.attribute: "createTimestamp"
           read.only: "true"
           alwaysReadValueFromLDAP: "true"
-          isMandatory: "true"
+          isMandatory: "false"
           is.binary.attribute: "false"
       - name: "email"
         providerId: "user-attribute-ldap-mapper"
         config:
-          ldap.attribute: "mail"
           user.model.attribute: "email"
+          ldap.attribute: "mail"
           read.only: "true"
-          alwaysReadValueFromLDAP: "true"
-          isMandatory: "true"
+          alwaysReadValueFromLDAP: "false"
+          isMandatory: "false"
           is.binary.attribute: "false"
       - name: "first name"
         providerId: "user-attribute-ldap-mapper"
         config:
-          ldap.attribute: "givenName"
           user.model.attribute: "firstName"
+          ldap.attribute: "cn"
           read.only: "true"
           alwaysReadValueFromLDAP: "true"
-          isMandatory: "false"
+          isMandatory: "true"
           is.binary.attribute: "false"
+      - name: "Kerberos principal attribute mapper"
+        providerId: "kerberos-principal-attribute-mapper"
       - name: "last name"
         providerId: "user-attribute-ldap-mapper"
         config:
-          ldap.attribute: "sn"
           user.model.attribute: "lastName"
+          ldap.attribute: "sn"
+          read.only: "true"
+          alwaysReadValueFromLDAP: "true"
+          isMandatory: "true"
+          is.binary.attribute: "false"
+      - name: "modify date"
+        providerId: "user-attribute-ldap-mapper"
+        config:
+          user.model.attribute: "modifyTimestamp"
+          ldap.attribute: "modifyTimestamp"
           read.only: "true"
           alwaysReadValueFromLDAP: "true"
           isMandatory: "false"
           is.binary.attribute: "false"
-      - name: "group"
+      - name: "username"
+        providerId: "user-attribute-ldap-mapper"
+        config:
+          user.model.attribute: "username"
+          ldap.attribute: "uid"
+          read.only: "true"
+          alwaysReadValueFromLDAP: "false"
+          isMandatory: "true"
+          is.binary.attribute: "false"
+      - name: "groups"
         providerId: "group-ldap-mapper"
         config:
           groups.dn: "cn=groups,cn=accounts,{{ ldap_base_dn }}"
           group.name.ldap.attribute: "cn"
           group.object.classes: "groupOfNames"
-          membership.ldap.attribute: "member"
+          membership.ldap.attribute: "memberOf"
           membership.attribute.type: "DN"
           groups.path: "/"
           mode: "READ_ONLY"
           drop.non.existing.groups.during.sync: "false"
           preserve.group.inheritance: "true"
           alwaysReadValueFromLDAP: "true"
-      - name: "role"
-        providerId: "role-ldap-mapper"
+
+- name: Configure Keycloak client for ArgoCD
+  delegate_to: localhost
+  community.general.keycloak_client:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    client_id: "argocd"
+    name: "ArgoCD"
+    enabled: true
+    client_authenticator_type: "client-secret"
+    secret: "{{ argocd_client_secret }}"
+    public_client: false
+    protocol: "openid-connect"
+    standard_flow_enabled: true
+    implicit_flow_enabled: false
+    direct_access_grants_enabled: false
+    service_accounts_enabled: false
+    base_url: "https://argocd.{{ lan_domain }}"
+    redirect_uris:
+      - "https://argocd.{{ lan_domain }}/auth/callback"
+    web_origins:
+      - "https://argocd.{{ lan_domain }}"
+    consent_required: false
+    default_client_scopes:
+      - name: "argocd"
+        description: "ArgoCD"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "false"
+    protocol_mappers:
+      - name: "username"
+        protocol: "openid-connect"
+        protocolMapper: "oidc-usermodel-property-mapper"
+        consentRequired: false
         config:
-          roles.dn: "cn=roles,cn=accounts,{{ ldap_base_dn }}"
-          role.name.ldap.attribute: "cn"
-          role.object.classes: "groupOfNames"
-          membership.ldap.attribute: "member"
-          membership.attribute.type: "DN"
-          mode: "READ_ONLY"
-          alwaysReadValueFromLDAP: "true"
+          user.model.attribute: "username"
+          claim.name: "username"
+          jsonType.label: "String"
+          id.token.claim: true
+          access.token.claim: true
+          userinfo.token.claim: true
+      - name: "groups"
+        protocol: "openid-connect"
+        protocolMapper: "oidc-group-membership-mapper"
+        consentRequired: false
+        config:
+          claim.name: "groups"
+          full.path: "false"
+          id.token.claim: true
+          access.token.claim: true
+          userinfo.token.claim: true
