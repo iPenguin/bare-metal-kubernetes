@@ -49,9 +49,9 @@ configs:
       p, role:org-admin, repositories, *, *, allow
       p, role:org-admin, logs, get, *, allow
       p, role:org-admin, exec, create, */*, allow
-      g, /app-argocd-admins, role:admin
-      g, /app-argocd-users, role:org-admin
-      g, /app-argocd-viewers, role:readonly
+      g, app-argocd-admins, role:admin
+      g, app-argocd-users, role:org-admin
+      g, app-argocd-viewers, role:readonly
 
   ssh:
     create: true
