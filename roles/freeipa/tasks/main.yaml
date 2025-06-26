@@ -82,6 +82,7 @@
     cmd: |-
       kubectl -n {{ ipa_namespace }} exec ipa-01-0
       -- ldapmodify -x -D "cn=Directory Manager"
+      -H ldap://localhost:389
       -w {{ ipa_directory_password }} -f /data/etc/openldap/anon-read.ldif
 
 - name: Test anonymous access is removed
