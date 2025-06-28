@@ -117,6 +117,7 @@
           membership.attribute.type: "DN"
           groups.path: "/"
           mode: "READ_ONLY"
+          user.roles.retrieve.strategy: "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE"
           drop.non.existing.groups.during.sync: "false"
           preserve.group.inheritance: "true"
           alwaysReadValueFromLDAP: "true"
