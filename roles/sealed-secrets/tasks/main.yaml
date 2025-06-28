@@ -6,11 +6,6 @@
     repo_url: https://bitnami-labs.github.io/sealed-secrets
     state: present
 
-- name: Create Sealed Secret TLS Key
-  kubernetes.core.k8s:
-    state: present
-    definition: "{{ lookup('template', 'sealed-secrets-key.yaml.j2') | from_yaml }}"
-
 - name: Install sealed-secrets
   kubernetes.core.helm:
     name: sealed-secrets
@@ -19,3 +14,8 @@
     release_namespace: sealed-secrets
     create_namespace: true
     update_repo_cache: true
+
+- name: Create Sealed Secret TLS Key
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'sealed-secrets-key.yaml.j2') | from_yaml }}"
