@@ -1,10 +1,16 @@
 ---
 
-- name: set hostname
+- name: Set hostname
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
-- name: update all packages
+- name: Disable unattended upgrades
+  ansible.builtin.systemd:
+    name: unattended-upgrades
+    enabled: no
+    state: stopped
+
+- name: Update all packages
   ansible.builtin.package:
     name: "*"
     state: latest

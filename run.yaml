@@ -13,6 +13,7 @@
 - name: Configure base OS
   hosts: metal
   tags:
+    - config-os
     - controllers
     - workers
   roles:
