@@ -49,10 +49,4 @@ postgresql:
   architecture: standalone
 
 keycloakConfigCli:
-  enabled: true
-  args:
-    - --import.var-substitution.enabled=true
-  extraEnvVarsSecret: "keycloak-passwords"
-  extraEnvVars:
-    - name: LOG_LEVEL
-      value: DEBUG
+  enabled: false
