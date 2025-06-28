@@ -51,4 +51,14 @@
         owner: root
         group: root
         mode: 0700
+
+    - name: Download rook toolbox
+      get_url:
+        url: "https://raw.githubusercontent.com/rook/rook/master/deploy/examples/toolbox.yaml"
+        dest: "/tmp/rook-toolbox.yaml"
+
+    - name: Install toolbox
+      kubernetes.core.k8s:
+        src: /tmp/rook-toolbox.yaml
+        state: present
 ...
