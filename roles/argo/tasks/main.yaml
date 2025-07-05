@@ -7,11 +7,23 @@
     name: argocd
     state: present
 
+- name: Generate argo secret
+  become: false
+  connection: local
+  ansible.builtin.shell: |
+      kubectl create secret generic argo-oidc-secrets \
+      --dry-run=client \
+      --from-literal=oidc.clientSecret={{ argocd_client_secret }} \
+       -n argocd -o json | kubeseal --controller-namespace=sealed-secrets \
+       --controller-name=sealed-secrets -o yaml
+  register: _argo_client_secret
+
 - name: Create ArgoCD OIDC Secrets
   kubernetes.core.k8s:
     state: present
-    template: templates/secrets.yaml.j2
+    # template: templates/secrets.yaml.j2
     namespace: argocd
+    definition: "{{ _argo_client_secret.stdout | from_yaml }}"
 
 - name: Add argo helm repo
   kubernetes.core.helm_repository:
