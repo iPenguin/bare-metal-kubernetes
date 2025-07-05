@@ -225,7 +225,7 @@
     protocol: "openid-connect"
     standard_flow_enabled: true
     implicit_flow_enabled: false
-    direct_access_grants_enabled: false
+    direct_access_grants_enabled: true
     service_accounts_enabled: false
     base_url: "https://argocd.{{ lan_domain }}"
     redirect_uris:
@@ -242,3 +242,36 @@
       - "service_account"
       - "username"
       - "web-origins"
+
+- name: Configure Keycloak client for gitea
+  delegate_to: localhost
+  community.general.keycloak_client:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    client_id: "gitea"
+    name: "Gitea configuration"
+    enabled: true
+    client_authenticator_type: "client-secret"
+    secret: "{{ gitea_client_secret }}"
+    public_client: false
+    protocol: "openid-connect"
+    standard_flow_enabled: true
+    implicit_flow_enabled: false
+    direct_access_grants_enabled: true
+    service_accounts_enabled: false
+    base_url: "https://git.{{ lan_domain }}"
+    redirect_uris:
+      - "https://git.{{ lan_domain }}/user/oauth2/homelab/callback"
+    web_origins:
+      - "https://git.{{ lan_domain }}"
+    consent_required: false
+    default_client_scopes:
+      - "email"
+      - "groups"
+      - "openid"
+      - "profile"
+      - "username"
