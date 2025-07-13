@@ -35,6 +35,7 @@
         namespace: "{{ rook_namespace }}"
         create_namespace: true
         values: "{{ lookup('template', 'rook-ceph.yaml.j2') | from_yaml }}"
+        update_repo_cache: true
         state: present
 
     - name: Deploy Rook Cluster Helm chart
@@ -45,6 +46,7 @@
         chart_version: "{{ rook_version }}"
         namespace: "{{ rook_namespace }}"
         values: "{{ lookup('template', 'rook-cluster.yaml.j2') | from_yaml }}"
+        update_repo_cache: true
         state: present
 
     - name: Copy reset script to controller
