@@ -6,44 +6,37 @@ ceph_srv_zone: "_tcp.{{ lan_domain }}"
 ceph_storage:
   - name: c1.clt.milco.casa
     devices:
-      - name: "nvme0n1" #1TB
-        model: "TEAM TM8FP6001T"
+      - model: "TEAM TM8FP6001T"
         serial: "TPBF2302100011003538"
         osds: 1
   - name: c2.clt.milco.casa
     devices:
-      - name: "nvme0n1" #1TB
-        model: "TEAM TM8FP6001T"
+      - model: "TEAM TM8FP6001T"
         serial: "TPBF2302100011003017"
         osds: 1
   - name: c3.clt.milco.casa
     devices:
-      - name: "nvme0n1" #1TB
-        model: "TEAM TM8FP6001T"
+      - model: "TEAM TM8FP6001T"
         serial: "TPBF2302100011002676"
         osds: 1
 
   - name: w1.clt.milco.casa
     devices:
-      - name: "nvme0n1" #1TB
-        model: "ADATA LEGEND 700 GOLD"
+      - model: "ADATA LEGEND 700 GOLD"
         serial: "2N142LQJBBR9"
         osds: 1
   - name: w2.clt.milco.casa
     devices:
-      - name: "nvme0n1" #1TB
-        model: "ADATA LEGEND 700 GOLD"
+      - model: "ADATA LEGEND 700 GOLD"
         serial: "2N142LQJHHR1"
         osds: 1
   - name: w3.clt.milco.casa
     devices:
-      - name: "nvme0n1" #1TB
-        model: "ADATA LEGEND 700 GOLD"
+      - model: "ADATA LEGEND 700 GOLD"
         serial: "2N1429QJBHEW"
         osds: 1
   - name: w5.clt.milco.casa
     devices:
-      - name: "nvme0n1" #1TB
-        model: "CT1000P310SSD8"
+      - model: "CT1000P310SSD8"
         serial: "25034D81F778"
         osds: 1

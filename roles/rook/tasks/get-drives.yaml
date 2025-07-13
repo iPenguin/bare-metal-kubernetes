@@ -1,0 +1,24 @@
+---
+
+- name: Get block device information
+  ansible.builtin.command: lsblk -J -o NAME,MODEL,SERIAL
+  register: lsblk_output
+  changed_when: false
+
+- name: Parse lsblk JSON output
+  ansible.builtin.set_fact:
+    block_devices: "{{ (lsblk_output.stdout | from_json).blockdevices }}"
+
+- name: Find matching device names
+  ansible.builtin.set_fact:
+    matched_devices: "{{ block_devices | selectattr('model', 'equalto', item.model) | selectattr('serial', 'equalto', item.serial) }}"
+  loop: "{{ ceph_storage | selectattr('name', 'equalto', inventory_hostname) | map(attribute='devices') | flatten }}"
+  register: matched_devices_result
+
+- name: Set maching device_list
+  ansible.builtin.set_fact:
+    host_matched_devices: "{{ matched_devices_result.results | map(attribute='ansible_facts.matched_devices') | flatten(levels=1)}}"
+
+- name: Display Host devices
+  debug:
+    msg: "{{ host_matched_devices }}"

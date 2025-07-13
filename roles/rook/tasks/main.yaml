@@ -1,5 +1,8 @@
 ---
 
+- name: Include drive info
+  include_tasks: get-drives.yaml
+
 - name: install lvm2 and other fs tools
   apt:
     name:

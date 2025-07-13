@@ -1,32 +1,25 @@
-- name: install utils
+- name: Include drive info
+  include_tasks: get-drives.yaml
+
+- name: Install utils
   ansible.builtin.apt:
     name:
       - ceph-volume
     state: present
 
 - name: Zap ceph lvm
-  command: "ceph-volume lvm zap --destroy /dev/{{ item.1.name }}"
-  delegate_to: "{{ item.0.name }}"
-  with_subelements:
-    - "{{ ceph_storage }}"
-    - devices
-  when: item.0.name == inventory_hostname
+  command: "ceph-volume lvm zap --destroy /dev/{{ item.name }}"
+  delegate_to: "{{ inventory_hostname }}"
+  loop: "{{ host_matched_devices }}"
 
 - name: Wipe drive
-  command: "blkdiscard /dev/{{ item.1.name }}"
-  delegate_to: "{{ item.0.name }}"
-  with_subelements:
-    - "{{ ceph_storage }}"
-    - devices
-  when: item.0.name == inventory_hostname
+  command: "blkdiscard /dev/{{ item.name }}"
+  delegate_to: "{{ inventory_hostname }}"
+  loop: "{{ host_matched_devices }}"
 
-- name: delete rook configuration folder
+- name: Delete rook configuration folder
   file:
     path: "/var/lib/rook"
     state: absent
-  delegate_to: "{{ item.0.name }}"
-  with_subelements:
-    - "{{ ceph_storage }}"
-    - devices
+  delegate_to: "{{ inventory_hostname }}"
   ignore_errors: yes
-  when: item.0.name == inventory_hostname

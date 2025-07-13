@@ -129,8 +129,8 @@ ingress:
       path: /
     ingressClassName: traefik
     tls:
-        - hosts:
-            - ceph.{{ lan_domain }}
+      - hosts:
+          - ceph.{{ lan_domain }}
 
 cephBlockPools:
   - name: ceph-blockpool

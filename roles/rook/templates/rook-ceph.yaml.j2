@@ -3,8 +3,8 @@
 crds:
   enabled: true
 
-# nodeSelector:
-#   {{ lan_domain }}/node-role: storage-node
+nodeSelector:
+  {{ lan_domain }}/node-role: storage-node
 
 # -- Whether the operator should watch cluster CRD in its own namespace or not
 currentNamespaceOnly: false
@@ -38,7 +38,7 @@ csi:
   # -- Set replicas for csi provisioner deployment
   provisionerReplicas: 2
 
-  #clusterName: "{{ k8s_cluster_name }}"
+  clusterName: "{{ k8s_cluster_name }}"
 
   nfs:
     enabled: false
