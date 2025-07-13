@@ -24,3 +24,9 @@
     cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-performance=low --overwrite"
   when: bogomips_result.stdout | float <= 60000
   delegate_to: "{{ k8s_controller }}"
+
+- name: Label node as nvidia node
+  ansible.builtin.command:
+    cmd: "kubectl label node {{ inventory_hostname }} {{ lan_domain }}/node-hardware=nvidia-gpu"
+  delegate_to: "{{ k8s_controller }}"
+  when: has_nvidia_card
