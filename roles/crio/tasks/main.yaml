@@ -5,12 +5,6 @@
     url: https://dl.k8s.io/apt/doc/apt-key.gpg
     state: present
 
-# - name: Remove any old cri_o configs from /etc/apt/sources.list.d
-#   ansible.builtin.file:
-#     path: "{{ item }}"
-#     state: absent
-#   loop: "{{ lookup('fileglob', '/etc/apt/sources.list.d/*cri_o*', wantlist=True) }}"
-
 - name: Remove files containing 'cri_o' in /etc/apt/sources.list.d
   ansible.builtin.find:
     paths: /etc/apt/sources.list.d
@@ -59,7 +53,7 @@
       - cri-tools
       - runc
     allow_change_held_packages: yes
-    state: present
+    state: latest
     update_cache: yes
   become: yes
 
