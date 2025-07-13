@@ -1,0 +1,38 @@
+---
+- name: Get block device information
+  ansible.builtin.command: lsblk -J -o NAME,MODEL,SERIAL
+  delegate_to: "{{ item.name }}"
+  loop: "{{ ceph_storage }}"
+  register: lsblk_output
+  changed_when: false
+
+- name: Parse lsblk JSON output
+  ansible.builtin.set_fact:
+    block_devices: "{{ block_devices | default([]) + (item.stdout | from_json).blockdevices }}"
+  loop: "{{ lsblk_output.results }}"
+
+- name: Find matching device names
+  ansible.builtin.set_fact:
+    matched_devices: "{{ block_devices | selectattr('model', 'equalto', item.model) | selectattr('serial', 'equalto', item.serial) }}"
+  loop: "{{ ceph_storage | map(attribute='devices') | flatten }}"
+  register: matched_devices_result
+
+- name: Transform device output
+  set_fact:
+    device_list: "{{ device_list | default([]) + item.ansible_facts.matched_devices }}"
+  loop: "{{ matched_devices_result.results }}"
+
+- name: Combine lists into ceph_cluster_devices
+  ansible.builtin.set_fact:
+    ceph_cluster_devices: "{{ ceph_cluster_devices | default([]) + [device | combine({'host': ceph.0.name, 'name': (device_list | selectattr('model', 'equalto', device.model) | selectattr('serial', 'equalto', device.serial) | first | default({})).name | default('unknown')})] }}"
+  loop_control:
+    loop_var: ceph
+  with_subelements:
+    - "{{ ceph_storage }}"
+    - devices
+  vars:
+    device: "{{ ceph.1 }}"
+
+- name: List ceph cluster devices
+  ansible.builtin.debug:
+    msg: "{{ ceph_cluster_devices }}"

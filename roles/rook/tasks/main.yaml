@@ -1,8 +1,5 @@
 ---
 
-- name: Include drive info
-  include_tasks: get-drives.yaml
-
 - name: install lvm2 and other fs tools
   apt:
     name:
@@ -19,6 +16,9 @@
       ansible.builtin.command:
         cmd: "kubectl label node {{ item.name }} {{ lan_domain }}/node-role=storage-node"
       loop: "{{ ceph_storage }}"
+
+    - name: Get all host and drive info
+      include_tasks: get-all-host-drive-info.yaml
 
     - name: Add rook helm repo
       kubernetes.core.helm_repository:
