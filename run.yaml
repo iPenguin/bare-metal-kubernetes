@@ -95,6 +95,28 @@
       when:
         - inventory_hostname in k8s_controller
 
+- name: Wipe ceph drives
+  hosts:
+    - controllers
+    - workers
+  tags:
+    - never
+    - yes-really-wipe-the-ceph-drives
+  tasks:
+    - include_tasks: roles/rook/tasks/format-disks.yaml
+
+- name: Deploy Rook ceph
+  hosts:
+    - controllers
+    - workers
+  tags:
+    - storage
+    - rook
+    - ceph
+  roles:
+    - role: chrony
+    - role: rook
+
 - name: Deploy cert-manager
   hosts:
     - controllers
@@ -106,6 +128,27 @@
       when:
         - inventory_hostname in k8s_controller
 
+- name: Deploy Free IPA
+  hosts:
+    - freeipa
+  tags:
+    - apps
+    - ipa
+  roles:
+    - role: freeipa
+
+- name: Deploy Domain config
+  hosts:
+    - freeipa
+  tags:
+    - ipa
+    - config
+    - domain
+  connection: local
+  become: false
+  roles:
+    - role: domain
+
 - name: Deploy Sealed Secrets
   hosts:
     - controllers
@@ -116,6 +159,19 @@
     - role: sealed-secrets
       when:
         - inventory_hostname in k8s_controller
+
+- name: Deploy Keycloak realm config
+  hosts:
+    - controllers
+  run_once: true
+  tags:
+    - keycloak
+    - realm
+    - domain
+  connection: local
+  become: false
+  roles:
+    - role: keycloak
 
 - name: Deploy Argo CD
   hosts:
@@ -140,59 +196,4 @@
       include_tasks: roles/argo/tasks/deploy-apps.yaml
       run_once: true
 
-- name: Wipe ceph drives
-  hosts:
-    - controllers
-    - workers
-  tags:
-    - never
-    - yes-really-wipe-the-ceph-drives
-  tasks:
-    - include_tasks: roles/rook/tasks/format-disks.yaml
-
-- name: Deploy Rook ceph
-  hosts:
-    - controllers
-    - workers
-  tags:
-    - storage
-    - rook
-    - ceph
-  roles:
-    - role: chrony
-    - role: rook
-
-- name: Deploy Free IPA
-  hosts:
-    - freeipa
-  tags:
-    - apps
-    - ipa
-  roles:
-    - role: freeipa
-
-- name: Deploy Domain config
-  hosts:
-    - freeipa
-  tags:
-    - ipa
-    - config
-    - domain
-  connection: local
-  become: false
-  roles:
-    - role: domain
-
-- name: Deploy Keycloak realm config
-  hosts:
-    - controllers
-  run_once: true
-  tags:
-    - keycloak
-    - realm
-    - domain
-  connection: local
-  become: false
-  roles:
-    - role: keycloak
 ...
