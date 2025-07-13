@@ -25,7 +25,6 @@
     - workers
   tags:
     - cluster
-    - runtime
   vars:
     nvidia_id: 10de
     has_nvidia_card: false
@@ -47,8 +46,12 @@
         - inventory_hostname in groups['controllers']
     - role: containerd
       when: k8s_runtime == 'containerd'
+      tags:
+        - runtime
     - role: crio
       when: k8s_runtime == 'crio'
+      tags:
+        - runtime
     - role: kubernetes
       tags:
         - k8s

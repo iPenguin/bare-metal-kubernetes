@@ -5,16 +5,35 @@
     url: https://dl.k8s.io/apt/doc/apt-key.gpg
     state: present
 
+# - name: Remove any old cri_o configs from /etc/apt/sources.list.d
+#   ansible.builtin.file:
+#     path: "{{ item }}"
+#     state: absent
+#   loop: "{{ lookup('fileglob', '/etc/apt/sources.list.d/*cri_o*', wantlist=True) }}"
+
+- name: Remove files containing 'cri_o' in /etc/apt/sources.list.d
+  ansible.builtin.find:
+    paths: /etc/apt/sources.list.d
+    patterns: '*cri_o*'
+    recurse: no
+  register: cri_o_files
+
+- name: Delete found files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ cri_o_files.files }}"
+
 - name: Add crio signing key
   get_url:
-    url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/Release.key
+    url: https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/Release.key
     dest: /etc/apt/trusted.gpg.d/crio.asc
     mode: '0644'
     force: true
 
 - name: Add cri-o repo
   ansible.builtin.apt_repository:
-    repo: deb [signed-by=/etc/apt/trusted.gpg.d/crio.asc] https://pkgs.k8s.io/addons:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/ /
+    repo: deb [signed-by=/etc/apt/trusted.gpg.d/crio.asc] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/ /
     state: present
 
 - name: Download k8s gpg keys
