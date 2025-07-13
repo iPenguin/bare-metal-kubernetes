@@ -22,17 +22,27 @@
     device_list: "{{ device_list | default([]) + item.ansible_facts.matched_devices }}"
   loop: "{{ matched_devices_result.results }}"
 
-- name: Combine lists into ceph_cluster_devices
+- name: Create unified ceph cluster device list
   ansible.builtin.set_fact:
-    ceph_cluster_devices: "{{ ceph_cluster_devices | default([]) + [device | combine({'host': ceph.0.name, 'name': (device_list | selectattr('model', 'equalto', device.model) | selectattr('serial', 'equalto', device.serial) | first | default({})).name | default('unknown')})] }}"
-  loop_control:
-    loop_var: ceph
-  with_subelements:
-    - "{{ ceph_storage }}"
-    - devices
-  vars:
-    device: "{{ ceph.1 }}"
+    ceph_cluster_devices: |
+      [
+        {% for host in ceph_storage %}
+        {
+          "host": "{{ host.name }}",
+          "devices": [
+            {% for device in host.devices %}
+            {
+              "model": "{{ device.model }}",
+              "serial": "{{ device.serial }}",
+              "osds": {{ device.osds }},
+              "name": "{{ (device_list | selectattr('serial', 'equalto', device.serial) | first).name }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+          ]
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
 
-- name: List ceph cluster devices
+- name: Display ceph cluster device list
   ansible.builtin.debug:
     msg: "{{ ceph_cluster_devices }}"

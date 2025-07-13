@@ -97,10 +97,10 @@ cephClusterSpec:
       # metadataDevice: "md0"
       # encryptedDevice: "true"
 
-    {% if ceph_storage is defined -%}
+    {% if ceph_cluster_devices is defined -%}
     nodes:
-      {% for node in ceph_storage -%}
-      - name: "{{ node.name }}"
+      {% for node in ceph_cluster_devices -%}
+      - name: "{{ node.host }}"
         {% if node.devices is defined -%}
         devices:
           {% for dev in node.devices -%}
