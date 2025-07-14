@@ -58,7 +58,7 @@
         mode: 0700
 
     - name: Download rook toolbox
-      get_url:
+      ansible.builtin.get_url:
         url: "https://raw.githubusercontent.com/rook/rook/master/deploy/examples/toolbox.yaml"
         dest: "/tmp/rook-toolbox.yaml"
 

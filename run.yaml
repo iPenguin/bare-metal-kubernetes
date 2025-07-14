@@ -28,16 +28,6 @@
   vars:
     nvidia_id: 10de
     has_nvidia_card: false
-  pre_tasks:
-    - name: check for nvidia card
-      ansible.builtin.command:
-        cmd: "lspci -d {{ nvidia_id }}:"
-      register: nvidia_devices
-
-    - name: register has_nvidia_card
-      ansible.builtin.set_fact:
-        has_nvidia_card: true
-      when: '"VGA" in nvidia_devices.stdout'
   roles:
     - role: kube-vip
       tags:
@@ -55,6 +45,10 @@
     - role: kubernetes
       tags:
         - k8s
+    - role: nvidia
+      tags:
+        - gpu
+        - nvidia
 
 
 - name: Install Helm

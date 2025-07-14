@@ -22,6 +22,7 @@ kube_vip_version: 0.8.7
 kubernetes_version: 1.33.2
 
 metallb_version: 0.14.8
+nvidia_k8s_plugin_version: 0.17.2
 
 rook_version: 1.17.6
 
