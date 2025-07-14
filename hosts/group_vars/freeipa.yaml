@@ -120,6 +120,8 @@ ipa_groups:
   - name: app-concourse-users
   - name: app-gitea-admins
   - name: app-gitea-users
+  - name: app-harbor-admins
+  - name: app-harbor-users
   - name: app-nextcloud-admins
   - name: app-nextcloud-users
 
@@ -133,6 +135,7 @@ ipa_users:
       - name: app-argocd-admins
       - name: app-concourse-admins
       - name: app-gitea-admins
+      - name: app-harbor-admins
       - name: app-nextcloud-admins
 
     emails:
