@@ -1,0 +1,72 @@
+expose:
+  type: ingress
+  tls:
+    enabled: true
+    certSource: none
+    secret:
+      secretName: ""
+  ingress:
+    hosts:
+      core: harbor.clt.milco.casa
+    className: "traefik"
+    annotations:
+      # note different ingress controllers may require a different ssl-redirect annotation
+      # for Envoy, use ingress.kubernetes.io/force-ssl-redirect: "true" and remove the nginx lines below
+      ingress.kubernetes.io/ssl-redirect: "true"
+      ingress.kubernetes.io/proxy-body-size: "0"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    # ingress-specific labels
+    labels: {}
+
+externalURL: https://harbor.clt.milco.casa
+
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    registry:
+      storageClass: "ceph-block"
+      accessMode: ReadWriteOnce
+      size: 5Gi
+    database:
+      storageClass: "ceph-block"
+      size: 1Gi
+  imageChartStorage:
+    type: filesystem
+    filesystem:
+      rootdirectory: /storage
+
+existingSecretAdminPassword: "harbor-secrets"
+existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
+
+internalTLS:
+  enabled: false
+
+ipFamily:
+  ipv6:
+    enabled: true
+  ipv4:
+    enabled: true
+
+imagePullPolicy: IfNotPresent
+
+# Use this set to assign a list of default pullSecrets
+imagePullSecrets:
+  - name: docker-registry-secret
+
+# If using existingSecretSecretKey, the key must be secretKey
+existingSecretSecretKey: "harbor-secrets"
+
+metrics:
+  enabled: false
+trace:
+  enabled: false
+
+database:
+  type: internal
+  internal:
+    # The initial superuser password for internal database
+    password: "GkDxfyIFnEb4QMzQLL3n"
+
+redis:
+  type: internal

@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: harbor
+  namespace: harbor
+spec:
+  description: Harbor container registry
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: harbor
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://helm.goharbor.io

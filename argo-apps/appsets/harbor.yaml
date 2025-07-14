@@ -1,0 +1,39 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: harbor
+  namespace: harbor
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - host: harbor
+  template:
+    metadata:
+      name: harbor
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - Confirm=true
+      project: harbor
+      destination:
+        namespace: harbor
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          path: argo-apps/apps/harbor
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          ref: valuesSrc
+        - repoURL: 'https://helm.goharbor.io'
+          chart: harbor
+          targetRevision: 1.17.1
+          helm:
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/harbor/values.yaml'

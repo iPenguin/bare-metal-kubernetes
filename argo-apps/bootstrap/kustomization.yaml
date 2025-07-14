@@ -6,6 +6,7 @@ resources:
   - concourse.yaml
   - freeipa.yaml
   - gitea.yaml
+  - harbor.yaml
   - keycloak.yaml
   - kubernetes-reflector.yaml
   - minio.yaml

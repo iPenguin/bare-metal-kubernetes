@@ -14,6 +14,7 @@ freeipa_version: 4.12.2
 gitea_helm_chart_version: 10.6.0
 gitea_version: 1.22.4
 
+harbor_chart_version: 1.17.1
 helm_version: 3.16.4
 
 keycloak_version: 22.0.1-1
