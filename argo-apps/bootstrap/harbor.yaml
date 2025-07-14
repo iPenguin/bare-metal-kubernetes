@@ -3,7 +3,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
   name: harbor
-  namespace: harbor
+  namespace: argocd
 spec:
   description: Harbor container registry
   destinations:
