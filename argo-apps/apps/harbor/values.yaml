@@ -21,6 +21,15 @@ expose:
 
 externalURL: https://harbor.clt.milco.casa
 
+core:
+  extraEnvVars:
+    # OIDC configuration
+    - name: CONFIG_OVERWRITE_JSON
+      valueFrom:
+        secretKeyRef:
+          name: harbor-secrets
+          key: harbor-config.json
+
 persistence:
   enabled: true
   persistentVolumeClaim:
