@@ -72,6 +72,14 @@ ipa_dns_entries:
     type: CNAME
     data: "traefik.{{ lan_domain }}."
     zone: "{{ lan_domain }}"
+  - name: git
+    type: CNAME
+    data: "traefik-ssh.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: harbor
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
   - name: minio
     type: CNAME
     data: "traefik.{{ lan_domain }}."
@@ -88,18 +96,6 @@ ipa_dns_entries:
     type: CNAME
     data: "traefik.{{ lan_domain }}."
     zone: "{{ lan_domain }}"
-  - name: s3
-    type: CNAME
-    data: "traefik.{{ lan_domain }}."
-    zone: "{{ lan_domain }}"
-  - name: sso
-    type: CNAME
-    data: "traefik.{{ lan_domain }}."
-    zone: "{{ lan_domain }}"
-  - name: git
-    type: CNAME
-    data: "traefik-ssh.{{ lan_domain }}."
-    zone: "{{ lan_domain }}"
   - name: plex-svc
     type: A
     data: "{{ network_services['plex-svc'].ipv4 }}"
@@ -107,6 +103,14 @@ ipa_dns_entries:
   - name: plex-svc
     type: AAAA
     data: "{{ network_services['plex-svc'].ipv6 }}"
+    zone: "{{ lan_domain }}"
+  - name: s3
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
+    zone: "{{ lan_domain }}"
+  - name: sso
+    type: CNAME
+    data: "traefik.{{ lan_domain }}."
     zone: "{{ lan_domain }}"
 
 ipa_groups:
