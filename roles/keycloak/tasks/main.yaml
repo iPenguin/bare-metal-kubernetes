@@ -234,14 +234,11 @@
       - "https://argocd.{{ lan_domain }}"
     consent_required: false
     default_client_scopes:
-      - "acr"
       - "email"
       - "groups"
       - "openid"
       - "profile"
-      - "service_account"
       - "username"
-      - "web-origins"
 
 - name: Configure Keycloak client for gitea
   delegate_to: localhost
@@ -298,7 +295,7 @@
     service_accounts_enabled: false
     base_url: "https://harbor.{{ lan_domain }}"
     redirect_uris:
-      - "https://harbor.{{ lan_domain }}/user/oauth2/homelab/callback"
+      - "https://harbor.{{ lan_domain }}/c/oidc/callback"
     web_origins:
       - "https://harbor.{{ lan_domain }}"
     consent_required: false

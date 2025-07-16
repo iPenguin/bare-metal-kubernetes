@@ -38,11 +38,15 @@ configs:
       clientID: argocd
       clientSecret: $argo-oidc-secrets:oidc.clientSecret
       requestedScopes: ["openid", "profile", "email", "groups"]
+      requestedIDTokenClaims:
+        groups:
+          essential: true
 
   params:
     server.insecure: true
   rbac:
     create: true
+    policy.default: role:readonly
     policy.csv: |
       p, role:org-admin, applications, *, */*, allow
       p, role:org-admin, clusters, get, *, allow
