@@ -1,13 +1,8 @@
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: UpgradeConfiguration
+kubernetesVersion: v{{ kubernetes_version }}
 node:
-  kubernetesVersion: v{{ kubernetes_version }}
-  imageRepository: registry.k8s.io
-  criSocket: {% if k8s_runtime == 'crio' %}unix:///run/crio/crio.sock{% endif %}{% if k8s_runtime == 'containerd' %}unix:///run/containerd/containerd.sock{% endif %}
-
-  imagePullPolicy: IfNotPresent
-  imagePullSerial: true
   certificateRenewal: true
   etcdUpgrade: true
 cluster:
