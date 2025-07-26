@@ -20,6 +20,7 @@ expose:
     labels: {}
 
 externalURL: https://harbor.clt.milco.casa
+logLevel: debug
 
 core:
   extraEnvVars:
