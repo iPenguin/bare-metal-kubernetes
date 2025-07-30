@@ -50,7 +50,7 @@ spec:
         - name: prometheus_server
           value: ":2112"
       image: ghcr.io/kube-vip/kube-vip:v{{ kube_vip_version }}
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       name: kube-vip
       securityContext:
         capabilities:
