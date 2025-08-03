@@ -19,6 +19,10 @@
     auth_password: "{{ keycloak_admin_password }}"
     auth_realm: "{{ keycloak.admin_realm }}"
     realm: "{{ keycloak.realm }}"
+    sso_session_idle_timeout: 86400
+    sso_session_max_lifespan: 172800
+    sso_session_idle_timeout_remember_me: 86400
+    sso_session_max_lifespan_remember_me: 172800
     state: present
     enabled: true
   register: realm_result
@@ -292,7 +296,7 @@
     standard_flow_enabled: true
     implicit_flow_enabled: false
     direct_access_grants_enabled: true
-    service_accounts_enabled: false
+    service_accounts_enabled: true
     base_url: "https://harbor.{{ lan_domain }}"
     redirect_uris:
       - "https://harbor.{{ lan_domain }}/c/oidc/callback"
