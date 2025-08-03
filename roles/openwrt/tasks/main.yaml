@@ -26,7 +26,7 @@
 - name: Update networking
   include_tasks: update-networking.yaml
   tags:
-    - ntworking
+    - networking
     - wireguard
 
 - name: Update hosts
