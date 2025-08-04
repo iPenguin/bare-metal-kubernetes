@@ -26,7 +26,6 @@
   tags:
     - cluster
   vars:
-    nvidia_id: 10de
     has_nvidia_card: false
   roles:
     - role: kube-vip

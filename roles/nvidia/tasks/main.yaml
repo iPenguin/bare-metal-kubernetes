@@ -1,7 +1,7 @@
 ---
 - name: check for nvidia card
   ansible.builtin.command:
-    cmd: "lspci -d {{ nvidia_id }}:"
+    cmd: "lspci -nn -d 10de:"
   register: nvidia_devices
 
 - name: register has_nvidia_card
@@ -16,12 +16,14 @@
   when: has_nvidia_card
 
 - name: Add Nvidia helm repo
+  run_once: true
   kubernetes.core.helm_repository:
     name: nvidia
     repo_url: https://nvidia.github.io/k8s-device-plugin
-  when: inventory_hostname in k8s_controller
+  delegate_to: "{{ k8s_controller }}"
 
 - name: Add Nvidia plugin
+  run_once: true
   kubernetes.core.helm:
     name: nvidia-k8s-plugin
     chart_ref: nvidia/nvidia-device-plugin
@@ -30,4 +32,4 @@
     create_namespace: true
     update_repo_cache: true
     values: "{{ lookup('template', 'nvidia-plugin-values.yaml.j2') | from_yaml }}"
-  when: inventory_hostname in k8s_controller
+  delegate_to: "{{ k8s_controller }}"

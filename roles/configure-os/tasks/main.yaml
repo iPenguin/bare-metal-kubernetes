@@ -16,7 +16,7 @@
     state: latest
 
 # This command will do nothing if there aren't any needed drivers
-- name: install nvidia drivers as needed
+- name: install any missing drivers as needed
   ansible.builtin.command:
     cmd: ubuntu-drivers autoinstall
   become: true
