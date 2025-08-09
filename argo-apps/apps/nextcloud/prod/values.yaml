@@ -153,4 +153,4 @@ rbac:
     name: nextcloud-serviceaccount
 
 nodeSelector:
-  clt.milco.casa/node-performance: medium
+  clt.milco.casa/node-performance: high

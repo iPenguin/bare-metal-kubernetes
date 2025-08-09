@@ -1,8 +1,7 @@
 ---
 
-- name: Set hostname
-  ansible.builtin.hostname:
-    name: "{{ inventory_hostname }}"
+- name: Configure OS networking
+  include_tasks: networking.yaml
 
 - name: Disable unattended upgrades
   ansible.builtin.systemd:

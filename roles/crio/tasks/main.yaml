@@ -19,7 +19,7 @@
   loop: "{{ cri_o_files.files }}"
 
 - name: Add crio signing key
-  get_url:
+  ansible.builtin.get_url:
     url: https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/Release.key
     dest: /etc/apt/trusted.gpg.d/crio.asc
     mode: '0644'
