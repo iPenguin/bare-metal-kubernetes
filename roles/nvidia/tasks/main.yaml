@@ -11,25 +11,68 @@
 
 - name: Label node as nvidia node
   ansible.builtin.command:
-    cmd: "kubectl label node {{ inventory_hostname }} nvidia.com/gpu=true"
+    cmd: "kubectl label node {{ inventory_hostname }} nvidia.com/gpu.present=true --overwrite"
   delegate_to: "{{ k8s_controller }}"
   when: has_nvidia_card
 
-- name: Add Nvidia helm repo
-  run_once: true
-  kubernetes.core.helm_repository:
-    name: nvidia
-    repo_url: https://nvidia.github.io/k8s-device-plugin
-  delegate_to: "{{ k8s_controller }}"
+- name: GPU node only configuration
+  when: has_nvidia_card
+  block:
+    - name: Add NVIDIA signing key
+      ansible.builtin.get_url:
+        url: https://nvidia.github.io/libnvidia-container/gpgkey
+        dest: /etc/apt/trusted.gpg.d/nvidia-container-toolkit-keyring.asc
+        mode: '0644'
+        force: true
 
-- name: Add Nvidia plugin
-  run_once: true
-  kubernetes.core.helm:
-    name: nvidia-k8s-plugin
-    chart_ref: nvidia/nvidia-device-plugin
-    release_namespace: nvidia
-    chart_version: "{{ nvidia_k8s_plugin_version }}"
-    create_namespace: true
-    update_repo_cache: true
-    values: "{{ lookup('template', 'nvidia-plugin-values.yaml.j2') | from_yaml }}"
-  delegate_to: "{{ k8s_controller }}"
+    - name: Configure Nvidia repo
+      ansible.builtin.blockinfile:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        block: |
+          deb [signed-by=/etc/apt/trusted.gpg.d/nvidia-container-toolkit-keyring.asc] https://nvidia.github.io/libnvidia-container/stable/deb/amd64 /
+        create: yes
+        state: present
+
+    - name: Install NVIDIA Container Toolkit
+      ansible.builtin.apt:
+        name:
+          - nvidia-container-toolkit
+          - nvidia-driver-575-open
+        state: present
+        update_cache: yes
+
+    - name: Check for Secure boot
+      ansible.builtin.command:
+        cmd: mokutil --sb-state
+      register: secure_boot
+
+    - name: Warning secure boot enabled -- driver signing key must be loaded in bios
+      ansible.builtin.debug:
+        msg: WARN -- To register signing key reboot after running 'mokutil --import /var/lib/shim-signed/mok/MOK.der'
+      when : "'enabled' in secure_boot.stdout"
+
+    - name: Create CRI-O runtime configuration directory
+      ansible.builtin.file:
+        path: /etc/crio/crio.conf.d
+        state: directory
+        mode: '0755'
+
+    - name: Add NVIDIA runtime to CRI-O configuration
+      ansible.builtin.copy:
+        content: |
+          # NVIDIA runtime configuration
+          [crio.runtime.runtimes.nvidia]
+          runtime_path = "/usr/bin/nvidia-container-runtime"
+          runtime_type = "oci"
+
+          # Alternative crun+nvidia configuration
+          [crio.runtime.runtimes.crun-nvidia]
+          runtime_path = "/usr/bin/crun"
+          runtime_type = "oci"
+
+        dest: /etc/crio/crio.conf.d/99-nvidia.conf
+        mode: '0644'
+      notify: Restart CRI-O
+
+- name: Configure k8s plugin
+  include_tasks: nvidia-k8s-plugin.yaml

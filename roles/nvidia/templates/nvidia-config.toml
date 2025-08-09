@@ -1,2 +1,0 @@
-[nvidia-container-runtime]
-runtimes = ["crun", "docker-runc", "runc"]

@@ -1,0 +1,20 @@
+---
+
+- name: Add Nvidia helm repo
+  run_once: true
+  kubernetes.core.helm_repository:
+    name: nvidia
+    repo_url: https://nvidia.github.io/k8s-device-plugin
+  delegate_to: "{{ k8s_controller }}"
+
+- name: Add Nvidia plugin
+  run_once: true
+  kubernetes.core.helm:
+    name: nvidia-k8s-plugin
+    chart_ref: nvidia/nvidia-device-plugin
+    release_namespace: nvidia
+    chart_version: "{{ nvidia_k8s_plugin_version }}"
+    create_namespace: true
+    update_repo_cache: true
+    values: "{{ lookup('template', 'nvidia-plugin-values.yaml.j2') | from_yaml }}"
+  delegate_to: "{{ k8s_controller }}"

@@ -1,0 +1,6 @@
+---
+
+- name: Restart CRI-O
+  ansible.builtin.service:
+    name: crio
+    state: restarted
