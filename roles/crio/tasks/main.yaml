@@ -81,10 +81,40 @@
     mode: 0755
     state: directory
 
+- name: Ensure additional container registry configuration is absent
+  ansible.builtin.file:
+    path: /etc/containers/registries.conf.d
+    state: absent
+
 - name: Configure container policy
   ansible.builtin.template:
-    src: policy.json.j2
+    src: policy.json
     dest: /etc/containers/policy.json
+    owner: root
+    group: root
+    mode: 0640
+
+- name: Configure docker auth
+  ansible.builtin.template:
+    src: auth.json
+    dest: /etc/containers/auth.json
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Configure docker registries
+  ansible.builtin.template:
+    src: registries.conf
+    dest: /etc/containers/registries.conf
+    owner: root
+    group: root
+    mode: 0640
+
+
+- name: Configure CRI-O to use auth
+  ansible.builtin.template:
+    src: 10-crio.conf
+    dest: /etc/crio/crio.conf.d/10-crio.conf
     owner: root
     group: root
     mode: 0640
