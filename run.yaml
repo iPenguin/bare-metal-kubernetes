@@ -38,10 +38,12 @@
       when: k8s_runtime == 'containerd'
       tags:
         - runtime
+        - containerd
     - role: crio
       when: k8s_runtime == 'crio'
       tags:
         - runtime
+        - crio
     - role: kubernetes
       tags:
         - k8s
