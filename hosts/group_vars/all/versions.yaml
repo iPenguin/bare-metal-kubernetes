@@ -1,8 +1,10 @@
 ---
 
+ai_image_version: 1.0.9
+
 argocd_chart_version: 8.0.9
 
-ceph_version: 19.2.2
+ceph_version: 19.2.3
 cert_manager_version: 1.17.1
 cilium_version: 1.17.2
 cilium_cli_version: 0.17.0
@@ -24,7 +26,7 @@ kubernetes_version: 1.33.3
 metallb_version: 0.14.8
 nvidia_k8s_plugin_version: 0.17.3
 
-rook_version: 1.17.6
+rook_version: 1.17.7
 
 sealed_secrets_version: 2.17.3
 ...
