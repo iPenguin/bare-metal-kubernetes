@@ -4,7 +4,11 @@ crds:
   enabled: true
 
 nodeSelector:
-  {{ lan_domain }}/node-role: storage-node
+  {{ lan_domain }}/rook-storage-gw: "true"
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Equal"
+    effect: "NoSchedule"
 
 # -- Whether the operator should watch cluster CRD in its own namespace or not
 currentNamespaceOnly: false
@@ -31,6 +35,18 @@ csi:
   enableRBDSnapshotter: true
   enablePluginSelinuxHostMount: false
   enableCSIEncryption: false
+
+  provisionerNodeAffinity: {{ lan_domain }}/rook-storage-gw=true
+  provisionerTolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Equal"
+      effect: "NoSchedule"
+
+  pluginNodeAffinity: {{ lan_domain }}/rook-storage-gw=true
+  pluginTolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Equal"
+      effect: "NoSchedule"
 
   # Set to "ms_mode=secure" when connections.encrypted is enabled in CephCluster CR
   # cephFSKernelMountOptions: ms_mode=secure
