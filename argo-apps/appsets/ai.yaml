@@ -3,7 +3,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: ai-applications
-  namespace: ai
+  namespace: argocd
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
