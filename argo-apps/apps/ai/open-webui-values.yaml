@@ -126,18 +126,15 @@ podDisruptionBudget:
   enabled: true
   minAvailable: 1
 
-# affinity:
-#   podAntiAffinity:
-#     preferredDuringSchedulingIgnoredDuringExecution:
-#     - weight: 100
-#       podAffinityTerm:
-#         labelSelector:
-#           matchExpressions:
-#           - key: app.kubernetes.io/name
-#             operator: In
-#             values:
-#             - open-webui
-#         topologyKey: kubernetes.io/hostname
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - "w4.clt.milco.casa"
 
 sso:
   enabled: true
