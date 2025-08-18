@@ -1,0 +1,164 @@
+---
+ollama:
+  enabled: true
+  ollama:
+    gpu:
+      enabled: true
+      type: 'nvidia'
+      number: 1
+    models:
+      pull:
+        - llama3
+        - mistral
+      run:
+        - llama3
+  persistentVolume:
+    enabled: true
+    size: 50Gi
+
+websocket:
+  enabled: true
+  manager: redis
+  redis:
+    enabled: true
+    name: open-webui-redis
+    image:
+      repository: redis
+      tag: 7.4.2-alpine3.21
+      pullPolicy: IfNotPresent
+    service:
+      containerPort: 6379
+      type: ClusterIP
+      port: 6379
+
+pipelines:
+  enabled: true
+
+# Enable internal PostgreSQL using Bitnami subchart
+postgresql:
+  enabled: true
+  fullnameOverride: open-webui-postgres
+  architecture: standalone
+
+  auth:
+    database: open-webui
+    username: open-webui
+    existingSecret: open-webui-secrets
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: user-password
+      replicationPasswordKey: replication-password
+
+  primary:
+    persistence:
+      enabled: true
+      size: 5Gi
+
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+
+    pgHbaConfiguration: |
+      local all all trust
+      host all all 127.0.0.1/32 trust
+      host all all ::1/128 trust
+      host all all 0.0.0.0/0 md5
+
+    configuration: |
+      max_connections = 100
+      shared_buffers = 128MB
+      effective_cache_size = 512MB
+      maintenance_work_mem = 64MB
+
+service:
+  type: ClusterIP
+  port: 8080
+
+nodeSelector:
+  nvidia.com/gpu.present: "true"
+
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Equal"
+    effect: "NoSchedule"
+
+ingress:
+  enabled: true
+  className: "traefik"
+  host: "ai.clt.milco.casa"
+
+resources:
+  limits:
+    memory: 6Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+persistence:
+  enabled: true
+  size: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  provider: local
+  storageClass: "ceph-block"
+
+env:
+  - name: OLLAMA_BASE_URL
+    value: "http://ollama.ai-namespace:11434"
+  - name: WEBUI_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: open-webui-secrets
+        key: secret-key
+  - name: WEBUI_AUTH
+    value: "true"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# affinity:
+#   podAntiAffinity:
+#     preferredDuringSchedulingIgnoredDuringExecution:
+#     - weight: 100
+#       podAffinityTerm:
+#         labelSelector:
+#           matchExpressions:
+#           - key: app.kubernetes.io/name
+#             operator: In
+#             values:
+#             - open-webui
+#         topologyKey: kubernetes.io/hostname
+
+sso:
+  enabled: true
+  enableSignup: false
+  mergeAccountsByEmail: false
+  enableRoleManagement: false
+  enableGroupManagement: false
+
+  oidc:
+    enabled: true
+    clientId: open-webui
+    clientExistingSecret: open-webui-secrets
+    clientExistingSecretKey: client-secret
+    providerUrl: "https://sso.clt.milco.casa"
+    providerName: "homeLab"
+    scopes: "openid email profile groups"
+
+  roleManagement:
+    rolesClaim: "roles"
+    allowedRoles: ""
+    adminRoles: ""
+
+  groupManagement:
+    groupsClaim: "groups"

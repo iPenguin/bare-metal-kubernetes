@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ai-applications
+  namespace: ai
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: ai-applications
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+      project: ai-applications
+      destination:
+        namespace: ai
+        server: https://kubernetes.default.svc
+      sources:
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          path: argo-apps/apps/ai
+          targetRevision: master
+        - repoURL: 'https://open-webui.github.io/helm-charts'
+          chart: open-webui
+          targetRevision: 7.2.0
+          helm:
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/ai/open-webui-values.yaml'
+        - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
+          targetRevision: master
+          ref: valuesSrc

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: easy
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: easy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: easy
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu
+                operator: In
+                values:
+                - "true"
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - w4.clt.milco.casa
+      containers:
+      - command:
+        - /srv/ai/easy/start.sh
+        env:
+        - name: HOME
+          value: /srv/ai
+        image: docker.io/ipenguin/ubuntu-24.04-cuda:v1.0.10
+        imagePullPolicy: IfNotPresent
+        name: primary
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        resources:
+          limits:
+            memory: 48Gi
+          requests:
+            memory: 1Gi
+        securityContext:
+          privileged: true
+          runAsGroup: 1000
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /srv/ai
+          name: srv-ai
+        - mountPath: /data
+          name: data
+        - mountPath: /usr/lib/x86_64-linux-gnu
+          name: usr-lib-x86
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+      volumes:
+      - name: srv-ai
+        persistentVolumeClaim:
+          claimName: ai-applications
+      - hostPath:
+          path: /data
+          type: Directory
+        name: data
+      - hostPath:
+          path: /usr/lib/x86_64-linux-gnu
+          type: Directory
+        name: usr-lib-x86
