@@ -43,7 +43,7 @@ nextcloud:
     - name: NEXTCLOUD_CONFIG_KEYCLOAK_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
-          name: nextcloud-keycloak-secret
+          name: nextcloud-secrets
           key: client-secret
 
   existingSecret:
