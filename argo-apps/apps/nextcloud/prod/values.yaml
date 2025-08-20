@@ -14,6 +14,14 @@ ingress:
   ipFamilies:
     - IPv4
     - IPv6
+  hosts:
+    - host: nextcloud.clt.milco.casa
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - nextcloud.clt.milco.casa
 
 phpClientHttpsFix:
   enabled: false
@@ -32,28 +40,11 @@ nextcloud:
       value: "nextcloud.clt.milco.casa"
     - name: NEXTCLOUD_TRUSTED_DOMAINS
       value: "nextcloud.clt.milco.casa"
-
-  extraInitContainers:
-    - name: init-ldap
-      image: busybox
-      command: ['sh', '/opt/bin/ldap.sh']
-      env:
-        - name: LDAP_LOOKUP_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secrets
-              key: ldap_lookup_password
-      volumeMounts:
-        - name: ldap-script
-          mountPath: /opt/bin/ldap.sh
-
-  extraVolumes:
-    - name: ldap-script
-      secret:
-        secretName: nextcloud-ldap-script
-        items:
-          - key: ldap.sh
-            path: ldap.sh
+    - name: NEXTCLOUD_CONFIG_KEYCLOAK_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: nextcloud-keycloak-secret
+          key: client-secret
 
   existingSecret:
     enabled: true
@@ -73,6 +64,33 @@ nextcloud:
   objectStore:
     s3:
       enabled: false
+
+  configs:
+    config.php: |
+      <?php
+      $CONFIG = array (
+        'allow_user_to_change_display_name' => false,
+        'lost_password_link' => 'disabled',
+        'oidc_login_provider_url' => 'https://sso.clt.milco.casa/realms/homelab',
+        'oidc_login_client_id' => 'nextcloud',
+        'oidc_login_client_secret' => '{{ .Values.keycloakClientSecret }}',
+        'oidc_login_auto_redirect' => false,
+        'oidc_login_logout_url' => 'https://sso.clt.milco.casa/realms/homelab/protocol/openid-connect/logout?redirect_uri=https://nextcloud.clt.milco.casa/',
+        'oidc_login_default_quota' => '1000000000',
+        'oidc_login_button_text' => 'Login with Homelab',
+        'oidc_login_attributes' => array (
+          'id' => 'preferred_username',
+          'name' => 'name',
+          'mail' => 'email',
+          'groups' => 'ownCloudGroups',
+        ),
+        'oidc_login_scope' => 'openid profile email',
+        'overwriteprotocol' => 'https',
+        'overwrite.cli.url' => 'https://nextcloud.clt.milco.casa',
+      );
+
+# Reference the Kubernetes Secret for the client secret
+keycloakClientSecret: "{{ .Values.nextcloud.configs.keycloakClientSecret }}"
 
 nginx:
   enabled: true
@@ -154,3 +172,8 @@ rbac:
 
 nodeSelector:
   clt.milco.casa/node-performance: high
+
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Equal"
+    effect: "NoSchedule"
