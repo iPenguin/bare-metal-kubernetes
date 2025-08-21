@@ -14,14 +14,6 @@ ingress:
   ipFamilies:
     - IPv4
     - IPv6
-  hosts:
-    - host: nextcloud.clt.milco.casa
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - hosts:
-        - nextcloud.clt.milco.casa
 
 phpClientHttpsFix:
   enabled: false
@@ -40,16 +32,38 @@ nextcloud:
       value: "nextcloud.clt.milco.casa"
     - name: NEXTCLOUD_TRUSTED_DOMAINS
       value: "nextcloud.clt.milco.casa"
-    - name: NEXTCLOUD_CONFIG_KEYCLOAK_CLIENT_SECRET
+    - name: NEXTCLOUD_ADMIN_USER
       valueFrom:
         secretKeyRef:
           name: nextcloud-secrets
-          key: client-secret
+          key: admin_username
+    - name: NEXTCLOUD_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: nextcloud-secrets
+          key: admin_password
+    # Database connection variables
+    - name: POSTGRES_HOST
+      value: "nextcloud-prod-postgresql"  # Adjust this to match your PostgreSQL service name
+    - name: POSTGRES_DB
+      value: "nextcloud"
+    - name: POSTGRES_USER
+      value: "nextcloud"
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: nextcloud-secrets
+          key: db_user_password
+    # - name: NEXTCLOUD_CONFIG_KEYCLOAK_CLIENT_SECRET
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: nextcloud-secrets
+    #       key: client-secret
 
   existingSecret:
     enabled: true
     secretName: nextcloud-secrets
-    usernameKey: admin_user
+    usernameKey: admin_username
     passwordKey: admin_password
   containerPort: 8080
   datadir: /var/www/html/data
@@ -65,32 +79,57 @@ nextcloud:
     s3:
       enabled: false
 
-  configs:
-    config.php: |
-      <?php
-      $CONFIG = array (
-        'allow_user_to_change_display_name' => false,
-        'lost_password_link' => 'disabled',
-        'oidc_login_provider_url' => 'https://sso.clt.milco.casa/realms/homelab',
-        'oidc_login_client_id' => 'nextcloud',
-        'oidc_login_client_secret' => '{{ .Values.keycloakClientSecret }}',
-        'oidc_login_auto_redirect' => false,
-        'oidc_login_logout_url' => 'https://sso.clt.milco.casa/realms/homelab/protocol/openid-connect/logout?redirect_uri=https://nextcloud.clt.milco.casa/',
-        'oidc_login_default_quota' => '1000000000',
-        'oidc_login_button_text' => 'Login with Homelab',
-        'oidc_login_attributes' => array (
-          'id' => 'preferred_username',
-          'name' => 'name',
-          'mail' => 'email',
-          'groups' => 'ownCloudGroups',
-        ),
-        'oidc_login_scope' => 'openid profile email',
-        'overwriteprotocol' => 'https',
-        'overwrite.cli.url' => 'https://nextcloud.clt.milco.casa',
-      );
+  # configs:
+  #   keycloak-oidc.config.php: |-
+  #     <?php
+  #     $CONFIG = array (
+  #       # Disable regular user registration
+  #       'allow_user_to_change_display_name' => false,
+  #       'lost_password_link' => 'disabled',
 
-# Reference the Kubernetes Secret for the client secret
-keycloakClientSecret: "{{ .Values.nextcloud.configs.keycloakClientSecret }}"
+  #       # OIDC provider settings for Keycloak
+  #       'user_oidc' => array(
+  #         'single_logout' => true,
+  #         'auto_provision' => true,
+  #         'soft_auto_provision' => true,
+  #       ),
+
+  #       # Example attribute mapping (uncomment and adjust as needed):
+  #       # 'user_oidc' => array(
+  #       #   'provider-params' => array(
+  #       #     'keycloak' => array(
+  #       #       'displayNameMapping' => 'name',
+  #       #       'mailMapping' => 'email',
+  #       #       'groupMapping' => 'groups',
+  #       #       'quotaMapping' => 'nextcloud_quota',
+  #       #       'uidMapping' => 'preferred_username',
+  #       #     ),
+  #       #   ),
+  #       # ),
+  #     );
+
+  #   config.php: |-
+  #     <?php
+  #     $CONFIG = array (
+  #       'allow_user_to_change_display_name' => false,
+  #       'lost_password_link' => 'disabled',
+  #       'oidc_login_provider_url' => 'https://sso.clt.milco.casa/realms/homelab',
+  #       'oidc_login_client_id' => 'nextcloud',
+  #       'oidc_login_client_secret' => '{{ .Values.keycloakClientSecret }}',
+  #       'oidc_login_auto_redirect' => false,
+  #       'oidc_login_logout_url' => 'https://sso.clt.milco.casa/realms/homelab/protocol/openid-connect/logout?redirect_uri=https://nextcloud.clt.milco.casa/',
+  #       'oidc_login_default_quota' => '1000000000',
+  #       'oidc_login_button_text' => 'Login with Homelab',
+  #       'oidc_login_attributes' => array (
+  #         'id' => 'preferred_username',
+  #         'name' => 'name',
+  #         'mail' => 'email',
+  #         'groups' => 'ownCloudGroups',
+  #       ),
+  #       'oidc_login_scope' => 'openid profile email',
+  #       'overwriteprotocol' => 'https',
+  #       'overwrite.cli.url' => 'https://nextcloud.clt.milco.casa',
+  #     );
 
 nginx:
   enabled: true
@@ -118,18 +157,19 @@ externalDatabase:
 
 postgresql:
   enabled: true
-  global:
-    postgresql:
-      auth:
-        username: nextcloud
-        existingSecret: "nextcloud-secrets"
-        secretKeys:
-          adminPasswordKey: "db_password"
-          userPasswordKey: "db_password"
-          replicationPasswordKey: "db_replication_password"
+  auth:
+    username: nextcloud
+    database: nextcloud
+    existingSecret: nextcloud-secrets
+    secretKeys:
+      adminPasswordKey: db_password
+      userPasswordKey: db_user_password
   primary:
+    initdb:
+      scriptsSecret: nextcloud-secrets
     persistence:
       enabled: true
+      size: 10Gi
 
 collabora:
   enabled: false
@@ -154,9 +194,11 @@ persistence:
     existingClaim: nextcloud-data
 
 resources:
+  limits:
+     memory: 8Gi
   requests:
-    cpu: "6"
-    memory: "12Gi"
+    cpu: 1
+    memory: 2Gi
 
 hpa:
   enabled: false
@@ -170,6 +212,9 @@ rbac:
     create: true
     name: nextcloud-serviceaccount
 
+redis:
+  enabled: false
+
 nodeSelector:
   clt.milco.casa/node-performance: high
 
@@ -177,3 +222,69 @@ tolerations:
   - key: "nvidia.com/gpu"
     operator: "Equal"
     effect: "NoSchedule"
+
+# # Post-installation job to configure Keycloak OIDC
+# extraInitContainers:
+#   - name: configure-oidc
+#     image: nextcloud:fpm
+#     command:
+#       - sh
+#       - -c
+#       - |
+#         # Wait for Nextcloud to be ready
+#         echo "Waiting for Nextcloud to be available..."
+#         while ! php /var/www/html/occ status --no-warnings; do
+#           echo "Still waiting for Nextcloud..."
+#           sleep 15
+#         done
+
+#         echo "Nextcloud is ready, installing OIDC app..."
+
+#         # Install and enable OIDC app
+#         php /var/www/html/occ app:install user_oidc || echo "OIDC app already installed"
+#         php /var/www/html/occ app:enable user_oidc || echo "OIDC app already enabled"
+
+#         # Configure Keycloak OIDC provider
+#         echo "Configuring Keycloak OIDC provider..."
+#         php /var/www/html/occ user_oidc:provider add \
+#           --provider-name="Keycloak" \
+#           --client-id="$KEYCLOAK_CLIENT_ID" \
+#           --client-secret="$KEYCLOAK_CLIENT_SECRET" \
+#           --discovery-uri="https://sso.clt.milco.casa/realms/YOUR_REALM/.well-known/openid_configuration" \
+#           --unique-uid=1 \
+#           --check-bearer=0 || echo "Provider may already exist"
+
+#         echo "OIDC configuration completed"
+#     env:
+#       # Keycloak credentials from secrets
+#       - name: KEYCLOAK_CLIENT_ID
+#         valueFrom:
+#           secretKeyRef:
+#             name: nextcloud-secrets
+#             key: client-id
+#       - name: KEYCLOAK_CLIENT_SECRET
+#         valueFrom:
+#           secretKeyRef:
+#             name: nextcloud-secrets
+#             key: client-secret
+#       - name: POSTGRES_PASSWORD
+#         valueFrom:
+#           secretKeyRef:
+#             name: nextcloud-secrets
+#             key: db_user_password
+#     volumeMounts:
+#       - name: nextcloud-data
+#         mountPath: /var/www/html
+#         subPath: root
+#       - name: nextcloud-data
+#         mountPath: /var/www/html/data
+#         subPath: data
+#       - name: nextcloud-data
+#         mountPath: /var/www/html/config
+#         subPath: config
+#       - name: nextcloud-data
+#         mountPath: /var/www/html/custom_apps
+#         subPath: custom_apps
+#       - name: nextcloud-data
+#         mountPath: /var/www/html/themes
+#         subPath: themes

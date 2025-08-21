@@ -15,9 +15,18 @@ metadata:
   name: nextcloud-headers
 spec:
   headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      X-Frame-Options: "SAMEORIGIN"
+      X-Content-Type-Options: "nosniff"
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: "no-referrer"
     stsSeconds: 15552000 # 6 months
     stsIncludeSubdomains: true
     stsPreload: true
+    frameDeny: true
+    sslRedirect: true
     customFrameOptionsValue: "SAMEORIGIN"
     browserXssFilter: true
     contentTypeNosniff: true
