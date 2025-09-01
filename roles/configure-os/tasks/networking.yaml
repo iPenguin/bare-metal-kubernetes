@@ -1,0 +1,23 @@
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+# Assuming one ACTVIE ethernet device enp* even if there are multiple
+# All primary network interfaces in my cluster start with enp
+- name: Get network status
+  command: networkctl status enp*
+  register: network_status
+  changed_when: false
+
+- name: Extract DUID
+  set_fact:
+    duid: "{{ network_status.stdout | regex_search('.*DUID: .*:([a-f0-9:]+)', '\\1') | first | default('not found') }}"
+
+- name: Fail if DUID is not found
+  fail:
+    msg: "No DUID found for interface. Ensure it has an active DHCPv6 lease."
+  when: duid == 'not found'
+
+- name: Display DUID
+  debug:
+    msg: "The DUID is {{ duid }}"
