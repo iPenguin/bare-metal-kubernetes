@@ -1,7 +1,9 @@
 ---
 
-- name: restart networking to load new protocol
-  ansible.builtin.raw: /etc/init.d/network restart
+- name: Start service httpd, if not running
+  community.general.openwrt_init:
+    state: restarted
+    name: network
 
 - name: Configure network interfaces
   ansible.builtin.template:

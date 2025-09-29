@@ -1,0 +1,97 @@
+---
+
+# generate_clients.yml - Task file for client generation
+- name: "Generate private key for {{ client_name }}"
+  ansible.builtin.raw: |-
+    wg genkey
+  register: client_private_key
+
+- name: "Generate public key for {{ client_name }}"
+  ansible.builtin.raw: |-
+    echo "{{ client_private_key.stdout }}" | wg pubkey
+  register: client_public_key
+
+- name: Add peer to server config for {{ client_name }}
+  ansible.builtin.copy:
+    content: "{{ block_content }}"
+    dest: /tmp/wg0_block.conf
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  connection: local
+  run_once: true
+  vars:
+    block_content: |
+      [Peer]
+      # {{ client_name }}
+      PublicKey = {{ client_public_key.stdout }}
+      AllowedIPs = {{ server_ip }}/32
+  notify: restart wireguard
+
+- name: Encode peer server config content locally
+  ansible.builtin.raw: |-
+    cat /tmp/wg0_block.conf | base64
+  delegate_to: localhost
+  become: false
+  connection: local
+  register: encoded_block
+
+- name: Remove existing block if present
+  ansible.builtin.raw: >
+    sed -i '/{{ marker_begin | regex_escape }}/d;/{{ marker_end | regex_escape }}/d' /etc/wireguard/wg0.conf
+  ignore_errors: true
+  vars:
+    marker_begin: "# {mark} ANSIBLE MANAGED BLOCK BEGIN"
+    marker_end: "# {mark} ANSIBLE MANAGED BLOCK END"
+
+- name: Insert encoded block and decode to file
+  ansible.builtin.raw: >
+    echo "{{ marker_begin }}\n{{ encoded_block.stdout | b64decode | regex_escape }}\n{{ marker_end }}" >> /etc/wireguard/wg0.conf
+  register: write_result
+  vars:
+    marker_begin: "# {mark} ANSIBLE MANAGED BLOCK BEGIN"
+    marker_end: "# {mark} ANSIBLE MANAGED BLOCK END"
+
+- name: "Generate client config for {{ client_name }}"
+  delegate_to: localhost
+  become: false
+  connection: local
+  ansible.builtin.template:
+    src: client.conf.j2
+    dest: "/tmp/{{ client_name }}.conf"
+    mode: '0600'
+  vars:
+    client_private: "{{ client_private_key.stdout }}"
+    client_ip: "{{ server_ip }}"
+    server_public: "{{ server_public_key.stdout | b64decode | trim }}"
+  run_once: true
+
+- name: Encode client config content locally
+  delegate_to: localhost
+  become: false
+  connection: local
+  ansible.builtin.raw: |-
+    cat /tmp/{{ client_name }}.conf | base64
+  delegate_to: localhost
+  register: encoded_script_content
+  run_once: true
+
+- name: Decode and write file on OpenWrt
+  ansible.builtin.raw: |-
+    echo "{{ encoded_script_content.stdout }}" | base64 -d > /tmp/{{ client_name }}.conf
+
+- name: Set permissions
+  ansible.builtin.raw: |-
+    chmod '0600' /tmp/{{ client_name }}.conf
+- name: Set ownership
+  ansible.builtin.raw: |-
+    chown root:root /tmp/{{ client_name }}.conf
+
+- name: "Generate QR code for {{ client_name }}"
+  ansible.builtin.raw: |-
+    qrencode -t ansiutf8 < /tmp/{{ client_name }}.conf
+  register: qr_code
+
+- name: "Display QR code for {{ client_name }}"
+  ansible.builtin.debug:
+    msg: "{{ qr_code.stdout_lines }}"

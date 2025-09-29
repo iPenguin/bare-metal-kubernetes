@@ -20,7 +20,6 @@ all:
         router:
           hosts:
             r.milco.casa:
-
 backups:
   hosts:
     c1.clt.milco.casa:
@@ -63,8 +62,13 @@ workstations:
 
 remote:
   vars:
-    #ansible_ssh_common_args: '-o ProxyCommand="ssh -p 2221 -W %h:%p -q ansible@{{ remote_host }}"'
+    #ansible_ssh_common_args: '-o ProxyCommand="ssh -p 2221 -W %h:%p -q ansible@{{ vault_remote_host }}"'
   children:
+    openwrt:
+      children:
+        router:
+          hosts:
+            r.milco.casa:
     controllers:
       hosts:
         c1.clt.milco.casa:

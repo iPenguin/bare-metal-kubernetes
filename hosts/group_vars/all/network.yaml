@@ -73,15 +73,15 @@ router:
       proto: static
       netmask: 255.255.255.0
       ipv4: "{{ network.ipv4.router }}"
-      ip6assign: 64
+      ip6assign: 64 #60
       dns_search: "{{ lan_domain }}"
     - name: wan
-      dev: wan
+      dev: p8
       proto: dhcp
       peerdns: 0
       dns_servers: "{{ network.ipv4.external_dns }}"
     - name: wan6
-      dev: wan
+      dev: p8
       proto: dhcpv6
       reqaddress: try
       reqprefix: 60
@@ -99,22 +99,34 @@ router:
     #     - fd00:10:1:2::1/128
   devices:
     - name: wan
-      mac: 18:fd:74:38:8a:d7
-    - name: lan2
-      mac: 18:fd:74:38:8a:d8
-    - name: lan3
-      mac: 18:fd:74:38:8a:d8
-    - name: lan4
-      mac: 18:fd:74:38:8a:d8
-    - name: lan5
-      mac: 18:fd:74:38:8a:d8
+      mac: 04:F4:1C:42:32:18
+    - name: p1
+      mac: 04:F4:1C:42:32:11
+    - name: p2
+      mac: 04:F4:1C:42:32:12
+    - name: p3
+      mac: 04:F4:1C:42:32:13
+    - name: p4
+      mac: 04:F4:1C:42:32:14
+    - name: p5
+      mac: 04:F4:1C:42:32:15
+    - name: p6
+      mac: 04:F4:1C:42:32:16
+    - name: p7
+      mac: 04:F4:1C:42:32:17
+    - name: p8
+      mac: 04:F4:1C:42:32:18
     - name: br-lan
       type: bridge
       ports:
-        - lan2
-        - lan3
-        - lan4
-        - lan5
+        - p1
+        - p2
+        - p3
+        - p4
+        - p5
+        - p6
+        - p7
+        - sfp
 
 hosts:
   - name: r
@@ -164,7 +176,7 @@ hosts:
   - name: w5
     mac: 58:47:CA:7D:4D:B5
     ipv4: "{{ ipv4_network }}.17"
-    duid: 00020000ab11ffb8728dad0bbf9c
+    duid: 00020000ab11d881ebf6ff625335
     hostid: 17
 
 # openwrt domains - glue to get FreeIPA running

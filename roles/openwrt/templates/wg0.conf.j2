@@ -1,0 +1,8 @@
+[Interface]
+Address = {{ server_ip }}/24
+ListenPort = {{ wireguard_port }}
+PrivateKey = {{ server_private_key.stdout | b64decode | trim }}
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o br-lan -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o br-lan -j MASQUERADE
+
+# Peers will be added dynamically

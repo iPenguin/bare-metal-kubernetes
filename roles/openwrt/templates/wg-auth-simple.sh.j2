@@ -1,0 +1,46 @@
+# templates/wg-auth-simple.sh.j2
+#!/bin/sh
+# Minimal HTTP auth server using netcat - OpenWrt compatible
+
+PORT=8080
+FIFO="/tmp/wg-auth-fifo"
+
+# Create named pipe for communication
+mkfifo "$FIFO" 2>/dev/null || true
+
+logger -t wg-auth "Starting minimal auth server on port $PORT"
+
+while true; do
+    # Listen for HTTP requests
+    {
+        read -r method path version
+        read -r host
+        read -r content_length
+        read -r content_type
+        read -r # empty line
+
+        # Read POST data if present
+        if echo "$content_length" | grep -q "Content-Length:"; then
+            length=$(echo "$content_length" | cut -d: -f2 | tr -d ' \r')
+            read -r -n "$length" post_data
+        fi
+
+        # Parse simple JSON (minimal parser for space)
+        if echo "$post_data" | grep -q "totp_code"; then
+            totp_code=$(echo "$post_data" | sed 's/.*"totp_code":"\([^"]*\)".*/\1/')
+            client_ip=$(echo "$post_data" | sed 's/.*"client_ip":"\([^"]*\)".*/\1/')
+            client_key=$(echo "$post_data" | sed 's/.*"public_key":"\([^"]*\)".*/\1/')
+
+            # Call 2FA script
+            if /usr/bin/wg-2fa.sh "$totp_code" "$client_ip" "$client_key"; then
+                echo -e "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"success\"}"
+            else
+                echo -e "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\n\r\n{\"status\":\"failed\"}"
+            fi
+        else
+            echo -e "HTTP/1.1 400 Bad Request\r\n\r\nBad Request"
+        fi
+    } | nc -l -p "$PORT"
+
+    sleep 1
+done

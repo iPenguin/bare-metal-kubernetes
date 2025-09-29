@@ -1,0 +1,171 @@
+---
+#
+# This script is absolutely rediculous because ansible-light
+# on open-wrt is missing all the needed libraries to actually
+# do anything useful.
+#
+
+- name: Install missing WireGuard packages
+  ansible.builtin.raw: |-
+    opkg install {{ item }}
+  loop:
+    - wireguard-tools
+    - kmod-wireguard
+    - luci-proto-wireguard
+    - qrencode
+    - oath-toolkit
+
+- name: Create WireGuard directory
+  ansible.builtin.raw: |-
+    mkdir -m 0700 -p /etc/wireguard
+
+- name: Generate WireGuard server private key
+  ansible.builtin.raw: |-
+    cd /etc/wireguard
+    umask 077
+    wg genkey > server_private.key
+  args:
+    creates: /etc/wireguard/server_private.key
+
+- name: Generate WireGuard server public key
+  ansible.builtin.raw: |-
+    cd /etc/wireguard
+    cat server_private.key | wg pubkey > server_public.key
+  args:
+    creates: /etc/wireguard/server_public.key
+
+- name: Read server private key
+  ansible.builtin.raw: |-
+    cat /etc/wireguard/server_private.key | base64
+  register: server_private_key
+  changed_when: false
+
+- name: Read server public key
+  ansible.builtin.raw: |-
+    cat /etc/wireguard/server_public.key | base64
+  register: server_public_key
+  changed_when: false
+
+- name: Render template locally
+  delegate_to: localhost
+  become: false
+  connection: local
+  ansible.builtin.template:
+    src: wg0.conf.j2
+    dest: /tmp/wg0.conf
+    mode: '0600'
+  run_once: true
+
+- name: Encode file content locally
+  delegate_to: localhost
+  become: false
+  connection: local
+  ansible.builtin.shell: |-
+    cat /tmp/wg0.conf | base64
+  delegate_to: localhost
+  register: encoded_content
+  run_once: true
+
+- name: Decode and write file on OpenWrt
+  ansible.builtin.raw: |-
+    echo "{{ encoded_content.stdout }}" | base64 -d > /etc/wireguard/wg0.conf
+  register: write_result
+
+- name: Set permissions
+  ansible.builtin.raw: |-
+    chmod 0600 /etc/wireguard/wg0.conf
+- name: Set ownership
+  ansible.builtin.raw: |-
+    chown root:root /etc/wireguard/wg0.conf
+
+
+- name: Configure UCI firewall for WireGuard
+  ansible.builtin.raw: |-
+    uci set firewall.@rule[-1]=rule
+    uci set firewall.@rule[-1].name='Allow-WireGuard'
+    uci set firewall.@rule[-1].src='wan'
+    uci set firewall.@rule[-1].dest_port='{{ wireguard_port }}'
+    uci set firewall.@rule[-1].proto='udp'
+    uci set firewall.@rule[-1].target='ACCEPT'
+  notify: restart firewall
+
+- name: Add VPN zone to firewall
+  ansible.builtin.raw: |-
+    uci set firewall.vpn=zone
+    uci set firewall.vpn.name='vpn'
+    uci set firewall.vpn.input='ACCEPT'
+    uci set firewall.vpn.output='ACCEPT'
+    uci set firewall.vpn.forward='ACCEPT'
+    uci set firewall.vpn.masq='1'
+    uci set firewall.vpn.device='wg0'
+  notify: restart firewall
+
+- name: Add VPN forwarding rule
+  ansible.builtin.raw: |-
+    uci set firewall.@forwarding[-1]=forwarding
+    uci set firewall.@forwarding[-1].src='vpn'
+    uci set firewall.@forwarding[-1].dest='lan'
+  notify: restart firewall
+
+- name: Commit UCI changes
+  ansible.builtin.raw: |-
+    uci commit firewall
+  notify: restart firewall
+
+- name: Create 2FA auth script
+  delegate_to: localhost
+  become: false
+  connection: local
+  ansible.builtin.template:
+    src: wg-2fa.sh.j2
+    dest: /tmp/wg-2fa.sh
+    mode: '0755'
+  run_once: true
+
+- name: Encode file content locally
+  delegate_to: localhost
+  become: false
+  connection: local
+  ansible.builtin.raw: |-
+    cat /tmp/wg-2fa.sh | base64
+  delegate_to: localhost
+  register: encoded_script_content
+  run_once: true
+
+- name: Decode and write file on OpenWrt
+  ansible.builtin.raw: |-
+    echo "{{ encoded_script_content.stdout }}" | base64 -d > /usr/bin/wg-2fa.sh
+
+- name: Set permissions
+  ansible.builtin.raw: |-
+    chmod 0755 /usr/bin/wg-2fa.sh
+- name: Set ownership
+  ansible.builtin.raw: |-
+    chown root:root /usr/bin/wg-2fa.sh
+
+- name: Generate client configurations
+  ansible.builtin.include_tasks: generate_clients.yaml
+  vars:
+    client_name: "{{ item }}"
+  loop: "{{ vpn_clients | default(['client1']) }}"
+
+- name: Add WireGuard to startup
+  lineinfile:
+    path: /etc/rc.local
+    line: 'wg-quick up wg0'
+    insertbefore: 'exit 0'
+
+- name: Enable CGI in uhttpd
+  ansible.builtin.raw: |-
+    uci set uhttpd.main.cgi_prefix='/cgi-bin'
+    uci commit uhttpd
+
+- name: Install CGI auth script
+  template:
+    src: wg-auth.cgi.j2
+    dest: /www/cgi-bin/wg-auth
+    mode: '0755'
+
+- name: Restart uhttpd
+  ansible.builtin.raw: |-
+    /etc/init.d/uhttpd restart

@@ -7,21 +7,32 @@
 # python3-urllib
 - name: Install required packages for ansible on OpenWrt
   ansible.builtin.raw: |-
-    opkg install openssh-sftp-server
+    opkg install {{ item }}
+  loop:
+    - openssh-sftp-server
+    - coreutils-base64
+    - python3
+    - python3-multiprocessing
+    - python3-distutils
+    - python3-logging
+    - python3-urllib
   tags:
     - ansible
     - packages
 
-#- name: Install wireguard packages
-#  ansible.builtin.raw: |-
-#    opkg install kmod-wireguard \
-#      wireguard-tools \
-#      luci-app-wireguard \
-#      luci-proto-wireguard
-#  tags:
-#    - wireguard
-#    - networking
-#    - packages
+# - name: Wireguard VPN setup
+#   include_tasks: vpn.yaml
+#   vars:
+#     ansible_user: root
+#     wireguard_port: 51820
+#     vpn_network: "10.0.0.0/24"
+#     server_ip: "10.0.0.1"
+#     # can be generated with: openssl rand -base64 20 | base32 -w 0 | tr -d '='
+#     totp_secret: "{{ vault_totp_secret }}"
+#   tags:
+#     - wireguard
+#     - networking
+#     - packages
 
 - name: Update networking
   include_tasks: update-networking.yaml

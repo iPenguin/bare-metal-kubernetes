@@ -19,3 +19,13 @@
   community.general.openwrt_init:
     name: network
     state: restarted
+
+- name: restart firewall
+  community.general.openwrt_init:
+    name: firewall
+    state: restarted
+
+- name: restart wireguard
+  community.general.openwrt_init:
+    name: wireguard
+    state: restarted

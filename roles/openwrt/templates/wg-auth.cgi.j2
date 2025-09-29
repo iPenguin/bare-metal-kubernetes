@@ -1,0 +1,27 @@
+# templates/wg-auth.cgi.j2
+#!/bin/sh
+# CGI script for WireGuard 2FA authentication
+
+echo "Content-Type: application/json"
+echo ""
+
+# Read POST data
+read -r post_data
+
+# Simple JSON parsing for minimal footprint
+totp_code=$(echo "$post_data" | sed 's/.*"totp_code":"\([^"]*\)".*/\1/')
+client_ip=$(echo "$post_data" | sed 's/.*"client_ip":"\([^"]*\)".*/\1/')
+client_key=$(echo "$post_data" | sed 's/.*"public_key":"\([^"]*\)".*/\1/')
+
+# Validate input
+if [ -z "$totp_code" ] || [ -z "$client_ip" ] || [ -z "$client_key" ]; then
+    echo '{"status":"error","message":"missing parameters"}'
+    exit 1
+fi
+
+# Call 2FA validation
+if /usr/bin/wg-2fa.sh "$totp_code" "$client_ip" "$client_key"; then
+    echo '{"status":"success"}'
+else
+    echo '{"status":"failed"}'
+fi

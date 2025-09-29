@@ -1,0 +1,30 @@
+# templates/wg-2fa.sh.j2
+#!/bin/sh
+# Minimal WireGuard 2FA using TOTP - OpenWrt compatible
+
+SECRET="{{ totp_secret }}"
+CLIENT_CODE="$1"
+CLIENT_IP="$2"
+CLIENT_KEY="$3"
+
+# Generate current TOTP (30-second window)
+CURRENT_TIME=$(date +%s)
+TIME_SLOT=$((CURRENT_TIME / 30))
+EXPECTED_CODE=$(oathtool --totp -b "$SECRET" --time-step-size=30s --start-time=0 --digits=6)
+
+# Simple logging to syslog (space efficient)
+logger -t wg-2fa "Auth attempt from $CLIENT_IP"
+
+if [ "$CLIENT_CODE" = "$EXPECTED_CODE" ]; then
+    logger -t wg-2fa "2FA success for $CLIENT_IP"
+    # Enable peer temporarily (could be enhanced with timeout)
+    wg set wg0 peer "$CLIENT_KEY" allowed-ips "$CLIENT_IP/32" 2>/dev/null || true
+    echo "success"
+    exit 0
+else
+    logger -t wg-2fa "2FA failed for $CLIENT_IP"
+    # Disable peer
+    wg set wg0 peer "$CLIENT_KEY" remove 2>/dev/null || true
+    echo "failed"
+    exit 1
+fi
