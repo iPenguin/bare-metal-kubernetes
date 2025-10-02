@@ -5,15 +5,15 @@ config acme
 {% for acct in acme_accounts %}
 config cert '{{ acct.name }}'
         option enabled '{{ acct.enabled | int }}'
-        option keylength '{{ acct.keylength }}'
+        option key_type '{{ acct.key_type }}'
         option validation_method '{{ acct.method }}'
         option dns '{{ acct.plugin }}'
-        {% for creds in acct.credentials %}
+{% for creds in acct.credentials %}
         list credentials '{{ creds }}'
-        {% endfor %}
+{% endfor %}
         option use_staging '0'
         option update_uhttpd '{{ acct.update_router | int }}'
-        {% for domain in acct.domains %}
+{% for domain in acct.domains %}
         list domains '{{ domain }}'
-        {% endfor %}
+{% endfor %}
 {% endfor %}

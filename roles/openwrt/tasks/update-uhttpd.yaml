@@ -1,0 +1,10 @@
+---
+
+- name: Configure uhttpd
+  ansible.builtin.template:
+    src: uhttpd.j2
+    dest: /etc/config/uhttpd
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart uhttpd
