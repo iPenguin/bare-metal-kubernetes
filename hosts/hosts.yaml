@@ -19,7 +19,7 @@ all:
       children:
         router:
           hosts:
-            r.milco.casa:
+            r.clt.milco.casa:
 backups:
   hosts:
     c1.clt.milco.casa:

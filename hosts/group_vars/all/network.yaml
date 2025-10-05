@@ -154,17 +154,17 @@ hosts:
     duid: 00020000ab1180602254182e6eb6
     hostid: 12
   - name: w1
-    mac: 04:7B:CB:A2:67:49
+    mac: 8c:ae:4c:b9:31:9e
     ipv4: "{{ ipv4_network }}.13"
     duid: 00020000ab117ee2afe94c203ff7
     hostid: 13
   - name: w2
-    mac: 04:7B:CB:A2:66:13
+    mac: 8c:ae:4c:b9:2f:ed
     ipv4: "{{ ipv4_network }}.14"
     duid: 00020000ab11dccab35199b63f41
     hostid: 14
   - name: w3
-    mac: 04:7B:CB:A2:66:FA
+    mac: 8c:ae:4c:b9:31:64
     ipv4: "{{ ipv4_network }}.15"
     duid: 00020000ab11eb87b0126a3ba008
     hostid: 15
@@ -178,6 +178,9 @@ hosts:
     ipv4: "{{ ipv4_network }}.17"
     duid: 00020000ab11d881ebf6ff625335
     hostid: 17
+  - name: kvm
+    mac: 80:34:28:66:04:92
+    ipv4: "{{ ipv4_network }}.5"
 
 # openwrt domains - glue to get FreeIPA running
 domains:
