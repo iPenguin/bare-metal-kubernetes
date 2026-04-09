@@ -30,30 +30,6 @@ nextcloud:
       value: "https"
     - name: OVERWRITEHOST
       value: "nextcloud.clt.milco.casa"
-    - name: NEXTCLOUD_TRUSTED_DOMAINS
-      value: "nextcloud.clt.milco.casa"
-    - name: NEXTCLOUD_ADMIN_USER
-      valueFrom:
-        secretKeyRef:
-          name: nextcloud-secrets
-          key: admin_username
-    - name: NEXTCLOUD_ADMIN_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: nextcloud-secrets
-          key: admin_password
-    # Database connection variables
-    - name: POSTGRES_HOST
-      value: "nextcloud-prod-postgresql"  # Adjust this to match your PostgreSQL service name
-    - name: POSTGRES_DB
-      value: "nextcloud"
-    - name: POSTGRES_USER
-      value: "nextcloud"
-    - name: POSTGRES_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: nextcloud-secrets
-          key: db_user_password
     # - name: NEXTCLOUD_CONFIG_KEYCLOAK_CLIENT_SECRET
     #   valueFrom:
     #     secretKeyRef:
@@ -78,58 +54,6 @@ nextcloud:
   objectStore:
     s3:
       enabled: false
-
-  # configs:
-  #   keycloak-oidc.config.php: |-
-  #     <?php
-  #     $CONFIG = array (
-  #       # Disable regular user registration
-  #       'allow_user_to_change_display_name' => false,
-  #       'lost_password_link' => 'disabled',
-
-  #       # OIDC provider settings for Keycloak
-  #       'user_oidc' => array(
-  #         'single_logout' => true,
-  #         'auto_provision' => true,
-  #         'soft_auto_provision' => true,
-  #       ),
-
-  #       # Example attribute mapping (uncomment and adjust as needed):
-  #       # 'user_oidc' => array(
-  #       #   'provider-params' => array(
-  #       #     'keycloak' => array(
-  #       #       'displayNameMapping' => 'name',
-  #       #       'mailMapping' => 'email',
-  #       #       'groupMapping' => 'groups',
-  #       #       'quotaMapping' => 'nextcloud_quota',
-  #       #       'uidMapping' => 'preferred_username',
-  #       #     ),
-  #       #   ),
-  #       # ),
-  #     );
-
-  #   config.php: |-
-  #     <?php
-  #     $CONFIG = array (
-  #       'allow_user_to_change_display_name' => false,
-  #       'lost_password_link' => 'disabled',
-  #       'oidc_login_provider_url' => 'https://sso.clt.milco.casa/realms/homelab',
-  #       'oidc_login_client_id' => 'nextcloud',
-  #       'oidc_login_client_secret' => '{{ .Values.keycloakClientSecret }}',
-  #       'oidc_login_auto_redirect' => false,
-  #       'oidc_login_logout_url' => 'https://sso.clt.milco.casa/realms/homelab/protocol/openid-connect/logout?redirect_uri=https://nextcloud.clt.milco.casa/',
-  #       'oidc_login_default_quota' => '1000000000',
-  #       'oidc_login_button_text' => 'Login with Homelab',
-  #       'oidc_login_attributes' => array (
-  #         'id' => 'preferred_username',
-  #         'name' => 'name',
-  #         'mail' => 'email',
-  #         'groups' => 'ownCloudGroups',
-  #       ),
-  #       'oidc_login_scope' => 'openid profile email',
-  #       'overwriteprotocol' => 'https',
-  #       'overwrite.cli.url' => 'https://nextcloud.clt.milco.casa',
-  #     );
 
 nginx:
   enabled: true
