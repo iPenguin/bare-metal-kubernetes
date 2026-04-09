@@ -1,7 +1,7 @@
 ---
 
 - name: Install desired packages
-  ansible.builtin.opkg:
+  ansible.builtin.apk:
     name: acme-acmesh,acme-acmesh-dnsapi,luci-app-acme
     state: present
     update_cache: yes
