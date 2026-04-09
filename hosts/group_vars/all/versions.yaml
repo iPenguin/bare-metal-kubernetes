@@ -13,9 +13,6 @@ crio_version: 1.33.2
 crun_version: 1.19
 freeipa_version: 4.12.2
 
-gitea_helm_chart_version: 10.6.0
-gitea_version: 1.22.4
-
 harbor_chart_version: 1.17.1
 helm_version: 3.16.4
 
