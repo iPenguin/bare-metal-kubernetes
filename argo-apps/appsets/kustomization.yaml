@@ -4,9 +4,12 @@ kind: Kustomization
 resources:
   - ai.yaml
   - concourse.yaml
+  - external-dns.yaml
   - gitea.yaml
+  - harbor.yaml
   - keycloak.yaml
   - kubernetes-reflector.yaml
+  - lldap.yaml
   - minio.yaml
   - nextcloud.yaml
   - plex.yaml

@@ -27,7 +27,7 @@
     enabled: true
   register: realm_result
 
-- name: Create LDAP user federation for FreeIPA in Keycloak
+- name: Create LDAP user federation for LLDAP in Keycloak
   delegate_to: localhost
   community.general.keycloak_user_federation:
     auth_keycloak_url: "{{ keycloak.url }}"
@@ -36,19 +36,19 @@
     auth_realm: "{{ keycloak.admin_realm }}"
     realm: "{{ keycloak.realm }}"
     state: present
-    name: "freeipa-ldap"
+    name: "lldap"
     provider_id: "ldap"
     config:
-      connectionUrl: "ldap://ipa-01.{{ lan_domain }}:389"
-      usersDn: "cn=users,cn=accounts,{{ ldap_base_dn }}"
-      bindDn: "uid=svc_ldap,cn=users,cn=accounts,{{ ldap_base_dn }}"
+      connectionUrl: "{{ lldap_url }}"
+      usersDn: "{{ ldap_users_dn }}"
+      bindDn: "{{ ldap_svc_dn }}"
       bindCredential: "{{ svc_ldap_password }}"
       vendor: "other"
       authType: "simple"
       usernameLDAPAttribute: "uid"
       rdnLDAPAttribute: "uid"
-      uuidLDAPAttribute: "nsUniqueId"
-      userObjectClasses: "inetOrgPerson, organizationalPerson, person, top"
+      uuidLDAPAttribute: "entryUUID"
+      userObjectClasses: "inetOrgPerson, person"
       searchScope: 2
       editMode: "READ_ONLY"
       fullSyncPeriod: 86400  # 24hr sync
@@ -79,13 +79,11 @@
         providerId: "user-attribute-ldap-mapper"
         config:
           user.model.attribute: "firstName"
-          ldap.attribute: "cn"
+          ldap.attribute: "givenName"
           read.only: "true"
           alwaysReadValueFromLDAP: "true"
           isMandatory: "true"
           is.binary.attribute: "false"
-      - name: "Kerberos principal attribute mapper"
-        providerId: "kerberos-principal-attribute-mapper"
       - name: "last name"
         providerId: "user-attribute-ldap-mapper"
         config:
@@ -116,14 +114,14 @@
       - name: "groups"
         providerId: "group-ldap-mapper"
         config:
-          groups.dn: "cn=groups,cn=accounts,{{ ldap_base_dn }}"
+          groups.dn: "{{ ldap_groups_dn }}"
           group.name.ldap.attribute: "cn"
-          group.object.classes: "groupOfNames"
-          membership.ldap.attribute: "memberOf"
+          group.object.classes: "groupOfUniqueNames"
+          membership.ldap.attribute: "uniqueMember"
           membership.attribute.type: "DN"
           groups.path: "/"
           mode: "LDAP_ONLY"
-          user.roles.retrieve.strategy: "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE"
+          user.roles.retrieve.strategy: "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
           drop.non.existing.groups.during.sync: "false"
           preserve.group.inheritance: "true"
           alwaysReadValueFromLDAP: "true"
@@ -210,102 +208,3 @@
           id.token.claim: true
           access.token.claim: true
           userinfo.token.claim: true
-
-- name: Configure Keycloak client for ArgoCD
-  delegate_to: localhost
-  community.general.keycloak_client:
-    auth_keycloak_url: "{{ keycloak.url }}"
-    auth_username: "{{ keycloak.admin_username }}"
-    auth_password: "{{ keycloak_admin_password }}"
-    auth_realm: "{{ keycloak.admin_realm }}"
-    realm: "{{ keycloak.realm }}"
-    state: present
-    client_id: "argocd"
-    name: "ArgoCD"
-    enabled: true
-    client_authenticator_type: "client-secret"
-    secret: "{{ argocd_client_secret }}"
-    public_client: false
-    protocol: "openid-connect"
-    standard_flow_enabled: true
-    implicit_flow_enabled: false
-    direct_access_grants_enabled: true
-    service_accounts_enabled: false
-    base_url: "https://argocd.{{ lan_domain }}"
-    redirect_uris:
-      - "https://argocd.{{ lan_domain }}/auth/callback"
-    web_origins:
-      - "https://argocd.{{ lan_domain }}"
-    consent_required: false
-    default_client_scopes:
-      - "email"
-      - "groups"
-      - "openid"
-      - "profile"
-      - "username"
-
-- name: Configure Keycloak client for gitea
-  delegate_to: localhost
-  community.general.keycloak_client:
-    auth_keycloak_url: "{{ keycloak.url }}"
-    auth_username: "{{ keycloak.admin_username }}"
-    auth_password: "{{ keycloak_admin_password }}"
-    auth_realm: "{{ keycloak.admin_realm }}"
-    realm: "{{ keycloak.realm }}"
-    state: present
-    client_id: "gitea"
-    name: "Gitea configuration"
-    enabled: true
-    client_authenticator_type: "client-secret"
-    secret: "{{ gitea_client_secret }}"
-    public_client: false
-    protocol: "openid-connect"
-    standard_flow_enabled: true
-    implicit_flow_enabled: false
-    direct_access_grants_enabled: true
-    service_accounts_enabled: false
-    base_url: "https://git.{{ lan_domain }}"
-    redirect_uris:
-      - "https://git.{{ lan_domain }}/user/oauth2/homelab/callback"
-    web_origins:
-      - "https://git.{{ lan_domain }}"
-    consent_required: false
-    default_client_scopes:
-      - "email"
-      - "groups"
-      - "openid"
-      - "profile"
-      - "username"
-
-- name: Configure Keycloak client for harbor
-  delegate_to: localhost
-  community.general.keycloak_client:
-    auth_keycloak_url: "{{ keycloak.url }}"
-    auth_username: "{{ keycloak.admin_username }}"
-    auth_password: "{{ keycloak_admin_password }}"
-    auth_realm: "{{ keycloak.admin_realm }}"
-    realm: "{{ keycloak.realm }}"
-    state: present
-    client_id: "harbor"
-    name: "Harbor configuration"
-    enabled: true
-    client_authenticator_type: "client-secret"
-    secret: "{{ harbor_client_secret }}"
-    public_client: false
-    protocol: "openid-connect"
-    standard_flow_enabled: true
-    implicit_flow_enabled: false
-    direct_access_grants_enabled: true
-    service_accounts_enabled: true
-    base_url: "https://harbor.{{ lan_domain }}"
-    redirect_uris:
-      - "https://harbor.{{ lan_domain }}/c/oidc/callback"
-    web_origins:
-      - "https://harbor.{{ lan_domain }}"
-    consent_required: false
-    default_client_scopes:
-      - "email"
-      - "groups"
-      - "openid"
-      - "profile"
-      - "username"

@@ -12,7 +12,7 @@ spec:
   destination:
     namespace: argocd
     server: https://kubernetes.default.svc
-  project: freeipa
+  project: homelab
   source:
     repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
     path: argo-apps/appsets

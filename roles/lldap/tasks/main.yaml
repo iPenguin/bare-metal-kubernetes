@@ -1,0 +1,89 @@
+---
+- name: Get LLDAP secrets
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: lldap-secrets
+    namespace: lldap
+  register: lldap_k8s_secrets
+
+- name: Set LLDAP admin password
+  ansible.builtin.set_fact:
+    lldap_admin_password: "{{ lldap_k8s_secrets.resources[0].data['LLDAP_LDAP_USER_PASS'] | b64decode }}"
+
+- name: Get LLDAP auth token
+  ansible.builtin.uri:
+    url: "{{ lldap_http_url }}/auth/simple/login"
+    method: POST
+    body_format: json
+    body:
+      username: "admin"
+      password: "{{ lldap_admin_password }}"
+    status_code: 200
+  register: lldap_auth
+  delegate_to: localhost
+
+- name: Set LLDAP auth token
+  ansible.builtin.set_fact:
+    lldap_token: "{{ lldap_auth.json.token }}"
+
+- name: Create LLDAP groups
+  ansible.builtin.uri:
+    url: "{{ lldap_http_url }}/api/graphql"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ lldap_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      query: |
+        mutation CreateGroup($name: String!) {
+          createGroup(name: $name) {
+            id
+            displayName
+          }
+        }
+      variables:
+        name: "{{ item.name }}"
+    status_code: [200]
+  loop: "{{ lldap_groups }}"
+  delegate_to: localhost
+  register: group_results
+  failed_when:
+    - group_results.status != 200
+    - "'already exists' not in (group_results.json.errors | default([]) | map(attribute='message') | join(''))"
+
+- name: Create LLDAP users
+  ansible.builtin.uri:
+    url: "{{ lldap_http_url }}/api/graphql"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ lldap_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      query: |
+        mutation CreateUser($user: CreateUserInput!) {
+          createUser(user: $user) {
+            id
+          }
+        }
+      variables:
+        user:
+          id: "{{ item.name }}"
+          email: "{{ item.email }}"
+          displayName: "{{ item.first_name }} {{ item.last_name }}"
+          firstName: "{{ item.first_name }}"
+          lastName: "{{ item.last_name }}"
+    status_code: [200]
+  loop: "{{ lldap_users }}"
+  delegate_to: localhost
+  register: user_results
+  failed_when:
+    - user_results.status != 200
+    - "'already exists' not in (user_results.json.errors | default([]) | map(attribute='message') | join(''))"
+
+- name: Add users to groups
+  ansible.builtin.include_tasks: add-user-groups.yaml
+  loop: "{{ lldap_users | selectattr('groups', 'defined') | selectattr('groups', 'ne', []) | list }}"
+  loop_var: lldap_user

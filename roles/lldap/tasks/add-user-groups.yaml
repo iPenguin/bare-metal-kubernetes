@@ -1,0 +1,49 @@
+---
+# Include file: called with loop_var lldap_user
+- name: "Add {{ lldap_user.name }} to groups"
+  ansible.builtin.uri:
+    url: "{{ lldap_http_url }}/api/graphql"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ lldap_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      query: |
+        query GetGroupId($name: String!) {
+          groups(filters: { displayName: { eq: $name } }) {
+            id
+          }
+        }
+      variables:
+        name: "{{ item }}"
+    status_code: [200]
+  loop: "{{ lldap_user.groups }}"
+  register: group_id_results
+  delegate_to: localhost
+
+- name: "Resolve group IDs for {{ lldap_user.name }}"
+  ansible.builtin.set_fact:
+    resolved_group_ids: "{{ group_id_results.results | map(attribute='json.data.groups') | map('first') | map(attribute='id') | list }}"
+
+- name: "Add {{ lldap_user.name }} to groups by ID"
+  ansible.builtin.uri:
+    url: "{{ lldap_http_url }}/api/graphql"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ lldap_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      query: |
+        mutation AddUserToGroup($userId: String!, $groupId: Int!) {
+          addUserToGroup(userId: $userId, groupId: $groupId) {
+            id
+          }
+        }
+      variables:
+        userId: "{{ lldap_user.name }}"
+        groupId: "{{ item }}"
+    status_code: [200]
+  loop: "{{ resolved_group_ids }}"
+  delegate_to: localhost

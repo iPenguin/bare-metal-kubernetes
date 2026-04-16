@@ -5,6 +5,8 @@ service:
   ipFamilies:
     - IPv4
     - IPv6
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "traefik.clt.milco.casa"
   additionalServices:
     ssh:
       enabled: true
@@ -13,6 +15,8 @@ service:
       ipFamilies:
         - IPv4
         - IPv6
+      annotations:
+        external-dns.alpha.kubernetes.io/hostname: "traefik-ssh.clt.milco.casa"
 
 ports:
   web:

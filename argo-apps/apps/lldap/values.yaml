@@ -1,0 +1,38 @@
+---
+replicaCount: 1
+
+env:
+  LLDAP_LDAP_BASE_DN: "dc=milco,dc=casa"
+  LLDAP_LDAP_PORT: "3890"
+  LLDAP_HTTP_PORT: "17170"
+  LLDAP_SMTP_OPTIONS__ENABLE_PASSWORD_RESET: "false"
+
+envFrom:
+  - secretRef:
+      name: lldap-secrets
+
+persistence:
+  enabled: true
+  storageClass: "ceph-block"
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+service:
+  type: ClusterIP
+  ldapPort: 3890
+  httpPort: 17170
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "lldap.clt.milco.casa"
+  hosts:
+    - host: lldap.clt.milco.casa
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: wildcard.milco.casa
+      hosts:
+        - lldap.clt.milco.casa

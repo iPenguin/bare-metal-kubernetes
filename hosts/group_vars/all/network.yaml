@@ -23,12 +23,6 @@ network_services:
   cilium:
     ipv4: "{{ ipv4_network }}.22"
     ipv6: "{{ ipv6_network }}::22"
-  ipa-01:
-    ipv4: "{{ ipv4_network }}.23"
-    ipv6: "{{ ipv6_network }}::23"
-  ipa-02:
-    ipv4: "{{ ipv4_network }}.24"
-    ipv6: "{{ ipv6_network }}::24"
   plex-svc:
     ipv4: "{{ ipv4_network }}.25"
     ipv6: "{{ ipv6_network }}::25"
@@ -39,7 +33,6 @@ network_services:
 network:
   ipv4:
     external_dns:
-      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv4 }}"
       - 1.1.1.3
       - 1.0.0.3
     subnet: "{{ ipv4_network }}.0/24"
@@ -50,7 +43,6 @@ network:
       end: "{{ ipv4_network }}.100"
   ipv6:
     external_dns:
-      - "/{{ lan_domain }}/{{ network_services['ipa-01'].ipv6 }}"
       - 2606:4700:4700::1113
       - 2606:4700:4700::1003
     subnet: "{{ ipv6_network }}::/64"
@@ -182,11 +174,26 @@ hosts:
     mac: 80:34:28:66:04:92
     ipv4: "{{ ipv4_network }}.5"
 
-# openwrt domains - glue to get FreeIPA running
+# openwrt static domains - records not managed by ExternalDNS
 domains:
-  - name: "ipa-01.{{ lan_domain }}"
-    ipv4: "{{ network_services['ipa-01'].ipv4 }}"
-    ipv6: "{{ network_services['ipa-01'].ipv6 }}"
   - name: "{{ k8s_api_endpoint }}"
     ipv4: "{{ network_services['vip'].ipv4 }}"
     ipv6: "{{ network_services['vip'].ipv6 }}"
+
+# Ceph SRV records for dnsmasq (ExternalDNS does not support SRV records)
+dnsmasq_srv_records:
+  - name: "_ceph-mon._tcp.{{ lan_domain }}"
+    target: "c1.{{ lan_domain }}"
+    port: 6789
+    priority: 10
+    weight: 20
+  - name: "_ceph-mon._tcp.{{ lan_domain }}"
+    target: "c2.{{ lan_domain }}"
+    port: 6789
+    priority: 10
+    weight: 30
+  - name: "_ceph-mon._tcp.{{ lan_domain }}"
+    target: "c3.{{ lan_domain }}"
+    port: 6789
+    priority: 20
+    weight: 50

@@ -1,0 +1,2 @@
+---
+lldap_http_url: "http://lldap.lldap.svc.cluster.local:17170"

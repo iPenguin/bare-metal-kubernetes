@@ -1,0 +1,37 @@
+---
+
+ldap_base_dn: "dc={{ domain }},dc={{ tld }}"
+ldap_users_dn: "ou=people,{{ ldap_base_dn }}"
+ldap_groups_dn: "ou=groups,{{ ldap_base_dn }}"
+ldap_svc_dn: "uid=svc_ldap,{{ ldap_users_dn }}"
+lldap_url: "ldap://lldap.lldap.svc.cluster.local:3890"
+lldap_http_url: "http://lldap.lldap.svc.cluster.local:17170"
+
+lldap_groups:
+  - name: app-argocd-admins
+  - name: app-argocd-users
+  - name: app-concourse-admins
+  - name: app-concourse-users
+  - name: app-gitea-admins
+  - name: app-gitea-users
+  - name: app-harbor-admins
+  - name: app-harbor-users
+  - name: app-nextcloud-admins
+  - name: app-nextcloud-users
+
+lldap_users:
+  - name: bmilco
+    first_name: Brian
+    last_name: Milco
+    email: "{{ site_admin_email }}"
+    groups:
+      - app-argocd-admins
+      - app-concourse-admins
+      - app-gitea-admins
+      - app-harbor-admins
+      - app-nextcloud-admins
+  - name: svc_ldap
+    first_name: Ldap
+    last_name: Lookup
+    email: "svc_ldap@{{ lan_domain }}"
+    groups: []

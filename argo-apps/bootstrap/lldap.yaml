@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: lldap
+  namespace: argocd
+spec:
+  description: LLDAP lightweight LDAP server
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: lldap
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://lldap.github.io/lldap-helm/

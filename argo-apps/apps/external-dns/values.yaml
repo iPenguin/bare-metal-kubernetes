@@ -1,0 +1,97 @@
+---
+# ExternalDNS with OpenWrt webhook provider (sidecar pattern)
+# https://github.com/ipenguin/external-dns-openwrt-webhook
+
+image:
+  repository: registry.k8s.io/external-dns/external-dns
+  pullPolicy: IfNotPresent
+
+provider:
+  name: webhook
+
+extraArgs:
+  - --webhook-provider-url=http://localhost:8888
+
+# Sidecar container running the OpenWrt webhook
+extraContainers:
+  - name: openwrt-webhook
+    image: ghcr.io/ipenguin/external-dns-openwrt-webhook:latest
+    imagePullPolicy: Always
+    ports:
+      - name: webhook
+        containerPort: 8888
+        protocol: TCP
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: webhook
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: webhook
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    env:
+      - name: OPENWRT_HOST
+        value: "10.1.1.1"
+      - name: OPENWRT_USER
+        value: "root"
+      - name: OPENWRT_SSH_PORT
+        value: "22"
+    volumeMounts:
+      - name: ssh-key
+        mountPath: /root/.ssh/id_ed25519
+        subPath: openwrt-ssh-key
+        readOnly: true
+
+extraVolumes:
+  - name: ssh-key
+    secret:
+      secretName: external-dns-secrets
+      defaultMode: 0600
+
+# Watch both Ingress and Service resources
+sources:
+  - ingress
+  - service
+
+# Only manage records in this zone
+domainFilters:
+  - "clt.milco.casa"
+
+# Manage all resources (no annotation filter)
+policy: sync
+
+# TXT registry for ownership tracking
+registry: txt
+txtOwnerId: "external-dns-homelab"
+txtPrefix: "edns-"
+
+interval: 1m
+
+logLevel: info
+logFormat: text
+
+serviceAccount:
+  create: true
+  name: external-dns
+
+rbac:
+  create: true
+
+# RBAC needs to watch Ingress and Service objects cluster-wide
+podSecurityContext:
+  fsGroup: 65534
+  runAsNonRoot: true
+  runAsUser: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true

@@ -35,3 +35,7 @@
 # "bert" another name, bertrand
 # The fields are <cname>,<target>
 #cname=bertand,bert
+
+{% for srv in dnsmasq_srv_records | default([]) %}
+srv-host={{ srv.name }},{{ srv.target }},{{ srv.port }},{{ srv.priority }},{{ srv.weight }}
+{% endfor %}

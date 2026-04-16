@@ -2,17 +2,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: freeipa
+  name: external-dns
   namespace: argocd
 spec:
-  description: FreeIPA domain server
+  description: ExternalDNS with OpenWrt webhook provider
   destinations:
     - namespace: argocd
       server: '*'
-    - namespace: freeipa
+    - namespace: external-dns
       server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
   sourceRepos:
     - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://kubernetes-sigs.github.io/external-dns/
