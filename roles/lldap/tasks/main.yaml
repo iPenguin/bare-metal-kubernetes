@@ -107,4 +107,5 @@
 - name: Add users to groups
   ansible.builtin.include_tasks: add-user-groups.yaml
   loop: "{{ lldap_users | selectattr('groups', 'defined') | selectattr('groups', 'ne', []) | list }}"
-  loop_var: lldap_user
+  loop_control:
+    loop_var: lldap_user

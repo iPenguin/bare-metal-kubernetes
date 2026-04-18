@@ -5,7 +5,7 @@ ldap_users_dn: "ou=people,{{ ldap_base_dn }}"
 ldap_groups_dn: "ou=groups,{{ ldap_base_dn }}"
 ldap_svc_dn: "uid=svc_ldap,{{ ldap_users_dn }}"
 lldap_url: "ldap://lldap.lldap.svc.cluster.local:3890"
-lldap_http_url: "http://lldap.lldap.svc.cluster.local:17170"
+lldap_http_url: "https://lldap.{{ lan_domain }}"
 
 lldap_groups:
   - name: app-argocd-admins
