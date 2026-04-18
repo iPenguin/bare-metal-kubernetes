@@ -7,9 +7,10 @@
     namespace: lldap
   register: lldap_k8s_secrets
 
-- name: Set LLDAP admin password
+- name: Set LLDAP passwords
   ansible.builtin.set_fact:
     lldap_admin_password: "{{ lldap_k8s_secrets.resources[0].data['LLDAP_LDAP_USER_PASS'] | b64decode }}"
+    lldap_svc_ldap_password: "{{ lldap_k8s_secrets.resources[0].data['LLDAP_SVC_LDAP_PASS'] | b64decode }}"
 
 - name: Get LLDAP auth token
   ansible.builtin.uri:
@@ -82,6 +83,26 @@
   failed_when:
     - user_results.status != 200
     - "'already exists' not in (user_results.json.errors | default([]) | map(attribute='message') | join(''))"
+
+- name: Set svc_ldap password
+  ansible.builtin.uri:
+    url: "{{ lldap_http_url }}/api/graphql"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ lldap_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      query: |
+        mutation ResetUserPasswordAdmin($userId: String!, $password: String!) {
+          changeUserPassword(userId: $userId, password: $password)
+        }
+      variables:
+        userId: "svc_ldap"
+        password: "{{ lldap_svc_ldap_password }}"
+    status_code: [200]
+  delegate_to: localhost
+  no_log: true
 
 - name: Add users to groups
   ansible.builtin.include_tasks: add-user-groups.yaml
