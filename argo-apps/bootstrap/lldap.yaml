@@ -16,4 +16,4 @@ spec:
       kind: '*'
   sourceRepos:
     - https://github.com/ipenguin/bare-metal-kubernetes.git
-    - https://lldap.github.io/lldap-helm/
+    - https://djjudas21.github.io/charts/

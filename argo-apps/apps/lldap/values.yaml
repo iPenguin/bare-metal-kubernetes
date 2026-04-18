@@ -7,9 +7,11 @@ env:
   LLDAP_HTTP_PORT: "17170"
   LLDAP_SMTP_OPTIONS__ENABLE_PASSWORD_RESET: "false"
 
-envFrom:
-  - secretRef:
-      name: lldap-secrets
+lldap:
+  secretName: lldap-secrets
+  jwtSecretKey: LLDAP_JWT_SECRET
+  ldapUserPassKey: LLDAP_LDAP_USER_PASS
+  keySeedKey: LLDAP_KEY_SEED
 
 persistence:
   enabled: true
@@ -17,10 +19,16 @@ persistence:
   accessMode: ReadWriteOnce
   size: 1Gi
 
+podSecurityContext:
+  fsGroup: 10001
+
 service:
-  type: ClusterIP
-  ldapPort: 3890
-  httpPort: 17170
+  http:
+    type: ClusterIP
+    port: 17170
+  ldap:
+    type: ClusterIP
+    port: 3890
 
 ingress:
   enabled: true

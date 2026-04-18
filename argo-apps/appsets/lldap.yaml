@@ -31,9 +31,9 @@ spec:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           ref: valuesSrc
-        - repoURL: 'https://lldap.github.io/lldap-helm/'
+        - repoURL: 'https://djjudas21.github.io/charts/'
           chart: lldap
-          targetRevision: 0.2.0
+          targetRevision: 0.6.3
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/lldap/values.yaml'
