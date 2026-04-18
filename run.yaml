@@ -138,6 +138,17 @@
       when:
         - inventory_hostname in k8s_controller
 
+- name: Configure LLDAP users and groups
+  hosts:
+    - controllers
+  run_once: true
+  tags:
+    - lldap
+  connection: local
+  become: false
+  roles:
+    - role: lldap
+
 - name: Deploy Keycloak realm config
   hosts:
     - controllers
