@@ -42,7 +42,7 @@ spec:
         - repoURL: 'registry-1.docker.io/bitnamicharts'
           chart: keycloak
           path: keycloak
-          targetRevision: 24.5.2
+          targetRevision: 25.2.0
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/keycloak/values.yaml'

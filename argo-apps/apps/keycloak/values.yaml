@@ -40,6 +40,9 @@ metrics:
 
 postgresql:
   enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: 17.6.0-debian-12-r4
   auth:
     username: bn_keycloak
     database: bitnami_keycloak
@@ -50,3 +53,6 @@ postgresql:
 
 keycloakConfigCli:
   enabled: false
+
+image:
+  repository: bitnamilegacy/keycloak
