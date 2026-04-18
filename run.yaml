@@ -127,27 +127,6 @@
       when:
         - inventory_hostname in k8s_controller
 
-- name: Deploy Free IPA
-  hosts:
-    - freeipa
-  tags:
-    - apps
-    - ipa
-  roles:
-    - role: freeipa
-
-- name: Deploy Domain config
-  hosts:
-    - freeipa
-  tags:
-    - ipa
-    - config
-    - domain
-  connection: local
-  become: false
-  roles:
-    - role: domain
-
 - name: Deploy Sealed Secrets
   hosts:
     - controllers
