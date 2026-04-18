@@ -1,0 +1,74 @@
+---
+- name: Get LLDAP secrets for Nextcloud
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: lldap-secrets
+    namespace: lldap
+  register: lldap_k8s_secrets
+
+- name: Set svc_ldap password
+  ansible.builtin.set_fact:
+    nextcloud_ldap_password: "{{ lldap_k8s_secrets.resources[0].data['LLDAP_SVC_LDAP_PASS'] | b64decode }}"
+
+- name: Get Nextcloud pod name
+  ansible.builtin.command:
+    cmd: kubectl -n nextcloud get pods -l app.kubernetes.io/name=nextcloud -o jsonpath='{.items[0].metadata.name}'
+  register: nextcloud_pod
+  delegate_to: localhost
+  changed_when: false
+
+- name: Configure Nextcloud LDAP settings
+  ansible.builtin.command:
+    cmd: >
+      kubectl -n nextcloud exec {{ nextcloud_pod.stdout }} -c nextcloud --
+      php /var/www/html/occ ldap:set-config "" {{ item.key }} "{{ item.value }}"
+  loop:
+    - key: ldapHost
+      value: "lldap.lldap.svc.cluster.local"
+    - key: ldapPort
+      value: "3890"
+    - key: ldapBase
+      value: "{{ ldap_users_dn }}"
+    - key: ldapBaseGroups
+      value: "{{ ldap_groups_dn }}"
+    - key: ldapAgentName
+      value: "{{ ldap_svc_dn }}"
+    - key: ldapUserFilter
+      value: "(objectClass=inetOrgPerson)"
+    - key: ldapLoginFilter
+      value: "(&(objectClass=inetOrgPerson)(uid=%uid))"
+    - key: ldapGroupFilter
+      value: "(objectClass=groupOfUniqueNames)"
+    - key: ldapGroupMemberAssocAttr
+      value: "uniqueMember"
+    - key: ldapUserDisplayName
+      value: "displayName"
+    - key: ldapEmailAttribute
+      value: "mail"
+    - key: ldapGidNumber
+      value: "cn"
+  delegate_to: localhost
+  changed_when: true
+
+- name: Configure Nextcloud LDAP bind password
+  ansible.builtin.command:
+    cmd: >
+      kubectl -n nextcloud exec {{ nextcloud_pod.stdout }} -c nextcloud --
+      php /var/www/html/occ ldap:set-config "" ldapAgentPassword "{{ nextcloud_ldap_password }}"
+  delegate_to: localhost
+  changed_when: true
+  no_log: true
+
+- name: Test Nextcloud LDAP connection
+  ansible.builtin.command:
+    cmd: >
+      kubectl -n nextcloud exec {{ nextcloud_pod.stdout }} -c nextcloud --
+      php /var/www/html/occ ldap:test-config ""
+  register: ldap_test
+  delegate_to: localhost
+  changed_when: false
+
+- name: Show LDAP test result
+  ansible.builtin.debug:
+    msg: "{{ ldap_test.stdout }}"

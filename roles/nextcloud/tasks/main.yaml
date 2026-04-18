@@ -1,0 +1,3 @@
+---
+- name: Configure Nextcloud LDAP integration
+  ansible.builtin.include_tasks: configure-ldap.yaml
