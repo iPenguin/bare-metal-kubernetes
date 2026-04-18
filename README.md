@@ -15,7 +15,7 @@ This repo does basic configuration for the following components:
 - **[ArgoCD](https://argo-cd.readthedocs.io/)** - For deployment management
 - **Kubernetes [metrics-server](https://github.com/kubernetes-sigs/metrics-server)** - for basic resource monitoring
 - **[Prometheus](https://prometheus.io/)/[Grafana](https://grafana.com/)** - for advanced resource monitoring and visualization
-- **[FreeIPA](https://www.freeipa.org/)** - For centralized Identinty Management
+- **[LLDAP](https://www.lldap.com/)** - For centralized Identinty Management
 - **[Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)** - For encrypting secrets
 
 ## Setup

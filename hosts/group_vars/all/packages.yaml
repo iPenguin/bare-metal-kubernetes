@@ -14,7 +14,6 @@ common_utils:
   - zsh
 
 debian_utils:
-  - freeipa-client
   - libvirt-daemon
   - libvirt-daemon-system
   - lvm2
