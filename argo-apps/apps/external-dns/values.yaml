@@ -8,31 +8,11 @@ image:
 
 provider:
   name: webhook
-
-extraArgs:
-  - --webhook-provider-url=http://localhost:8888
-
-# Sidecar container running the OpenWrt webhook
-extraContainers:
-  - name: openwrt-webhook
-    image: ghcr.io/ipenguin/external-dns-openwrt-webhook:latest
+  webhook:
+    image:
+      repository: ghcr.io/ipenguin/external-dns-openwrt-webhook
+      tag: latest
     imagePullPolicy: Always
-    ports:
-      - name: webhook
-        containerPort: 8888
-        protocol: TCP
-    livenessProbe:
-      httpGet:
-        path: /healthz
-        port: webhook
-      initialDelaySeconds: 10
-      periodSeconds: 10
-    readinessProbe:
-      httpGet:
-        path: /healthz
-        port: webhook
-      initialDelaySeconds: 10
-      periodSeconds: 10
     env:
       - name: OPENWRT_HOST
         value: "10.1.1.1"
@@ -40,6 +20,18 @@ extraContainers:
         value: "root"
       - name: OPENWRT_SSH_PORT
         value: "22"
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: http-webhook
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: http-webhook
+      initialDelaySeconds: 10
+      periodSeconds: 10
     volumeMounts:
       - name: ssh-key
         mountPath: /root/.ssh/id_ed25519
