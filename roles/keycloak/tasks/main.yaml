@@ -119,7 +119,7 @@
           group.object.classes: "groupOfUniqueNames"
           membership.ldap.attribute: "uniqueMember"
           membership.attribute.type: "DN"
-          groups.path: "/"
+          groups.path: ""
           mode: "LDAP_ONLY"
           user.roles.retrieve.strategy: "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
           drop.non.existing.groups.during.sync: "false"

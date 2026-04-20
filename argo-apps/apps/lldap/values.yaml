@@ -2,12 +2,12 @@
 replicaCount: 1
 
 env:
-  LLDAP_LDAP_BASE_DN: "dc=milco,dc=casa"
   LLDAP_LDAP_PORT: "3890"
   LLDAP_HTTP_PORT: "17170"
   LLDAP_SMTP_OPTIONS__ENABLE_PASSWORD_RESET: "false"
 
 lldap:
+  baseDN: "dc=milco,dc=casa"
   secretName: lldap-secrets
   jwtSecretKey: LLDAP_JWT_SECRET
   ldapUserPassKey: LLDAP_LDAP_USER_PASS
