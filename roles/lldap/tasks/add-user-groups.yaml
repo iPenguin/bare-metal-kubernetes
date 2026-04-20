@@ -1,6 +1,6 @@
 ---
 # Include file: called with loop_var lldap_user
-- name: "Add {{ lldap_user.name }} to groups"
+- name: "Get all LLDAP groups"
   ansible.builtin.uri:
     url: "{{ lldap_http_url }}/api/graphql"
     method: POST
@@ -10,23 +10,17 @@
     body_format: json
     body:
       query: |
-        query GetGroupId($name: String!) {
-          groups(filters: { displayName: { eq: $name } }) {
+        query {
+          groups {
             id
+            displayName
           }
         }
-      variables:
-        name: "{{ item }}"
     status_code: [200]
-  loop: "{{ lldap_user.groups }}"
-  register: group_id_results
+  register: all_groups_result
   delegate_to: localhost
 
-- name: "Resolve group IDs for {{ lldap_user.name }}"
-  ansible.builtin.set_fact:
-    resolved_group_ids: "{{ group_id_results.results | map(attribute='json.data.groups') | map('first') | map(attribute='id') | list }}"
-
-- name: "Add {{ lldap_user.name }} to groups by ID"
+- name: "Add {{ lldap_user.name }} to groups"
   ansible.builtin.uri:
     url: "{{ lldap_http_url }}/api/graphql"
     method: POST
@@ -38,12 +32,13 @@
       query: |
         mutation AddUserToGroup($userId: String!, $groupId: Int!) {
           addUserToGroup(userId: $userId, groupId: $groupId) {
-            id
+            ok
           }
         }
       variables:
         userId: "{{ lldap_user.name }}"
-        groupId: "{{ item }}"
+        groupId: "{{ (all_groups_result.json.data.groups | selectattr('displayName', 'eq', item) | first).id }}"
     status_code: [200]
-  loop: "{{ resolved_group_ids }}"
+  loop: "{{ lldap_user.groups }}"
   delegate_to: localhost
+

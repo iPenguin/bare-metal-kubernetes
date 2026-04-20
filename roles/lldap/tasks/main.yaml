@@ -1,4 +1,14 @@
 ---
+- name: Install pre-req ldap libraries
+  ansible.builtin.apt:
+    name:
+      - libldap2-dev
+      - libsasl2-dev
+    state: present
+    update_cache: true
+  become: true
+  delegate_to: localhost
+
 - name: Get LLDAP secrets
   kubernetes.core.k8s_info:
     api_version: v1
@@ -84,25 +94,27 @@
     - user_results.status != 200
     - "'already exists' not in (user_results.json.errors | default([]) | map(attribute='message') | join(''))"
 
-- name: Set svc_ldap password
-  ansible.builtin.uri:
-    url: "{{ lldap_http_url }}/api/graphql"
-    method: POST
-    headers:
-      Authorization: "Bearer {{ lldap_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      query: |
-        mutation ResetUserPasswordAdmin($userId: String!, $password: String!) {
-          changeUserPassword(userId: $userId, password: $password)
-        }
-      variables:
-        userId: "svc_ldap"
-        password: "{{ lldap_svc_ldap_password }}"
-    status_code: [200]
+- name: Set svc_ldap password via port-forward
+  ansible.builtin.shell: |
+    fuser -k 13890/tcp 2>/dev/null || true
+    kubectl port-forward -n lldap svc/lldap-ldap 13890:3890 &
+    PF_PID=$!
+    trap "kill $PF_PID 2>/dev/null" EXIT
+    for i in $(seq 1 20); do
+      nc -z localhost 13890 2>/dev/null && break
+      sleep 1
+    done
+    sleep 1
+    python3 -c "
+    import ldap
+    conn = ldap.initialize('ldap://localhost:13890')
+    conn.simple_bind_s('uid=admin,{{ ldap_users_dn }}', '{{ lldap_admin_password }}')
+    conn.passwd_s('uid=svc_ldap,{{ ldap_users_dn }}', None, '{{ lldap_svc_ldap_password }}')
+    conn.unbind_s()
+    "
   delegate_to: localhost
-  no_log: true
+  no_log: false
+  changed_when: true
 
 - name: Add users to groups
   ansible.builtin.include_tasks: add-user-groups.yaml

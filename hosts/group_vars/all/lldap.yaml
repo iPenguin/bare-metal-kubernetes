@@ -34,4 +34,6 @@ lldap_users:
     first_name: Ldap
     last_name: Lookup
     email: "svc_ldap@{{ lan_domain }}"
-    groups: []
+    groups:
+      - lldap_admin
+
