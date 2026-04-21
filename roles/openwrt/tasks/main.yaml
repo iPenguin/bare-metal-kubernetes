@@ -9,6 +9,9 @@
   ansible.builtin.raw: |-
     apk add {{ item }}
   loop:
+    - luci-compat
+    - luci-lib-ipkg 
+    - luci-mod-rpc 
     - openssh-sftp-server
     - coreutils-base64
     - python3
