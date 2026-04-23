@@ -20,6 +20,13 @@ provider:
         value: "root"
       - name: OPENWRT_SSH_PORT
         value: "22"
+      - name: OPENWRT_SSH_KEY
+        value: "/etc/ssh-key/id_ed25519"   # or whatever env var the webhook accepts
+    volumeMounts:
+      - name: ssh-key
+        mountPath: /etc/ssh-key/id_ed25519
+        subPath: openwrt-ssh-key
+        readOnly: true
     livenessProbe:
       httpGet:
         path: /healthz
@@ -32,11 +39,6 @@ provider:
         port: http-webhook
       initialDelaySeconds: 10
       periodSeconds: 10
-    volumeMounts:
-      - name: ssh-key
-        mountPath: /root/.ssh/id_ed25519
-        subPath: openwrt-ssh-key
-        readOnly: true
 
 extraVolumes:
   - name: ssh-key
