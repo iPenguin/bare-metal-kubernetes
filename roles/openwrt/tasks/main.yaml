@@ -9,9 +9,6 @@
   ansible.builtin.raw: |-
     apk add {{ item }}
   loop:
-    - luci-compat
-    - luci-lib-ipkg 
-    - luci-mod-rpc 
     - openssh-sftp-server
     - coreutils-base64
     - python3
@@ -41,6 +38,11 @@
   tags:
     - networking
     - wireguard
+
+- name: Update dns
+  include_tasks: update-dns.yaml
+  tags:
+    - dns
 
 - name: Update hosts
   include_tasks: update-hosts.yaml

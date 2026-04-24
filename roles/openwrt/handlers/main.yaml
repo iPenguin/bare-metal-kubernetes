@@ -25,6 +25,11 @@
     name: network
     state: restarted
 
+- name: restart rpcd
+  community.general.openwrt_init:
+    name: rpcd
+    state: restarted
+
 - name: restart uhttpd
   community.general.openwrt_init:
     name: uhttpd

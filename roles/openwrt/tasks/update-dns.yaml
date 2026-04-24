@@ -1,0 +1,55 @@
+---
+
+- name: Install desired packages
+  ansible.builtin.apk:
+    name: luci-compat,luci-lib-ipkg,luci-mod-rpc,shadow-useradd,shadow-usermod
+    state: present
+    update_cache: yes
+
+- name: Add service user
+  ansible.builtin.user:
+    name: luci-dns
+    comment: Luci DNS
+    uid: 1040
+    password: "{{ vault_luci_dns_password | password_hash('sha512', 'mysecretsalt') }}"
+
+- name: Ensure rpcd ACL directory exists
+  ansible.builtin.file:
+    path: /etc/rpcd/acl.d
+    state: directory
+    mode: "0755"
+
+- name: Configure rpcd ACL for luci-dns
+  ansible.builtin.copy:
+    dest: /etc/rpcd/acl.d/luci-dns.json
+    content: |
+      {
+        "luci-dns": {
+          "description": "External-DNS LuCI RPC access",
+          "read": {
+            "ubus": {
+              "uci": ["get", "changes"],
+              "session": ["access"]
+            },
+            "uci": {
+              "dhcp": ["*"]
+            }
+          },
+          "write": {
+            "ubus": {
+              "uci": ["set", "delete", "add", "commit", "revert"]
+            },
+            "uci": {
+              "dhcp": ["*"]
+            }
+          }
+        }
+      }
+    mode: "0644"
+  notify: restart rpcd
+
+- name: Ensure rpcd is running
+  ansible.builtin.service:
+    name: rpcd
+    state: started
+    enabled: true
