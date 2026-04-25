@@ -12,7 +12,7 @@ provider:
     image:
       repository: ghcr.io/ipenguin/external-dns-openwrt-webhook
       tag: latest
-    imagePullPolicy: Always
+      pullPolicy: Always
     env:
       - name: PROVIDER_OPENWRT_LUCIRPC_HOSTNAME
         value: "r.milco.casa"
