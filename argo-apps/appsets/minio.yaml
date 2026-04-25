@@ -8,17 +8,9 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - matrix:
-        generators:
-          - list:
-              elements:
-                - host: minio
-          - plugin:
-              configMapRef:
-                name: dig
-              input:
-                parameters:
-                  hostname: '{{ .host }}.clt.milco.casa'
+    - list:
+        elements:
+          - host: minio
   template:
     metadata:
       name: minio

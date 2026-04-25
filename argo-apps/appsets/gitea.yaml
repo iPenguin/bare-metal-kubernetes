@@ -8,17 +8,9 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - matrix:
-        generators:
-          - list:
-              elements:
-                - host: git
-          - plugin:
-              configMapRef:
-                name: dig
-              input:
-                parameters:
-                  hostname: '{{ .host }}.clt.milco.casa'
+    - list:
+        elements:
+          - host: gitea
   template:
     metadata:
       name: gitea
