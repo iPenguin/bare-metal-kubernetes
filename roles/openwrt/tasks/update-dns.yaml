@@ -2,26 +2,49 @@
 
 - name: Install desired packages
   ansible.builtin.apk:
-    name: luci-compat,luci-lib-ipkg,luci-mod-rpc,shadow-useradd,shadow-usermod
+    name: luci-compat,luci-lib-ipkg,luci-mod-rpc
     state: present
     update_cache: yes
 
-- name: Add service user
-  ansible.builtin.user:
-    name: luci-dns
-    comment: Luci DNS
-    uid: 1040
-    password: "{{ vault_luci_dns_password | password_hash('sha512', 'mysecretsalt') }}"
+- name: Generate luci-dns password hash
+  ansible.builtin.command:
+    cmd: "uhttpd -m {{ vault_luci_dns_password }}"
+  register: luci_dns_hash
+  changed_when: false
+
+- name: Get current rpcd config
+  ansible.builtin.command:
+    cmd: uci show rpcd
+  register: rpcd_show
+  changed_when: false
+
+- name: Configure rpcd login for luci-dns
+  ansible.builtin.shell: |
+    set -e
+    HASH="{{ luci_dns_hash.stdout }}"
+    while uci show rpcd | grep -q "\.username='luci-dns'"; do
+      section=$(uci show rpcd | grep "\.username='luci-dns'" | head -1 | sed "s/\(rpcd\.[^.]*\)\..*/\1/")
+      uci delete "$section"
+    done
+    uci add rpcd login
+    uci set rpcd.@login[-1].username='luci-dns'
+    uci set "rpcd.@login[-1].password=$HASH"
+    uci add_list rpcd.@login[-1].read='luci-dns'
+    uci commit rpcd
+  when: >
+    "username='luci-dns'" not in rpcd_show.stdout or
+    luci_dns_hash.stdout not in rpcd_show.stdout
+  notify: restart rpcd
 
 - name: Ensure rpcd ACL directory exists
   ansible.builtin.file:
-    path: /etc/rpcd/acl.d
+    path: /usr/share/rpcd/acl.d
     state: directory
     mode: "0755"
 
 - name: Configure rpcd ACL for luci-dns
   ansible.builtin.copy:
-    dest: /etc/rpcd/acl.d/luci-dns.json
+    dest: /usr/share/rpcd/acl.d/luci-dns.json
     content: |
       {
         "luci-dns": {
@@ -29,7 +52,7 @@
           "read": {
             "ubus": {
               "uci": ["get", "changes"],
-              "session": ["access"]
+              "session": ["login", "access"]
             },
             "uci": {
               "dhcp": ["*"]
