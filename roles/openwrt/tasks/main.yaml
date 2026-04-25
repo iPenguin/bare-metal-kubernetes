@@ -44,6 +44,12 @@
   tags:
     - dns
 
+- name: Update clt.milco.casa glue DNS records
+  include_tasks: update-clt-dns.yaml
+  tags:
+    - dns
+    - clt-dns
+
 - name: Update hosts
   include_tasks: update-hosts.yaml
   tags:

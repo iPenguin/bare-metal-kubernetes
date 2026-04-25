@@ -1,0 +1,4 @@
+---
+# Records are rendered inline in dnsmasq.conf.j2 via the
+# clt_cname_records and network_services.traefik variables.
+# This task is intentionally empty; kept for the tag entry in main.yaml.
