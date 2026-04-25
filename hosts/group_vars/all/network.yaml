@@ -197,3 +197,13 @@ dnsmasq_srv_records:
     port: 6789
     priority: 20
     weight: 50
+
+# Bootstrap CNAMEs for clt.milco.casa services pointing to Traefik ingress
+# Managed by ExternalDNS once external-dns is working
+clt_cname_records:
+  - argocd
+  - ceph
+  - harbor
+  - lldap
+  - s3
+  - sso
