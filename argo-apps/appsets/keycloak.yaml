@@ -8,17 +8,9 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - matrix:
-        generators:
-          - list:
-              elements:
-                - host: sso
-          - plugin:
-              configMapRef:
-                name: dig
-              input:
-                parameters:
-                  hostname: '{{ .host }}.clt.milco.casa'
+    - list:
+        elements:
+          - host: sso
   template:
     metadata:
       name: keycloak
