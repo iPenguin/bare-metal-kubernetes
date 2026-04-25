@@ -14,51 +14,43 @@ provider:
       tag: latest
     imagePullPolicy: Always
     env:
-      - name: OPENWRT_HOST
-        value: "10.1.1.1"
-      - name: OPENWRT_USER
-        value: "root"
-      - name: OPENWRT_SSH_PORT
-        value: "22"
-      - name: OPENWRT_SSH_KEY
-        value: "/etc/ssh-key/id_ed25519"   # or whatever env var the webhook accepts
-    volumeMounts:
-      - name: ssh-key
-        mountPath: /etc/ssh-key/id_ed25519
-        subPath: openwrt-ssh-key
-        readOnly: true
+      - name: PROVIDER_OPENWRT_LUCIRPC_HOSTNAME
+        value: "r.milco.casa"
+      - name: PROVIDER_OPENWRT_LUCIRPC_PORT
+        value: "443"
+      - name: PROVIDER_OPENWRT_LUCIRPC_SSL
+        value: "true"
+      - name: PROVIDER_OPENWRT_LUCIRPC_INSECURE_SKIP_VERIFY
+        value: "false"
+      - name: PROVIDER_OPENWRT_LUCIRPC_AUTH_USERNAME
+        value: "luci-dns"
+      - name: PROVIDER_OPENWRT_LUCIRPC_AUTH_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: external-dns-secrets
+            key: openwrt-password
     livenessProbe:
       httpGet:
-        path: /healthz
-        port: http-webhook
+        path: /ping
+        port: 8888
       initialDelaySeconds: 10
       periodSeconds: 10
     readinessProbe:
       httpGet:
-        path: /healthz
-        port: http-webhook
+        path: /ping
+        port: 8888
       initialDelaySeconds: 10
       periodSeconds: 10
 
-extraVolumes:
-  - name: ssh-key
-    secret:
-      secretName: external-dns-secrets
-      defaultMode: 0600
-
-# Watch both Ingress and Service resources
 sources:
   - ingress
   - service
 
-# Only manage records in this zone
 domainFilters:
   - "clt.milco.casa"
 
-# Manage all resources (no annotation filter)
 policy: sync
 
-# TXT registry for ownership tracking
 registry: txt
 txtOwnerId: "external-dns-homelab"
 txtPrefix: "edns-"
@@ -75,7 +67,6 @@ serviceAccount:
 rbac:
   create: true
 
-# RBAC needs to watch Ingress and Service objects cluster-wide
 podSecurityContext:
   fsGroup: 65534
   runAsNonRoot: true
@@ -89,3 +80,4 @@ securityContext:
     drop:
       - ALL
   readOnlyRootFilesystem: true
+
