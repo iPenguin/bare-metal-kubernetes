@@ -231,3 +231,38 @@
       - profile
       - email
       - groups
+
+- name: Create Harbor OIDC client in Keycloak
+  community.general.keycloak_client:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    client_id: harbor
+    secret: "{{ harbor_client_secret }}"
+    protocol: openid-connect
+    enabled: true
+    public_client: false
+    redirect_uris:
+      - "https://harbor.{{ lan_domain }}/c/oidc/callback"
+    web_origins:
+      - "https://harbor.{{ lan_domain }}"
+    default_client_scopes:
+      - openid
+      - profile
+      - email
+      - groups
+
+- name: Generate harbor OIDC config sealed secret
+  become: false
+  connection: local
+  ansible.builtin.shell: |
+    kubectl create secret generic harbor-oidc-config \
+    --dry-run=client \
+    --from-literal=harbor-config.json='{"auth_mode":"oidc_auth","oidc_name":"Homelab","oidc_endpoint":"https://sso.{{ lan_domain }}/realms/{{ keycloak.realm }}","oidc_client_id":"harbor","oidc_client_secret":"{{ harbor_client_secret }}","oidc_scope":"openid,profile,email,groups","oidc_auto_onboard":true,"oidc_user_claim":"username"}' \
+    -n harbor -o json | \
+    kubeseal --controller-namespace=sealed-secrets \
+    --controller-name=sealed-secrets -o yaml > {{ playbook_dir }}/argo-apps/apps/harbor/oidc-secret.yaml
+  changed_when: true

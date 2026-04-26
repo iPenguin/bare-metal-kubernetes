@@ -28,7 +28,7 @@ core:
     - name: CONFIG_OVERWRITE_JSON
       valueFrom:
         secretKeyRef:
-          name: harbor-secrets
+          name: harbor-oidc-config
           key: harbor-config.json
 
 persistence:
