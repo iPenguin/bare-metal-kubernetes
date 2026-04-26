@@ -261,7 +261,7 @@
   ansible.builtin.shell: |
     kubectl create secret generic harbor-oidc-config \
     --dry-run=client \
-    --from-literal=harbor-config.json='{"auth_mode":"oidc_auth","oidc_name":"Homelab","oidc_endpoint":"https://sso.{{ lan_domain }}/realms/{{ keycloak.realm }}","oidc_client_id":"harbor","oidc_client_secret":"{{ harbor_client_secret }}","oidc_scope":"openid,profile,email,groups","oidc_auto_onboard":true,"oidc_user_claim":"username"}' \
+    --from-literal=harbor-config.json='{"auth_mode":"oidc_auth","oidc_name":"Homelab","oidc_endpoint":"https://sso.{{ lan_domain }}/realms/{{ keycloak.realm }}","oidc_client_id":"harbor","oidc_client_secret":"{{ harbor_client_secret }}","oidc_scope":"openid,profile,email,groups,offline_access","oidc_auto_onboard":true,"oidc_user_claim":"preferred_username","oidc_groups_claim":"groups","oidc_group_filter":""}' \
     -n harbor -o json | \
     kubeseal --controller-namespace=sealed-secrets \
     --controller-name=sealed-secrets -o yaml > {{ playbook_dir }}/argo-apps/apps/harbor/oidc-secret.yaml
