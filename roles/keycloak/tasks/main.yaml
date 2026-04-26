@@ -242,9 +242,13 @@
     state: present
     client_id: harbor
     secret: "{{ harbor_client_secret }}"
+    client_authenticator_type: client-secret
     protocol: openid-connect
     enabled: true
     public_client: false
+    standard_flow_enabled: true
+    direct_access_grants_enabled: false
+    service_accounts_enabled: false
     redirect_uris:
       - "https://harbor.{{ lan_domain }}/c/oidc/callback"
     web_origins:
@@ -255,14 +259,73 @@
       - email
       - groups
 
-- name: Generate harbor OIDC config sealed secret
-  become: false
-  connection: local
-  ansible.builtin.shell: |
-    kubectl create secret generic harbor-oidc-config \
-    --dry-run=client \
-    --from-literal=harbor-config.json='{"auth_mode":"oidc_auth","oidc_name":"Homelab","oidc_endpoint":"https://sso.{{ lan_domain }}/realms/{{ keycloak.realm }}","oidc_client_id":"harbor","oidc_client_secret":"{{ harbor_client_secret }}","oidc_scope":"openid,profile,email,groups,offline_access","oidc_auto_onboard":true,"oidc_user_claim":"preferred_username","oidc_groups_claim":"groups","oidc_group_filter":""}' \
-    -n harbor -o json | \
-    kubeseal --controller-namespace=sealed-secrets \
-    --controller-name=sealed-secrets -o yaml > {{ playbook_dir }}/argo-apps/apps/harbor/oidc-secret.yaml
-  changed_when: true
+- name: Get Keycloak admin token
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/realms/{{ keycloak.admin_realm }}/protocol/openid-connect/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      client_id: admin-cli
+      username: "{{ keycloak.admin_username }}"
+      password: "{{ keycloak_admin_password }}"
+      grant_type: password
+    return_content: true
+  register: _keycloak_token
+  no_log: true
+
+- name: Look up harbor client UUID
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients?clientId=harbor"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+    return_content: true
+  register: _harbor_client_lookup
+
+- name: Force-set harbor client secret
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients/{{ _harbor_client_lookup.json[0].id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      secret: "{{ harbor_client_secret }}"
+    status_code: [204]
+  no_log: true
+
+- name: Get harbor admin password from Kubernetes secret
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: harbor-secrets
+    namespace: harbor
+  register: _harbor_secrets
+
+- name: Set harbor admin password fact
+  ansible.builtin.set_fact:
+    harbor_admin_password: "{{ _harbor_secrets.resources[0].data['HARBOR_ADMIN_PASSWORD'] | b64decode }}"
+  no_log: true
+
+- name: Configure Harbor OIDC via API
+  ansible.builtin.uri:
+    url: "https://harbor.{{ lan_domain }}/api/v2.0/configurations"
+    method: PUT
+    user: admin
+    password: "{{ harbor_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      auth_mode: oidc_auth
+      oidc_name: Homelab
+      oidc_endpoint: "https://sso.{{ lan_domain }}/realms/{{ keycloak.realm }}"
+      oidc_client_id: harbor
+      oidc_client_secret: "{{ harbor_client_secret }}"
+      oidc_scope: "openid,profile,email,groups,offline_access"
+      oidc_user_claim: preferred_username
+      oidc_groups_claim: groups
+      oidc_auto_onboard: true
+      oidc_verify_cert: true
+    status_code: [200]
+  no_log: false
