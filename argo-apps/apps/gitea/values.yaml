@@ -98,13 +98,13 @@ gitea:
   ssh:
     logLevel: "INFO"
 
-redis-cluster:
+valkey-cluster:
   enabled: false
-redis:
+valkey:
   enabled: true
   architecture: standalone
   global:
-    redis:
+    valkey:
       password: changeme
   master:
     count: 1
