@@ -52,3 +52,7 @@ oidc:
   scopes: "openid,profile,email"
   redirectUri: "https://minio.clt.milco.casa/oauth_callback"
   displayName: "Homelab"
+
+environment:
+  MINIO_BROWSER_REDIRECT_URL: "https://minio.clt.milco.casa"
+  MINIO_SERVER_URL: "https://minio-local.clt.milco.casa"
