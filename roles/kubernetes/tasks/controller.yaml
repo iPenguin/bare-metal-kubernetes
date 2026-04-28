@@ -56,3 +56,6 @@
     taints:
     - effect: NoSchedule
       key: "node-role.kubernetes.io/control-plane"
+
+- name: Configure CoreDNS for LAN domain resolution
+  include_tasks: coredns.yaml
