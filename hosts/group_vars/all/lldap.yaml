@@ -16,6 +16,8 @@ lldap_groups:
   - name: app-gitea-users
   - name: app-harbor-admins
   - name: app-harbor-users
+  - name: app-minio-admins
+  - name: app-minio-users
   - name: app-nextcloud-admins
   - name: app-nextcloud-users
 
@@ -29,6 +31,7 @@ lldap_users:
       - app-concourse-admins
       - app-gitea-admins
       - app-harbor-admins
+      - app-minio-admins
       - app-nextcloud-admins
   - name: svc_ldap
     first_name: Ldap

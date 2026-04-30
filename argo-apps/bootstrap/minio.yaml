@@ -16,4 +16,4 @@ spec:
       kind: '*'
   sourceRepos:
     - https://github.com/ipenguin/bare-metal-kubernetes.git
-    - https://charts.min.io/
+    - registry-1.docker.io/bitnamicharts

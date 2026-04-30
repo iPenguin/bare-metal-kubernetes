@@ -28,16 +28,14 @@
       Authorization: "Bearer {{ lldap_token }}"
       Content-Type: "application/json"
     body_format: json
-    body:
-      query: |
-        mutation AddUserToGroup($userId: String!, $groupId: Int!) {
-          addUserToGroup(userId: $userId, groupId: $groupId) {
-            ok
-          }
+    body: |-
+      {
+        "query": "mutation AddUserToGroup($userId: String!, $groupId: Int!) { addUserToGroup(userId: $userId, groupId: $groupId) { ok } }",
+        "variables": {
+          "userId": "{{ lldap_user.name }}",
+          "groupId": {{ (all_groups_result.json.data.groups | selectattr('displayName', 'eq', item) | first).id | int }}
         }
-      variables:
-        userId: "{{ lldap_user.name }}"
-        groupId: "{{ (all_groups_result.json.data.groups | selectattr('displayName', 'eq', item) | first).id }}"
+      }
     status_code: [200]
   loop: "{{ lldap_user.groups }}"
   delegate_to: localhost

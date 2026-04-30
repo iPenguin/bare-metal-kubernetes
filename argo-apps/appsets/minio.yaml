@@ -53,9 +53,9 @@ spec:
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           ref: valuesSrc
-        - repoURL: 'https://charts.min.io/'
+        - repoURL: 'registry-1.docker.io/bitnamicharts'
           chart: minio
-          targetRevision: 5.4.0
+          targetRevision: 17.0.21
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/minio/values.yaml'

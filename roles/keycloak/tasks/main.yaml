@@ -259,6 +259,58 @@
       - email
       - groups
 
+- name: Create MinIO realm roles in Keycloak
+  community.general.keycloak_role:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    name: "{{ item }}"
+    description: "MinIO {{ item }} policy"
+  loop:
+    - app-minio-admins
+    - app-minio-users
+
+- name: Create MinIO OIDC client in Keycloak
+  community.general.keycloak_client:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    client_id: minio
+    secret: "{{ minio_client_secret }}"
+    client_authenticator_type: client-secret
+    protocol: openid-connect
+    enabled: true
+    public_client: false
+    standard_flow_enabled: true
+    direct_access_grants_enabled: false
+    service_accounts_enabled: false
+    redirect_uris:
+      - "https://minio.{{ lan_domain }}/oauth_callback"
+    web_origins:
+      - "https://minio.{{ lan_domain }}"
+    default_client_scopes:
+      - openid
+      - profile
+      - email
+    protocol_mappers:
+      - name: "policy"
+        protocol: openid-connect
+        protocolMapper: oidc-usermodel-realm-role-mapper
+        config:
+          claim.name: "policy"
+          jsonType.label: "String"
+          multivalued: "true"
+          access.token.claim: "true"
+          id.token.claim: "true"
+          userinfo.token.claim: "false"
+          usermodel.realmRoleMapping.rolePrefix: ""
+
 - name: Get Keycloak admin token
   ansible.builtin.uri:
     url: "{{ keycloak.url }}/realms/{{ keycloak.admin_realm }}/protocol/openid-connect/token"
@@ -271,6 +323,28 @@
       grant_type: password
     return_content: true
   register: _keycloak_token
+  no_log: true
+
+- name: Look up minio client UUID
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients?clientId=minio"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+    return_content: true
+  register: _minio_client_lookup
+
+- name: Force-set minio client secret
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients/{{ _minio_client_lookup.json[0].id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      secret: "{{ minio_client_secret }}"
+    status_code: [204]
   no_log: true
 
 - name: Look up harbor client UUID
