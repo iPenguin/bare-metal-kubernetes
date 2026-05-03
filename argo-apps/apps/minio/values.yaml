@@ -3,14 +3,16 @@ mode: standalone
 image:
   tag: RELEASE.2025-05-24T17-08-30Z
 
-auth:
-  existingSecret: "minio-credentials"
-
+# Persistence configuration using the mounted drive
 persistence:
   enabled: true
   existingClaim: "local-backups"
 
-defaultBuckets: "velero-backups"
+existingSecret: "minio-credentials"
+buckets:
+  - name: velero-backups
+    policy: none
+    purge: false
 
 tolerations:
   - key: "node-role.kubernetes.io/control-plane"
@@ -20,45 +22,37 @@ affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
-        - matchExpressions:
-            - key: clt.milco.casa/local-backups
-              operator: In
-              values:
-                - "true"
+      - matchExpressions:
+        - key: clt.milco.casa/local-backups
+          operator: In
+          values:
+          - "true"
 
-# Bitnami: `ingress` is the web console
 ingress:
   enabled: true
   ingressClassName: "traefik"
-  hostname: minio.clt.milco.casa
   path: /
+  hosts:
+    - minio-local.clt.milco.casa
 
-# Bitnami: `apiIngress` is the S3 API
-apiIngress:
+consoleIngress:
   enabled: true
   ingressClassName: "traefik"
-  hostname: minio-local.clt.milco.casa
   path: /
+  hosts:
+    - minio.clt.milco.casa
 
-extraEnvVars:
-  - name: MINIO_BROWSER_REDIRECT_URL
-    value: "https://minio.clt.milco.casa"
-  - name: MINIO_SERVER_URL
-    value: "https://minio-local.clt.milco.casa"
-  - name: MINIO_IDENTITY_OPENID_CONFIG_URL
-    value: "https://sso.clt.milco.casa/realms/homelab/.well-known/openid-configuration"
-  - name: MINIO_IDENTITY_OPENID_CLIENT_ID
-    value: "minio"
-  - name: MINIO_IDENTITY_OPENID_CLIENT_SECRET
-    valueFrom:
-      secretKeyRef:
-        name: minio-oidc-credentials
-        key: clientSecret
-  - name: MINIO_IDENTITY_OPENID_CLAIM_NAME
-    value: "policy"
-  - name: MINIO_IDENTITY_OPENID_SCOPES
-    value: "openid,profile,email"
-  - name: MINIO_IDENTITY_OPENID_REDIRECT_URI
-    value: "https://minio.clt.milco.casa/oauth_callback"
-  - name: MINIO_IDENTITY_OPENID_DISPLAY_NAME
-    value: "Homelab"
+oidc:
+  enabled: true
+  configUrl: "https://sso.clt.milco.casa/realms/homelab/.well-known/openid-configuration"
+  clientId: "minio"
+  existingClientSecretName: "minio-oidc-credentials"
+  existingClientSecretKey: "clientSecret"
+  claimName: "policy"
+  scopes: "openid,profile,email"
+  redirectUri: "https://minio.clt.milco.casa/oauth_callback"
+  displayName: "Homelab"
+
+environment:
+  MINIO_BROWSER_REDIRECT_URL: "https://minio.clt.milco.casa"
+  MINIO_SERVER_URL: "https://minio-local.clt.milco.casa"
