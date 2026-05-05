@@ -46,7 +46,7 @@ schedules:
   local-backups:
     schedule: "0 0 * * *"
     template:
-      ttl: 720h  # 30 days (720 hours)
+      ttl: 720h  # 30 days
       includedNamespaces:
         - "*"
       excludedNamespaces:
@@ -54,8 +54,23 @@ schedules:
         - velero
       includedResources:
         - "*"
-      excludedResources:
-        - persistentvolumeclaims.plex.pms-config-plex-plex-media-server-0
       defaultVolumesToFsBackup: true
       includeClusterResources: true
       storageLocation: local
+  offsite-backups:
+    schedule: "0 3 * * 0"  # weekly, Sundays 03:00
+    template:
+      ttl: 8760h  # 1 year
+      includedNamespaces:
+        - cert-manager
+        - concourse
+        - gitea
+        - keycloak
+        - lldap
+        - nextcloud
+        - rook-ceph
+      includedResources:
+        - "*"
+      defaultVolumesToFsBackup: true
+      includeClusterResources: true
+      storageLocation: backblaze
