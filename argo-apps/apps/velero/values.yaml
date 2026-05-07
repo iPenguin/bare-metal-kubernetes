@@ -32,6 +32,10 @@ defaultVolumesToFsBackup: true
 deployNodeAgent: true
 uploaderType: kopia
 
+# CRDs applied manually — see docs. Hook image churn (Bitnami deprecation,
+# distroless shell mismatch, hook SA token 401) made the hook unreliable.
+upgradeCRDs: false
+
 featureFlags:
   - EnableUnifiedRepo
 
