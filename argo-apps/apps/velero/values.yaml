@@ -3,6 +3,11 @@ credentials:
   useSecret: true
   existingSecret: velero-minio-secrets
 
+serviceAccount:
+  server:
+    create: true
+    name: velero
+
 configuration:
   backupStorageLocation:
     - name: local
