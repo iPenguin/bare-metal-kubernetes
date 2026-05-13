@@ -15,6 +15,7 @@
     owner: root
     group: root
     mode: 0640
+  notify: restart chronyd
 
 - name: configure local time clients
   when:
@@ -25,15 +26,17 @@
     owner: root
     group: root
     mode: 0640
+  notify: restart chronyd
 
 - name: configure local time sources
   when:
     - ! inventory_hostname in k8s_controller
   ansible.builtin.template:
     src: "local.sources.j2"
-    dest: "/etc/chrony/conf.d/local.sources"
+    dest: "/etc/chrony/sources.d/local.sources"
     owner: root
     group: root
     mode: 0640
+  notify: restart chronyd
 
 ...

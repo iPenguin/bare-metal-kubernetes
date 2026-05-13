@@ -104,6 +104,18 @@
   tasks:
     - include_tasks: roles/rook/tasks/format-disks.yaml
 
+- name: Deploy chrony
+  hosts:
+    - controllers
+    - workers
+  tags:
+    - storage
+    - rook
+    - ceph
+    - time
+  roles:
+    - role: chrony
+
 - name: Deploy Rook ceph
   hosts:
     - controllers
@@ -113,7 +125,6 @@
     - rook
     - ceph
   roles:
-    - role: chrony
     - role: rook
 
 - name: Deploy cert-manager
