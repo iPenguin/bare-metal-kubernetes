@@ -15,6 +15,7 @@ all:
             w2.clt.milco.casa:
             w3.clt.milco.casa:
             w4.clt.milco.casa:
+            w5.clt.milco.casa:
     openwrt:
       children:
         router:

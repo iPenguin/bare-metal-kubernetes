@@ -5,7 +5,7 @@ operatorNamespace: {{ rook_namespace }}
 #clusterName: "{{ k8s_cluster_name }}"
 
 toolbox:
-  enabled: false
+  enabled: true
 monitoring:
   enabled: false
   # createPrometheusRules: true
@@ -73,6 +73,9 @@ cephClusterSpec:
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
+        - effect: NoSchedule
+          key: nvidia.com/gpu
+          operator: Exists
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
