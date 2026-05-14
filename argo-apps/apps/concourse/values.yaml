@@ -149,21 +149,28 @@ worker:
 persistence:
   enabled: true
 
+## As of chart v19+, the bitnami/postgresql subchart was dropped and replaced
+## with a built-in StatefulSet running the official postgres image.
 postgresql:
   enabled: true
-  service:
-    clusterIP:
 
-  ## Configuration for the primary database of the PostgreSQL subchart,
-  ## i.e. the instance used by the web component.
-  ##
-  primary:
-    persistence:
-      enabled: true
-      storageClass: ceph-block
-      accessModes:
-        - ReadWriteOnce
-      size: 8Gi
+  image: postgres
+  imageTag: "17"
+  version: 17
+
+  auth:
+    user: concourse
+    database: concourse
+    password: concourse
+
+  persistence:
+    enabled: true
+    storageClass: ceph-block
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 8Gi
 
 secrets:
   create: false

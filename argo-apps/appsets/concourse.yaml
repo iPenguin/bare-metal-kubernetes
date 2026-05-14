@@ -27,7 +27,7 @@ spec:
           targetRevision: master
         - repoURL: 'https://concourse-charts.storage.googleapis.com/'
           chart: concourse
-          targetRevision: 18.1.1
+          targetRevision: 20.2.1
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/concourse/values.yaml'
