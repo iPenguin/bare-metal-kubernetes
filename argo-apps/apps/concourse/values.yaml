@@ -54,12 +54,15 @@ concourse:
     auth:
       mainTeam:
         oidc:
-          group: "/app-concourse-admins"
+          ## Keycloak's "groups" client scope emits bare group names
+          ## (full.path: false), so no leading slash here.
+          group: "app-concourse-admins"
       oidc:
         enabled: true
         issuer: "https://sso.clt.milco.casa/realms/homelab"
         scope: "openid profile email groups"
         groupsKey: "groups"
+        userNameKey: "preferred_username"
         displayName: "Homelab"
 
   worker:
