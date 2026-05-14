@@ -166,8 +166,14 @@ postgresql:
   persistence:
     enabled: true
     storageClass: ceph-block
-    accessModes:
+    ## Rendered straight into the PVC spec via toJson, so this must be a
+    ## list even though the key is singular.
+    accessMode:
       - ReadWriteOnce
+    ## Mount a subdirectory of the PVC as PGDATA. A freshly provisioned
+    ## block volume has a lost+found dir at its root, which makes initdb
+    ## refuse to initialize directly on the mount point.
+    subPath: pgdata
     resources:
       requests:
         storage: 8Gi
