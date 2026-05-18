@@ -1,0 +1,23 @@
+---
+
+- name: Add helm repo for external-secrets
+  kubernetes.core.helm_repository:
+    name: external-secrets
+    repo_url: https://charts.external-secrets.io
+    state: present
+
+- name: Create external-secrets namespace
+  kubernetes.core.k8s:
+    name: "{{ external_secrets_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Install external-secrets
+  kubernetes.core.helm:
+    name: external-secrets
+    chart_version: "{{ external_secrets_version }}"
+    chart_ref: external-secrets/external-secrets
+    release_namespace: "{{ external_secrets_namespace }}"
+    update_repo_cache: true
+    values: "{{ lookup('template', 'values.yaml.j2') | from_yaml }}"

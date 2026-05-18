@@ -130,6 +130,14 @@ hosts:
   - name: ap1
     mac: F0:2F:74:92:A0:20
     ipv4: "{{ ipv4_network }}.3"
+  - name: bao1
+    mac: b8:27:eb:5f:94:53
+    ipv4: "{{ ipv4_network }}.4"
+    duid: 0004252771117cfd52454fc34c87c4bff02a
+    hostid: 4
+  - name: kvm
+    mac: 80:34:28:66:04:92
+    ipv4: "{{ ipv4_network }}.5"
   - name: c1
     mac: 1C:FD:08:7C:08:BC
     ipv4: "{{ ipv4_network }}.10"
@@ -170,9 +178,6 @@ hosts:
     ipv4: "{{ ipv4_network }}.17"
     duid: 00020000ab11d881ebf6ff625335
     hostid: 17
-  - name: kvm
-    mac: 80:34:28:66:04:92
-    ipv4: "{{ ipv4_network }}.5"
 
 # openwrt static domains - records not managed by ExternalDNS
 domains:

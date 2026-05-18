@@ -1,0 +1,47 @@
+#!/bin/bash
+# Auto-unseal helper invoked by openbao.service ExecStartPost.
+# Runs as root so it can read the unseal keyfile, then talks to the local
+# OpenBao listener as a normal client.
+
+set -u
+
+KEYFILE="{{ openbao_pi_unseal_keyfile }}"
+export BAO_ADDR="https://127.0.0.1:8200"
+export BAO_CACERT="{{ openbao_pi_tls_dir }}/ca.crt"
+
+# Nothing to do if the keyfile doesn't exist yet (pre-init).
+[ -r "$KEYFILE" ] || exit 0
+
+# Wait for the listener to be ready (up to 30s).
+for _ in $(seq 1 30); do
+    if /usr/local/bin/bao status >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
+
+# Read current status. Exit 0 if already unsealed.
+STATUS_OUT="$(/usr/local/bin/bao status -format=json 2>/dev/null || true)"
+if [ -z "$STATUS_OUT" ]; then
+    echo "openbao-unseal: bao status returned nothing; aborting" >&2
+    exit 0
+fi
+SEALED="$(echo "$STATUS_OUT" | grep -o '"sealed":[a-z]*' | cut -d: -f2)"
+if [ "$SEALED" = "false" ]; then
+    exit 0
+fi
+
+# Feed unseal keys one per line until threshold reached.
+while IFS= read -r key; do
+    [ -z "$key" ] && continue
+    /usr/local/bin/bao operator unseal "$key" >/dev/null 2>&1 || true
+    STATUS_OUT="$(/usr/local/bin/bao status -format=json 2>/dev/null || true)"
+    SEALED="$(echo "$STATUS_OUT" | grep -o '"sealed":[a-z]*' | cut -d: -f2)"
+    if [ "$SEALED" = "false" ]; then
+        echo "openbao-unseal: unsealed"
+        exit 0
+    fi
+done < "$KEYFILE"
+
+echo "openbao-unseal: ran out of keys without reaching threshold" >&2
+exit 1

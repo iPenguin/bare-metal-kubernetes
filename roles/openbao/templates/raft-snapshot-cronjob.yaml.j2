@@ -1,0 +1,96 @@
+---
+# Daily Raft snapshot of cluster-OpenBao, uploaded to MinIO under
+# {{ openbao_raft_snapshot_minio_bucket }}/{{ openbao_raft_snapshot_minio_prefix }}/.
+# This is the supported restore path - PVC backups (via Velero) are a
+# coarse-grained fallback that is not crash-consistent for Raft.
+#
+# Requires two secrets in the {{ openbao_namespace }} namespace, populated
+# by the operator after cluster init (see docs/openbao-bootstrap.md, Section I):
+#   - openbao-raft-snapshot-token  (key: token)
+#   - openbao-raft-snapshot-minio  (keys: access_key, secret_key)
+#
+# Until those secrets exist the CronJob will fail; that is acceptable
+# until migration time.
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: openbao-raft-snapshot
+  namespace: {{ openbao_namespace }}
+spec:
+  schedule: "{{ openbao_raft_snapshot_schedule }}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+            - name: snapshot
+              image: openbao/openbao:{{ openbao_image_version }}
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: BAO_ADDR
+                  value: "http://openbao-active.{{ openbao_namespace }}.svc:8200"
+                - name: BAO_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: openbao-raft-snapshot-token
+                      key: token
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  ts=$(date -u +%Y%m%dT%H%M%SZ)
+                  bao operator raft snapshot save "/share/openbao-${ts}.snap"
+                  ls -la /share
+              volumeMounts:
+                - name: share
+                  mountPath: /share
+          containers:
+            - name: uploader
+              image: amazon/aws-cli:2.17.45
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: openbao-raft-snapshot-minio
+                      key: access_key
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: openbao-raft-snapshot-minio
+                      key: secret_key
+                - name: AWS_DEFAULT_REGION
+                  value: minio
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  snap=$(ls -t /share/openbao-*.snap | head -1)
+                  ts=$(basename "$snap" .snap | sed 's/^openbao-//')
+                  aws --endpoint-url {{ openbao_raft_snapshot_minio_endpoint }} \
+                      s3 cp "$snap" \
+                      "s3://{{ openbao_raft_snapshot_minio_bucket }}/{{ openbao_raft_snapshot_minio_prefix }}/openbao-${ts}.snap"
+                  # Prune old snapshots beyond retention window
+                  cutoff=$(date -u -d "-{{ openbao_raft_snapshot_retention_days }} days" +%s)
+                  aws --endpoint-url {{ openbao_raft_snapshot_minio_endpoint }} \
+                      s3 ls "s3://{{ openbao_raft_snapshot_minio_bucket }}/{{ openbao_raft_snapshot_minio_prefix }}/" \
+                    | while read -r d t _ f; do
+                        [ -z "$f" ] && continue
+                        ftime=$(date -u -d "$d $t" +%s 2>/dev/null || echo 0)
+                        if [ "$ftime" -lt "$cutoff" ]; then
+                          aws --endpoint-url {{ openbao_raft_snapshot_minio_endpoint }} \
+                              s3 rm "s3://{{ openbao_raft_snapshot_minio_bucket }}/{{ openbao_raft_snapshot_minio_prefix }}/$f"
+                        fi
+                      done
+              volumeMounts:
+                - name: share
+                  mountPath: /share
+          volumes:
+            - name: share
+              emptyDir: {}

@@ -1,0 +1,67 @@
+---
+
+- name: Add OpenBao helm repo
+  kubernetes.core.helm_repository:
+    name: openbao
+    repo_url: https://openbao.github.io/openbao-helm
+    state: present
+
+- name: Create openbao namespace
+  kubernetes.core.k8s:
+    name: "{{ openbao_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create openbao internal CA secret (CA bundle that signs the Pi cert)
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: openbao-internal-ca
+        namespace: "{{ openbao_namespace }}"
+      type: Opaque
+      stringData:
+        ca.crt: "{{ vault_openbao_internal_ca_cert }}"
+  when:
+    - vault_openbao_internal_ca_cert is defined
+    - vault_openbao_internal_ca_cert != 'REPLACE_ME'
+  no_log: true
+
+- name: Create openbao Pi autounseal token secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: openbao-transit-token
+        namespace: "{{ openbao_namespace }}"
+      type: Opaque
+      stringData:
+        token: "{{ vault_openbao_pi_autounseal_token }}"
+  when:
+    - vault_openbao_pi_autounseal_token is defined
+    - vault_openbao_pi_autounseal_token != 'REPLACE_ME'
+  no_log: true
+
+- name: Install openbao helm chart
+  kubernetes.core.helm:
+    name: openbao
+    chart_version: "{{ openbao_chart_version }}"
+    chart_ref: openbao/openbao
+    release_namespace: "{{ openbao_namespace }}"
+    update_repo_cache: true
+    values: "{{ lookup('template', 'openbao-values.yaml.j2') | from_yaml }}"
+
+- name: Deploy openbao ingress
+  kubernetes.core.k8s:
+    state: present
+    template: openbao-ingress.yaml.j2
+
+- name: Deploy raft snapshot cronjob
+  kubernetes.core.k8s:
+    state: present
+    template: raft-snapshot-cronjob.yaml.j2

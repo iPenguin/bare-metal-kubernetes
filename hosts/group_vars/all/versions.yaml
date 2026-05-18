@@ -25,4 +25,9 @@ nvidia_k8s_plugin_version: 0.17.3
 rook_version: 1.17.7
 
 sealed_secrets_version: 2.17.3
+
+openbao_pi_binary_version: 2.4.1
+openbao_chart_version: 0.16.0
+openbao_image_version: 2.4.1
+external_secrets_version: 0.20.4
 ...

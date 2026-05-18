@@ -10,6 +10,15 @@
   roles:
     - role: openwrt
 
+- name: Bootstrap Pi unseal helper
+  hosts: bao_unseal
+  become: true
+  tags:
+    - never
+    - openbao-pi
+  roles:
+    - role: openbao-pi
+
 - name: Configure base OS
   hosts: metal
   tags:
@@ -146,6 +155,29 @@
     - secrets
   roles:
     - role: sealed-secrets
+      when:
+        - inventory_hostname in k8s_controller
+
+- name: Deploy OpenBao HA cluster
+  hosts:
+    - controllers
+  tags:
+    - openbao
+    - secrets
+  roles:
+    - role: openbao
+      when:
+        - inventory_hostname in k8s_controller
+
+- name: Deploy External Secrets Operator
+  hosts:
+    - controllers
+  tags:
+    - eso
+    - openbao
+    - secrets
+  roles:
+    - role: external-secrets
       when:
         - inventory_hostname in k8s_controller
 

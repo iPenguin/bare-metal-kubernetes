@@ -14,6 +14,7 @@ site_admin_username: "{{ vault_site_admin_username }}"
 lan_domain_cert: "wildcard.{{ lan_tld }}"
 cert_namespaces:
   - traefik
+  - openbao
 
 remote_users:
   - user: ansible

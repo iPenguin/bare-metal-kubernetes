@@ -1,0 +1,17 @@
+---
+
+openbao_pi_user: openbao
+openbao_pi_group: openbao
+openbao_pi_config_dir: /etc/openbao
+openbao_pi_data_dir: /var/lib/openbao
+openbao_pi_tls_dir: /etc/openbao/tls
+openbao_pi_unseal_keyfile: /etc/openbao/unseal.key
+openbao_pi_unseal_script: /usr/local/bin/openbao-unseal.sh
+openbao_pi_listen_addr: "0.0.0.0:8200"
+openbao_pi_api_addr: "https://bao1.{{ lan_domain }}:8200"
+openbao_pi_cluster_addr: "https://bao1.{{ lan_domain }}:8201"
+openbao_pi_transit_key: autounseal
+
+# OpenBao binary for aarch64 (Raspberry Pi OS 64-bit)
+openbao_pi_arch: arm64
+openbao_pi_binary_url: "https://github.com/openbao/openbao/releases/download/v{{ openbao_pi_binary_version }}/bao_{{ openbao_pi_binary_version }}_linux_{{ openbao_pi_arch }}.tar.gz"

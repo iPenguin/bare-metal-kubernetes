@@ -1,0 +1,16 @@
+ui = false
+disable_mlock = true
+
+storage "file" {
+  path = "{{ openbao_pi_data_dir }}"
+}
+
+listener "tcp" {
+  address       = "{{ openbao_pi_listen_addr }}"
+  tls_cert_file = "{{ openbao_pi_tls_dir }}/server.crt"
+  tls_key_file  = "{{ openbao_pi_tls_dir }}/server.key"
+  tls_min_version = "tls12"
+}
+
+api_addr     = "{{ openbao_pi_api_addr }}"
+cluster_addr = "{{ openbao_pi_cluster_addr }}"

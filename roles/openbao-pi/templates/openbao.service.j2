@@ -1,0 +1,32 @@
+[Unit]
+Description=OpenBao (Transit autounseal helper)
+Documentation=https://openbao.org/docs/
+After=network-online.target
+Wants=network-online.target
+ConditionFileNotEmpty={{ openbao_pi_config_dir }}/openbao.hcl
+
+[Service]
+Type=notify
+User={{ openbao_pi_user }}
+Group={{ openbao_pi_group }}
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+SecureBits=keep-caps
+AmbientCapabilities=CAP_IPC_LOCK
+CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK
+NoNewPrivileges=yes
+ExecStart=/usr/local/bin/bao server -config={{ openbao_pi_config_dir }}/openbao.hcl
+ExecReload=/bin/kill --signal HUP $MAINPID
+ExecStartPost=+{{ openbao_pi_unseal_script }}
+KillMode=process
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+LimitNOFILE=65536
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target

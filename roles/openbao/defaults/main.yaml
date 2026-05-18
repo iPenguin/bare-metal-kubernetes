@@ -1,0 +1,15 @@
+---
+
+openbao_namespace: openbao
+openbao_replicas: 3
+openbao_pi_addr: "https://bao1.{{ lan_domain }}:8200"
+openbao_pi_transit_key: autounseal
+openbao_ingress_host: "bao.{{ lan_domain }}"
+openbao_storage_class: ceph-block
+openbao_storage_size: 10Gi
+
+openbao_raft_snapshot_schedule: "30 2 * * *"
+openbao_raft_snapshot_retention_days: 30
+openbao_raft_snapshot_minio_endpoint: "https://minio-local.{{ lan_domain }}"
+openbao_raft_snapshot_minio_bucket: velero-backups
+openbao_raft_snapshot_minio_prefix: openbao-raft-snapshots

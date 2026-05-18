@@ -1,0 +1,144 @@
+---
+
+- name: Create openbao group
+  ansible.builtin.group:
+    name: "{{ openbao_pi_group }}"
+    system: true
+    state: present
+
+- name: Create openbao user
+  ansible.builtin.user:
+    name: "{{ openbao_pi_user }}"
+    group: "{{ openbao_pi_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ openbao_pi_data_dir }}"
+    createhome: false
+    state: present
+
+- name: Create openbao directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ openbao_pi_user }}"
+    group: "{{ openbao_pi_group }}"
+    mode: "0750"
+  loop:
+    - "{{ openbao_pi_config_dir }}"
+    - "{{ openbao_pi_tls_dir }}"
+    - "{{ openbao_pi_data_dir }}"
+
+- name: Install unzip (required to expand release archive)
+  ansible.builtin.apt:
+    name: unzip
+    state: present
+    update_cache: true
+  become: true
+
+- name: Check installed openbao version
+  ansible.builtin.command: /usr/local/bin/bao version
+  register: _bao_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Download OpenBao release archive
+  ansible.builtin.get_url:
+    url: "https://github.com/openbao/openbao/releases/download/v{{ openbao_pi_binary_version }}/bao_{{ openbao_pi_binary_version }}_linux_{{ openbao_pi_arch }}.tar.gz"
+    dest: "/tmp/bao_{{ openbao_pi_binary_version }}_linux_{{ openbao_pi_arch }}.tar.gz"
+    mode: "0644"
+  when: openbao_pi_binary_version not in (_bao_installed_version.stdout | default(''))
+
+- name: Extract OpenBao binary
+  ansible.builtin.unarchive:
+    src: "/tmp/bao_{{ openbao_pi_binary_version }}_linux_{{ openbao_pi_arch }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    include:
+      - bao
+    owner: root
+    group: root
+    mode: "0755"
+  when: openbao_pi_binary_version not in (_bao_installed_version.stdout | default(''))
+  notify: restart openbao
+
+- name: Write internal CA bundle (for clients verifying server cert)
+  ansible.builtin.copy:
+    content: "{{ vault_openbao_internal_ca_cert }}"
+    dest: "{{ openbao_pi_tls_dir }}/ca.crt"
+    owner: "{{ openbao_pi_user }}"
+    group: "{{ openbao_pi_group }}"
+    mode: "0444"
+  when:
+    - vault_openbao_internal_ca_cert is defined
+    - vault_openbao_internal_ca_cert != 'REPLACE_ME'
+  notify: restart openbao
+
+- name: Write Pi server cert
+  ansible.builtin.copy:
+    content: "{{ vault_openbao_pi_server_cert }}"
+    dest: "{{ openbao_pi_tls_dir }}/server.crt"
+    owner: "{{ openbao_pi_user }}"
+    group: "{{ openbao_pi_group }}"
+    mode: "0444"
+  when:
+    - vault_openbao_pi_server_cert is defined
+    - vault_openbao_pi_server_cert != 'REPLACE_ME'
+  notify: restart openbao
+
+- name: Write Pi server key
+  ansible.builtin.copy:
+    content: "{{ vault_openbao_pi_server_key }}"
+    dest: "{{ openbao_pi_tls_dir }}/server.key"
+    owner: "{{ openbao_pi_user }}"
+    group: "{{ openbao_pi_group }}"
+    mode: "0400"
+  when:
+    - vault_openbao_pi_server_key is defined
+    - vault_openbao_pi_server_key != 'REPLACE_ME'
+  no_log: true
+  notify: restart openbao
+
+- name: Render openbao config
+  ansible.builtin.template:
+    src: openbao.hcl.j2
+    dest: "{{ openbao_pi_config_dir }}/openbao.hcl"
+    owner: "{{ openbao_pi_user }}"
+    group: "{{ openbao_pi_group }}"
+    mode: "0640"
+  notify: restart openbao
+
+- name: Render unseal helper script
+  ansible.builtin.template:
+    src: openbao-unseal.sh.j2
+    dest: "{{ openbao_pi_unseal_script }}"
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Render unseal keyfile
+  ansible.builtin.template:
+    src: unseal.key.j2
+    dest: "{{ openbao_pi_unseal_keyfile }}"
+    owner: root
+    group: root
+    mode: "0400"
+  when:
+    - vault_openbao_pi_unseal_keys is defined
+    - vault_openbao_pi_unseal_keys | length > 0
+  no_log: true
+
+- name: Render systemd unit
+  ansible.builtin.template:
+    src: openbao.service.j2
+    dest: /etc/systemd/system/openbao.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart openbao
+
+- name: Enable and start openbao
+  ansible.builtin.systemd:
+    name: openbao.service
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -1,0 +1,92 @@
+---
+
+global:
+  enabled: true
+  namespace: "{{ openbao_namespace }}"
+  tlsDisable: true
+
+injector:
+  enabled: false
+
+server:
+  image:
+    tag: "{{ openbao_image_version }}"
+
+  affinity: ""
+
+  ha:
+    enabled: true
+    replicas: {{ openbao_replicas }}
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        ui = true
+        disable_mlock = true
+
+        listener "tcp" {
+          tls_disable = 1
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+        }
+
+        storage "raft" {
+          path = "/openbao/data"
+          {% for i in range(openbao_replicas) %}
+          retry_join {
+            leader_api_addr = "http://openbao-{{ i }}.openbao-internal:8200"
+          }
+          {% endfor %}
+        }
+
+        seal "transit" {
+          address         = "{{ openbao_pi_addr }}"
+          token           = "${BAO_TRANSIT_TOKEN}"
+          disable_renewal = "false"
+          key_name        = "{{ openbao_pi_transit_key }}"
+          mount_path      = "transit/"
+          tls_ca_cert     = "/etc/openbao/pi-ca/ca.crt"
+        }
+
+        service_registration "kubernetes" {}
+
+  extraEnvironmentVars:
+    BAO_CACERT: /etc/openbao/pi-ca/ca.crt
+
+  extraSecretEnvironmentVars:
+    - envName: BAO_TRANSIT_TOKEN
+      secretName: openbao-transit-token
+      secretKey: token
+
+  volumes:
+    - name: openbao-pi-ca
+      secret:
+        secretName: openbao-internal-ca
+
+  volumeMounts:
+    - name: openbao-pi-ca
+      mountPath: /etc/openbao/pi-ca
+      readOnly: true
+
+  dataStorage:
+    enabled: true
+    size: "{{ openbao_storage_size }}"
+    storageClass: "{{ openbao_storage_class }}"
+    accessMode: ReadWriteOnce
+
+  service:
+    enabled: true
+    type: ClusterIP
+
+  # Ingress handled by separate manifest using the reflected wildcard cert.
+  ingress:
+    enabled: false
+
+  readinessProbe:
+    enabled: true
+    path: "/v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204"
+
+  livenessProbe:
+    enabled: true
+    path: "/v1/sys/health?standbyok=true"
+    initialDelaySeconds: 60

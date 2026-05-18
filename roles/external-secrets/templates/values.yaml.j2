@@ -1,0 +1,18 @@
+---
+installCRDs: true
+
+replicaCount: 2
+
+serviceAccount:
+  create: true
+  name: external-secrets
+
+# No ClusterSecretStore here - that's a migration-time artifact, since it
+# requires the ESO ServiceAccount to be bound to a Kubernetes auth role
+# inside OpenBao.
+
+webhook:
+  replicaCount: 1
+
+certController:
+  replicaCount: 1
