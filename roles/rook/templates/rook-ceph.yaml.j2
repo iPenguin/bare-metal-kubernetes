@@ -4,7 +4,7 @@ crds:
   enabled: true
 
 nodeSelector:
-  {{ lan_domain }}/rook-storage-gw: "true"
+  {{ lan_domain }}/node-role: storage-node
 tolerations:
   - key: "nvidia.com/gpu"
     operator: "Equal"
@@ -43,13 +43,13 @@ csi:
   enablePluginSelinuxHostMount: false
   enableCSIEncryption: false
 
-  provisionerNodeAffinity: {{ lan_domain }}/rook-storage-gw=true
+  provisionerNodeAffinity: {{ lan_domain }}/node-role=storage-node
   provisionerTolerations:
     - key: "nvidia.com/gpu"
       operator: "Equal"
       effect: "NoSchedule"
 
-  pluginNodeAffinity: {{ lan_domain }}/rook-storage-gw=true
+  pluginNodeAffinity: {{ lan_domain }}/node-role=storage-node
   pluginTolerations:
     - key: "nvidia.com/gpu"
       operator: "Equal"
