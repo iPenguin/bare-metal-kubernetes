@@ -66,6 +66,7 @@ router:
       netmask: 255.255.255.0
       ipv4: "{{ network.ipv4.router }}"
       ip6assign: 64 #60
+      ip6prefix: "{{ ipv6_network }}::/64"
       dns_search: "{{ lan_domain }}"
     - name: wan
       dev: p8

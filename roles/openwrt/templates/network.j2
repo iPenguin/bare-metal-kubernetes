@@ -26,6 +26,7 @@ config interface '{{ iface.name }}'
 	{% if iface.reqaddress is defined %}option reqaddress '{{ iface.reqaddress }}'{% endif +%}
 	{% if iface.reqprefix is defined %}option reqprefix '{{ iface.reqprefix }}'{% endif +%}
 	{% if iface.ip6assign is defined %}option ip6assign '{{ iface.ip6assign }}'{% endif +%}
+	{% if iface.ip6prefix is defined %}option ip6prefix '{{ iface.ip6prefix }}'{% endif +%}
 	{% if iface.private_key is defined %}option private_key '{{ iface.private_key }}'{% endif +%}
 	{% if iface.dns_servers is defined -%}
 	{% for dns_server in iface.dns_servers %}list dns '{{ dns_server }}'
