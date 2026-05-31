@@ -26,6 +26,17 @@
     namespace: argocd
     definition: "{{ _argo_client_secret.stdout | from_yaml }}"
 
+- name: Ensure argocd part-of label on oidc secret
+  kubernetes.core.k8s:
+    state: patched
+    kind: Secret
+    name: argo-oidc-secrets
+    namespace: argocd
+    definition:
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: argocd
+
 - name: Add argo helm repo
   kubernetes.core.helm_repository:
     name: argo

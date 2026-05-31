@@ -219,6 +219,7 @@
     state: present
     client_id: argocd
     secret: "{{ argocd_client_secret }}"
+    client_authenticator_type: client-secret
     protocol: openid-connect
     enabled: true
     public_client: false
@@ -465,6 +466,28 @@
     body_format: json
     body:
       secret: "{{ openbao_client_secret }}"
+    status_code: [204]
+  no_log: true
+
+- name: Look up argocd client UUID
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients?clientId=argocd"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+    return_content: true
+  register: _argocd_client_lookup
+
+- name: Force-set argocd client secret
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients/{{ _argocd_client_lookup.json[0].id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      secret: "{{ argocd_client_secret }}"
     status_code: [204]
   no_log: true
 
