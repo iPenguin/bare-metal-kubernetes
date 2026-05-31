@@ -70,15 +70,14 @@ gitea:
     ENABLE_OPENID_SIGNIN: true
     ENABLE_OPENID_SIGNUP: false
   oauth:
-    - name: "Homelab"
+    - name: "homelab"
       existingSecret: gitea-secrets
-      name: "homelab"
       provider: "openidConnect"
       autoDiscoverUrl: "https://sso.clt.milco.casa/realms/homelab/.well-known/openid-configuration"
       scopes: "email profile openid groups"
       adminGroup: "app-gitea-admins"
       restricted-group: "app-gitea-users"
-      groupClaimName: "group-names"
+      groupClaimName: "groups"
   service:
     DISABLE_REGISTRATION: true
     REQUIRE_SIGNIN_VIEW: true
