@@ -498,11 +498,15 @@
     name: harbor-secrets
     namespace: harbor
   register: _harbor_secrets
+  tags:
+    - harbor-oidc
 
 - name: Set harbor admin password fact
   ansible.builtin.set_fact:
     harbor_admin_password: "{{ _harbor_secrets.resources[0].data['HARBOR_ADMIN_PASSWORD'] | b64decode }}"
   no_log: true
+  tags:
+    - harbor-oidc
 
 - name: Configure Harbor OIDC via API
   ansible.builtin.uri:
@@ -525,3 +529,5 @@
       oidc_verify_cert: true
     status_code: [200]
   no_log: false
+  tags:
+    - harbor-oidc
