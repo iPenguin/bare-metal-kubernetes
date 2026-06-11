@@ -11,7 +11,7 @@
     - role: openwrt
 
 - name: Bootstrap Pi unseal helper
-  hosts: bao_unseal
+  hosts: openbao
   become: true
   tags:
     - never

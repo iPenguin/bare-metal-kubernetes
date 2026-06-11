@@ -1,0 +1,260 @@
+---
+
+# Run-once playbook for section D of docs/openbao-bootstrap.md:
+# initialize Pi-OpenBao, unseal it, enable the Transit autounseal key,
+# and mint the autounseal token for the cluster.
+#
+# Idempotent: if OpenBao is already initialized, the playbook skips
+# init/unseal/token-mint and only reconciles the transit engine, the
+# autounseal key, and the autounseal policy (those need a root token
+# from the vault).
+#
+# Captured secrets from a first run (root token, 5 unseal keys, autounseal
+# token) are written to .openbao-pi-init.json on the control node. Section
+# E of the runbook covers persisting them into the vault.
+#
+# Usage:
+#   ansible-playbook openbao-pi-init.yaml --tags openbao-pi-init
+
+- name: Initialize Pi-OpenBao
+  hosts: openbao
+  become: true
+  gather_facts: false
+  tags:
+    - never
+    - openbao-pi-init
+  vars:
+    openbao_pi_init_output: "{{ playbook_dir }}/.openbao-pi-init.json"
+    # Talk to the local TLS listener on loopback. Skip CA verification
+    # because the CA cert may not have been deployed to the Pi yet (the
+    # openbao-pi role only writes it once vault_openbao_internal_ca_cert
+    # is populated). Loopback + root means there is no MITM exposure here.
+    _bao_env:
+      BAO_ADDR: "https://127.0.0.1:8200"
+      BAO_SKIP_VERIFY: "true"
+
+  pre_tasks:
+    - name: Check for an existing capture file
+      ansible.builtin.stat:
+        path: "{{ openbao_pi_init_output }}"
+      register: _init_capture
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Refuse to overwrite an existing capture file
+      ansible.builtin.fail:
+        msg: >-
+          {{ openbao_pi_init_output }} already exists. Move or delete it
+          before re-running this playbook so previously captured root keys
+          are not silently overwritten.
+      when: _init_capture.stat.exists
+
+    - name: Confirm openbao.service is active
+      ansible.builtin.command: systemctl is-active openbao.service
+      register: _bao_service_state
+      changed_when: false
+      failed_when: false
+
+    # The unit is Type=notify; older bao binaries never send READY=1, so
+    # systemd may sit in "activating" forever even though the TLS listener
+    # is bound. Treat "activating" as acceptable here and let the wait_for
+    # task below be the authoritative gate on the API actually answering.
+    - name: Fail clearly if openbao.service is not running
+      ansible.builtin.fail:
+        msg: >-
+          openbao.service on {{ inventory_hostname }} is "{{ _bao_service_state.stdout }}".
+          The service must be up before we can initialize. Run section C of
+          the runbook first:
+            ansible-playbook run.yaml --tags openbao-pi
+          Then check `journalctl -u openbao.service` if it still will not
+          start.
+      when: _bao_service_state.stdout not in ['active', 'activating']
+
+    - name: Wait for the OpenBao listener to accept connections
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 8200
+        timeout: 30
+
+    - name: Check current OpenBao status
+      ansible.builtin.command: /usr/local/bin/bao status -format=json
+      environment: "{{ _bao_env }}"
+      register: _bao_status_raw
+      changed_when: false
+      # bao status exits 0 when unsealed, 2 when sealed (or uninitialized),
+      # 1 only on a real error. Both 0 and 2 still produce valid JSON.
+      failed_when: _bao_status_raw.rc not in [0, 2]
+
+    - name: Parse OpenBao status
+      ansible.builtin.set_fact:
+        _bao_status: "{{ _bao_status_raw.stdout | from_json }}"
+
+  tasks:
+    - name: Initialize OpenBao (5 shares, threshold 3)
+      ansible.builtin.command: >-
+        /usr/local/bin/bao operator init
+        -key-shares=5
+        -key-threshold=3
+        -format=json
+      environment: "{{ _bao_env }}"
+      register: _bao_init_raw
+      when: not _bao_status.initialized
+      no_log: true
+
+    - name: Persist captured init material to control node
+      ansible.builtin.copy:
+        content: "{{ _bao_init_raw.stdout }}"
+        dest: "{{ openbao_pi_init_output }}"
+        mode: "0600"
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      when: not _bao_status.initialized
+      no_log: true
+
+    - name: Parse init output
+      ansible.builtin.set_fact:
+        _bao_init: "{{ _bao_init_raw.stdout | from_json }}"
+      when: not _bao_status.initialized
+      no_log: true
+
+    - name: Unseal OpenBao with the first 3 captured keys
+      ansible.builtin.command: >-
+        /usr/local/bin/bao operator unseal {{ item }}
+      environment: "{{ _bao_env }}"
+      loop: "{{ _bao_init.unseal_keys_b64[:3] }}"
+      when: _bao_init is defined
+      no_log: true
+
+    - name: Refresh status after potential init/unseal
+      ansible.builtin.command: /usr/local/bin/bao status -format=json
+      environment: "{{ _bao_env }}"
+      register: _bao_status_raw
+      changed_when: false
+      failed_when: _bao_status_raw.rc not in [0, 2]
+
+    - name: Re-parse status
+      ansible.builtin.set_fact:
+        _bao_status: "{{ _bao_status_raw.stdout | from_json }}"
+
+    - name: Fail if OpenBao is still sealed
+      ansible.builtin.fail:
+        msg: >-
+          OpenBao is initialized but still sealed. Cannot configure transit.
+          Unseal manually (or fix vault_openbao_pi_unseal_keys and run the
+          openbao-pi role) and re-run this playbook.
+      when: _bao_status.sealed
+
+    - name: Pick the root token for the rest of the play
+      ansible.builtin.set_fact:
+        _bao_root_token: "{{ _bao_init.root_token if _bao_init is defined else (vault_openbao_pi_root_token | default('')) }}"
+      no_log: true
+
+    - name: Require a root token for transit reconciliation
+      ansible.builtin.fail:
+        msg: >-
+          OpenBao is already initialized but vault_openbao_pi_root_token is
+          not set in the vault. Transit + policy reconciliation needs a
+          root-equivalent token. Either set the variable in
+          vaults/group_vars/all/openbao.yaml, or pass --extra-vars to
+          override.
+      when: _bao_root_token | length == 0
+
+    - name: List enabled secrets engines
+      ansible.builtin.command: /usr/local/bin/bao secrets list -format=json
+      environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
+      register: _bao_secrets_raw
+      changed_when: false
+      no_log: true
+
+    - name: Enable transit secrets engine
+      ansible.builtin.command: /usr/local/bin/bao secrets enable transit
+      environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
+      when: "'transit/' not in (_bao_secrets_raw.stdout | from_json)"
+
+    - name: List existing transit keys
+      ansible.builtin.command: /usr/local/bin/bao list -format=json transit/keys
+      environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
+      register: _bao_transit_keys_raw
+      changed_when: false
+      failed_when: false
+
+    - name: Create the autounseal transit key
+      ansible.builtin.command: >-
+        /usr/local/bin/bao write -f transit/keys/{{ openbao_pi_transit_key }}
+      environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
+      when: >-
+        _bao_transit_keys_raw.rc != 0
+        or openbao_pi_transit_key not in (_bao_transit_keys_raw.stdout | from_json)
+
+    - name: Render autounseal policy
+      ansible.builtin.copy:
+        dest: /tmp/autounseal.hcl
+        mode: "0600"
+        content: |
+          path "transit/encrypt/{{ openbao_pi_transit_key }}" {
+            capabilities = ["update"]
+          }
+          path "transit/decrypt/{{ openbao_pi_transit_key }}" {
+            capabilities = ["update"]
+          }
+
+    - name: Install autounseal policy
+      ansible.builtin.command: >-
+        /usr/local/bin/bao policy write autounseal /tmp/autounseal.hcl
+      environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
+      changed_when: true
+
+    - name: Remove temporary policy file
+      ansible.builtin.file:
+        path: /tmp/autounseal.hcl
+        state: absent
+
+    - name: Mint the cluster autounseal token (first run only)
+      ansible.builtin.command: >-
+        /usr/local/bin/bao token create
+        -policy=autounseal
+        -orphan
+        -period=24h
+        -display-name=cluster-autounseal
+        -format=json
+      environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
+      register: _bao_autounseal_token_raw
+      when: _bao_init is defined
+      no_log: true
+
+    - name: Append autounseal token to capture file
+      ansible.builtin.copy:
+        content: |
+          {{ _bao_init_raw.stdout }}
+          ---
+          {{ _bao_autounseal_token_raw.stdout }}
+        dest: "{{ openbao_pi_init_output }}"
+        mode: "0600"
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      when: _bao_init is defined
+      no_log: true
+
+    - name: Report next steps after a fresh init
+      ansible.builtin.debug:
+        msg:
+          - "Pi-OpenBao is initialized and unsealed."
+          - "Captured secrets are in: {{ openbao_pi_init_output }}"
+          - "Follow section E of docs/openbao-bootstrap.md to encrypt"
+          - "vault_openbao_pi_unseal_keys, vault_openbao_pi_root_token,"
+          - "and vault_openbao_pi_autounseal_token into the vault, then"
+          - "shred the capture file."
+      when: _bao_init is defined
+
+    - name: Report no-op
+      ansible.builtin.debug:
+        msg: >-
+          OpenBao was already initialized; transit engine, autounseal key,
+          and autounseal policy reconciled. No new init material captured.
+      when: _bao_init is not defined

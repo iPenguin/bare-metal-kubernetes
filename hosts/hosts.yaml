@@ -21,7 +21,7 @@ all:
         router:
           hosts:
             r.milco.casa:
-    bao_unseal:
+    openbao:
       hosts:
         bao1.clt.milco.casa:
 backups:
@@ -90,7 +90,7 @@ remote:
           ansible_host: 10.1.1.16
         w5.clt.milco.casa:
           ansible_host: 10.1.1.17
-    bao_unseal:
+    openbao:
       hosts:
         bao1.clt.milco.casa:
           ansible_host: 10.1.1.4

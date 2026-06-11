@@ -1,3 +1,4 @@
 .devcontainer
 inventory.*
 vaults/*
+.openbao*
