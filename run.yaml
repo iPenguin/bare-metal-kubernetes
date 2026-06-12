@@ -200,7 +200,6 @@
     - keycloak
     - realm
     - domain
-    - harbor-oidc
   connection: local
   become: false
   roles:

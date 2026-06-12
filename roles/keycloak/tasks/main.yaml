@@ -6,11 +6,15 @@
     name: keycloak-passwords
     namespace: keycloak
   register: keycloak_secrets
+  tags:
+    - harbor-oidc
 
 - name: Get Keycloak admin password
   ansible.builtin.set_fact:
     keycloak_admin_password: "{{ keycloak_secrets.resources[0].data['adminPassword'] | b64decode }}"
     svc_ldap_password: "{{ keycloak_secrets.resources[0].data['BIND_PASSWORD'] | b64decode }}"
+  tags:
+    - harbor-oidc
 
 - name: Create a new realm in Keycloak
   community.general.keycloak_realm:
@@ -259,6 +263,8 @@
       - profile
       - email
       - groups
+  tags:
+    - harbor-oidc
 
 - name: Create MinIO realm roles in Keycloak
   community.general.keycloak_role:
@@ -380,6 +386,8 @@
     return_content: true
   register: _keycloak_token
   no_log: true
+  tags:
+    - harbor-oidc
 
 - name: Look up minio client UUID
   ansible.builtin.uri:
@@ -411,6 +419,8 @@
       Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
     return_content: true
   register: _harbor_client_lookup
+  tags:
+    - harbor-oidc
 
 - name: Force-set harbor client secret
   ansible.builtin.uri:
@@ -424,6 +434,28 @@
       secret: "{{ harbor_client_secret }}"
     status_code: [204]
   no_log: true
+  tags:
+    - harbor-oidc
+
+# A bogus code with valid client credentials returns 400 invalid_grant;
+# a wrong secret returns 401 unauthorized_client, failing this task.
+- name: Verify harbor client credentials against Keycloak
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/realms/{{ keycloak.realm }}/protocol/openid-connect/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: authorization_code
+      client_id: harbor
+      client_secret: "{{ harbor_client_secret }}"
+      code: ansible-verification-bogus-code
+      redirect_uri: "https://harbor.{{ lan_domain }}/c/oidc/callback"
+    status_code: [400]
+  register: _harbor_client_check
+  failed_when: _harbor_client_check.json.error != 'invalid_grant'
+  no_log: true
+  tags:
+    - harbor-oidc
 
 - name: Look up concourse client UUID
   ansible.builtin.uri:
