@@ -1,0 +1,17 @@
+---
+
+- name: Deploy cert renewal check script
+  ansible.builtin.template:
+    src: renew-certs.sh.j2
+    dest: /root/renew-certs.sh
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Schedule daily kubeadm cert renewal check
+  ansible.builtin.cron:
+    name: "kubeadm cert renewal check"
+    user: root
+    minute: "{{ k8s_cert_renewal_minute }}"
+    hour: "{{ groups['controllers'].index(inventory_hostname) + k8s_cert_renewal_hour_base }}"
+    job: "/root/renew-certs.sh"

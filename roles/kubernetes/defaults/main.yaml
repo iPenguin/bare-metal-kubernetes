@@ -3,3 +3,11 @@
 _k8s_master_node_schedule_taint: present
 
 _kubeadm_config: "/root/kubeadm.yaml"
+
+k8s_cert_renewal_threshold_days: 30
+
+k8s_cert_renewal_log_path: /var/log/kubeadm-cert-renewal.log
+
+k8s_cert_renewal_minute: 15
+
+k8s_cert_renewal_hour_base: 2

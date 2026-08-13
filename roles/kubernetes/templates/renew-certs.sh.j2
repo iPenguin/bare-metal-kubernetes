@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+# Daily check (scheduled via cron, staggered per-controller — see
+# roles/kubernetes/tasks/cert-renewal.yaml) for kubeadm-managed cert expiry.
+# All kubeadm leaf certs are issued together at bootstrap/join and share the
+# same ~1yr validity (kubeadm.yaml.j2 certificateValidityPeriod), so a single
+# representative cert is used as a proxy for "are we close to expiry".
+#
+# Renewing on disk isn't enough: the running etcd/apiserver/kube-vip
+# containers cache their certs in memory and won't pick up renewed files on
+# their own. Moving the static pod manifests out of the manifests dir and
+# back forces kubelet to recreate those containers against the fresh certs.
+
+set -u
+
+LOG="{{ k8s_cert_renewal_log_path }}"
+THRESHOLD_DAYS={{ k8s_cert_renewal_threshold_days }}
+CERT=/etc/kubernetes/pki/apiserver.crt
+MANIFEST_DIR=/etc/kubernetes/manifests
+BOUNCE_DIR=/etc/kubernetes/manifests-bounce-tmp
+
+now_epoch=$(date +%s)
+expiry_epoch=$(openssl x509 -enddate -noout -in "$CERT" | cut -d= -f2 | xargs -I{} date -d {} +%s)
+days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+
+echo "$(date -Is) check: ${days_left}d remaining on ${CERT}" >> "$LOG"
+
+if [ "$days_left" -ge "$THRESHOLD_DAYS" ]; then
+  exit 0
+fi
+
+echo "$(date -Is) renewing: ${days_left}d < ${THRESHOLD_DAYS}d threshold" >> "$LOG"
+
+if kubeadm certs renew all >> "$LOG" 2>&1; then
+{% if inventory_hostname == k8s_controller %}
+  cp /etc/kubernetes/admin.conf /root/.kube/config
+{% endif %}
+  mkdir -p "$BOUNCE_DIR"
+  mv "$MANIFEST_DIR"/*.yaml "$BOUNCE_DIR"/
+  sleep 20
+  mv "$BOUNCE_DIR"/*.yaml "$MANIFEST_DIR"/
+  rmdir "$BOUNCE_DIR"
+  echo "$(date -Is) renewed and control-plane static pods bounced" >> "$LOG"
+else
+  echo "$(date -Is) ERROR: kubeadm certs renew all failed, static pods NOT bounced" >> "$LOG"
+fi
