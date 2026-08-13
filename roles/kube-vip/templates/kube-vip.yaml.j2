@@ -28,7 +28,7 @@ spec:
         - name: vip_ddns
           value: "false"
         - name: svc_enable
-          value: "true"
+          value: "false"
         - name: vip_leaderelection
           value: "true"
         - name: vip_leaseduration
@@ -70,6 +70,7 @@ spec:
     - ip: 127.0.0.1
       hostnames:
         - kubernetes
+        - {{ k8s_api_endpoint }}
   hostNetwork: true
   volumes:
     - hostPath:
