@@ -171,12 +171,12 @@ hosts:
   - name: w4
     mac: 84:47:09:1D:2B:11
     ipv4: "{{ ipv4_network }}.16"
-    duid: 00020000ab116dc8533febf9788b
+    duid: 00020000ab118daf4a65f715f3dd
     hostid: 16
   - name: w5
     mac: 58:47:CA:7D:4D:B5
     ipv4: "{{ ipv4_network }}.17"
-    duid: 00020000ab11d881ebf6ff625335
+    duid: 00020000ab119d4d5e61a21d7e05
     hostid: 17
 
 # openwrt static domains - records not managed by ExternalDNS
