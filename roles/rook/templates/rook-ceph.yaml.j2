@@ -49,7 +49,10 @@ csi:
       operator: "Equal"
       effect: "NoSchedule"
 
-  pluginNodeAffinity: {{ lan_domain }}/node-role=storage-node
+  # No pluginNodeAffinity: the CSI node plugin (csi-rbdplugin/csi-cephfsplugin)
+  # must run on every node that can schedule a pod with a ceph-block/cephfs PVC,
+  # not just nodes with local OSDs (e.g. w4, which has no storage but runs pods
+  # that mount PVCs).
   pluginTolerations:
     - key: "nvidia.com/gpu"
       operator: "Equal"
