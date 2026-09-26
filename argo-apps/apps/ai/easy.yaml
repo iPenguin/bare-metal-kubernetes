@@ -22,23 +22,33 @@ spec:
                 operator: In
                 values:
                 - "true"
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - w4.clt.milco.casa
       containers:
       - command:
-        - /srv/ai/easy/start.sh
+        - /bin/bash
+        - /opt/ai-init/easy.sh
         env:
         - name: HOME
           value: /srv/ai
+        - name: APP_DIR
+          value: /srv/ai/easy
         image: docker.io/ipenguin/ubuntu-24.04-cuda:v1.0.10
         imagePullPolicy: IfNotPresent
         name: primary
         ports:
         - containerPort: 9000
           protocol: TCP
+        # first start downloads the installer, python env and models; allow up to an hour
+        startupProbe:
+          httpGet:
+            path: /
+            port: 9000
+          periodSeconds: 30
+          failureThreshold: 120
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9000
+          periodSeconds: 30
         resources:
           limits:
             memory: 48Gi
@@ -51,12 +61,14 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /srv/ai
-          name: srv-ai
-        - mountPath: /data
-          name: data
+        - mountPath: /srv
+          name: srv
         - mountPath: /usr/lib/x86_64-linux-gnu
           name: usr-lib-x86
+          readOnly: true
+        - mountPath: /opt/ai-init
+          name: ai-init
+          readOnly: true
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: "OnRootMismatch"
@@ -66,14 +78,14 @@ spec:
         key: nvidia.com/gpu
         operator: Equal
       volumes:
-      - name: srv-ai
+      - name: srv
         persistentVolumeClaim:
           claimName: ai-applications
-      - hostPath:
-          path: /data
-          type: Directory
-        name: data
       - hostPath:
           path: /usr/lib/x86_64-linux-gnu
           type: Directory
         name: usr-lib-x86
+      - configMap:
+          name: ai-init-scripts
+          defaultMode: 0755
+        name: ai-init
