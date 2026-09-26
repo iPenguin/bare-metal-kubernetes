@@ -1,0 +1,24 @@
+---
+- name: Build image with Podman
+  containers.podman.podman_image:
+    name: "{{ image_name }}"
+    tag: "{{ image_tag }}"
+    build:
+      container_file: "{{ lookup('template', 'Dockerfile') }}"
+      context: "{{ build_context }}"
+      push: true
+      push_args:
+        dest: docker.io/ipenguin/ubuntu-24.04-cuda:v{{ ai_image_version }}
+        format: oci
+      rm: yes
+      format: oci
+      extra_args: >-
+        --build-arg BUILD_DATE={{ ansible_date_time.iso8601 }}
+        --build-arg VCS_REF={{ ansible_env.GIT_COMMIT | default('unknown') }}
+        --layers=false
+    state: present
+    force: yes
+  register: podman_build_result
+  when: build_ai_image
+
+...

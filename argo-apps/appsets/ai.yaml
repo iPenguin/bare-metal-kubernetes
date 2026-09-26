@@ -27,7 +27,7 @@ spec:
           targetRevision: master
         - repoURL: 'https://open-webui.github.io/helm-charts'
           chart: open-webui
-          targetRevision: 13.2.1
+          targetRevision: 16.6.0
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/ai/open-webui-values.yaml'
