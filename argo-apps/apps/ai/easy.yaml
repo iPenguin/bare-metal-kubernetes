@@ -86,6 +86,6 @@ spec:
           type: Directory
         name: usr-lib-x86
       - configMap:
-          name: ai-init-scripts
+          name: ai-init-scripts-29fb5g68ct
           defaultMode: 0755
         name: ai-init
