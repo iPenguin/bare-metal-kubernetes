@@ -18,7 +18,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: nvidia.com/gpu
+              - key: nvidia.com/gpu.present
                 operator: In
                 values:
                 - "true"
