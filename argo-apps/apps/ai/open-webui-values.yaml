@@ -10,11 +10,12 @@ ollama:
       pull:
         - llama3
         - mistral
+        - qwen3.8
       run:
         - llama3
   persistentVolume:
     enabled: true
-    size: 50Gi
+    size: 100Gi
 
 websocket:
   enabled: true
