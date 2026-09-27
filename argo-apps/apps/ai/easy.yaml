@@ -13,6 +13,7 @@ spec:
       labels:
         app.kubernetes.io/name: easy
     spec:
+      runtimeClassName: nvidia
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -31,6 +32,8 @@ spec:
           value: /srv/ai
         - name: APP_DIR
           value: /srv/ai/easy
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
         image: docker.io/ipenguin/ubuntu-24.04-cuda:v1.0.10
         imagePullPolicy: IfNotPresent
         name: primary
@@ -52,10 +55,10 @@ spec:
         resources:
           limits:
             memory: 48Gi
+            nvidia.com/gpu: 1
           requests:
             memory: 1Gi
         securityContext:
-          privileged: true
           runAsGroup: 1000
           runAsUser: 1000
         terminationMessagePath: /dev/termination-log
@@ -63,9 +66,6 @@ spec:
         volumeMounts:
         - mountPath: /srv
           name: srv
-        - mountPath: /usr/lib/x86_64-linux-gnu
-          name: usr-lib-x86
-          readOnly: true
         - mountPath: /opt/ai-init
           name: ai-init
           readOnly: true
@@ -81,10 +81,6 @@ spec:
       - name: srv
         persistentVolumeClaim:
           claimName: ai-applications
-      - hostPath:
-          path: /usr/lib/x86_64-linux-gnu
-          type: Directory
-        name: usr-lib-x86
       - configMap:
           name: ai-init-scripts-29fb5g68ct
           defaultMode: 0755

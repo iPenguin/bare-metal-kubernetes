@@ -1,5 +1,18 @@
 ---
 
+# lets pods opt in to the nvidia runtime configured in /etc/crio/crio.conf.d/99-nvidia.conf
+- name: Create nvidia RuntimeClass
+  run_once: true
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: node.k8s.io/v1
+      kind: RuntimeClass
+      metadata:
+        name: nvidia
+      handler: nvidia
+  delegate_to: "{{ k8s_controller }}"
+
 - name: Add Nvidia helm repo
   run_once: true
   kubernetes.core.helm_repository:

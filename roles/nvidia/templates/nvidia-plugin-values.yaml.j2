@@ -6,6 +6,9 @@ image:
 # Namespace for deployment
 namespaceOverride: "nvidia"
 
+# Run under the nvidia runtime so the plugin can load NVML and discover GPUs
+runtimeClassName: nvidia
+
 # Ensure the plugin is scheduled on GPU-enabled nodes
 nodeSelector:
   nvidia.com/gpu.present: "true"
@@ -54,13 +57,12 @@ config:
         failOnInitError: false
         nvidiaDriverRoot: "/"
         nvidiaDevRoot: "/dev"
-        deviceDiscoveryStrategy: "tegra"
+        deviceDiscoveryStrategy: "auto"
         plugin:
           passDeviceSpecs: true
           deviceListStrategy: ["envvar"]
           deviceIDStrategy: "uuid"
           nvidiaCTKPath: "/usr/bin/nvidia-ctk"
-          containerDriverRoot: "/var/run/nvidia"
         mpsRoot: "/tmp/nvidia-mps"
 
 # Disable MPS (Multi-Process Service) for simplicity
