@@ -33,9 +33,12 @@
         create: yes
         state: present
 
+    # dkms needs headers to build the driver module; without them a kernel upgrade leaves no nvidia.ko
     - name: Install NVIDIA Container Toolkit
       ansible.builtin.apt:
         name:
+          - "linux-headers-{{ ansible_facts['kernel'] }}"
+          - linux-headers-generic
           - nvidia-container-toolkit
           - nvidia-driver-575-open
         state: present
@@ -50,6 +53,40 @@
       ansible.builtin.debug:
         msg: WARN -- To register signing key reboot after running 'mokutil --import /var/lib/shim-signed/mok/MOK.der'
       when : "'enabled' in secure_boot.stdout"
+
+    - name: Check nvidia module is built for the running kernel
+      ansible.builtin.command:
+        cmd: "dkms status -m nvidia -k {{ ansible_facts['kernel'] }}"
+      register: nvidia_dkms
+      changed_when: false
+
+    - name: Build nvidia module for the running kernel
+      ansible.builtin.command:
+        cmd: "dkms autoinstall -k {{ ansible_facts['kernel'] }}"
+      when: "'installed' not in nvidia_dkms.stdout"
+
+    - name: Load nvidia kernel module
+      ansible.builtin.command:
+        cmd: modprobe nvidia
+      register: nvidia_modprobe
+      changed_when: false
+      failed_when: false
+
+    - name: Check nvidia driver
+      ansible.builtin.command:
+        cmd: nvidia-smi -L
+      register: nvidia_smi
+      changed_when: false
+      failed_when: false
+
+    - name: Fail if nvidia driver is not working
+      ansible.builtin.fail:
+        msg: |
+          nvidia driver is not loaded on {{ inventory_hostname }}; pods will fail with "Driver Not Loaded".
+          modprobe: {{ nvidia_modprobe.stderr | default('ok') }}
+          nvidia-smi: {{ nvidia_smi.stdout }} {{ nvidia_smi.stderr }}
+          Check secure boot (mokutil --sb-state), nouveau (lsmod | grep nouveau) or reboot after a fresh driver install.
+      when: nvidia_smi.rc != 0
 
     - name: Create CRI-O runtime configuration directory
       ansible.builtin.file:

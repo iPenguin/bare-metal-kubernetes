@@ -15,8 +15,7 @@ if [ ! -x "$APP_DIR/start.sh" ]; then
   echo "Easy Diffusion not found in $APP_DIR, downloading installer from $INSTALLER_URL"
   tmp=$(mktemp -d)
   curl -fL --retry 3 -o "$tmp/easy-diffusion.zip" "$INSTALLER_URL"
-  # the image has no unzip
-  python3 -m zipfile -e "$tmp/easy-diffusion.zip" "$tmp/extract"
+  unzip -q "$tmp/easy-diffusion.zip" -d "$tmp/extract"
   cp -a "$tmp"/extract/easy-diffusion/. "$APP_DIR"/
   chmod +x "$APP_DIR"/*.sh "$APP_DIR"/scripts/*.sh
   rm -rf "$tmp"

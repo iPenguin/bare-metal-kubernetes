@@ -34,8 +34,8 @@ spec:
           value: /srv/ai/easy
         - name: NVIDIA_DRIVER_CAPABILITIES
           value: compute,utility
-        image: docker.io/ipenguin/ubuntu-24.04-cuda:v1.0.10
-        imagePullPolicy: IfNotPresent
+        image: harbor.clt.milco.casa/homelab/ai-base:latest
+        imagePullPolicy: Always
         name: primary
         ports:
         - containerPort: 9000
@@ -82,6 +82,6 @@ spec:
         persistentVolumeClaim:
           claimName: ai-applications
       - configMap:
-          name: ai-init-scripts-29fb5g68ct
+          name: ai-init-scripts
           defaultMode: 0755
         name: ai-init
