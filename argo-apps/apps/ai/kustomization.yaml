@@ -6,3 +6,7 @@ resources:
   - easy.yaml
   - ingress.yaml
   - open-webui-secrets.yaml
+configMapGenerator:
+  - name: ai-init-scripts
+    files:
+      - scripts/easy.sh

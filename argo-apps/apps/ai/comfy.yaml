@@ -9,7 +9,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 100Gi
+      storage: 250Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -70,21 +70,15 @@ spec:
             limits:
               memory: "48Gi"
           volumeMounts:
-            - name: srv-ai
-              mountPath: "/srv/ai"
-            - name: data
-              mountPath: /data
+            - name: srv
+              mountPath: "/srv"
             - name: usr-lib-x86
               mountPath: /usr/lib/x86_64-linux-gnu
               readOnly: true
       volumes:
-        - name: srv-ai
+        - name: srv
           persistentVolumeClaim:
             claimName: ai-applications
-        - name: data
-          hostPath:
-            path: /data
-            type: Directory
         - name: usr-lib-x86
           hostPath:
             path: /usr/lib/x86_64-linux-gnu
