@@ -1,0 +1,25 @@
+---
+# kubeadm sets serverTLSBootstrap: true (roles/kubernetes/templates/kubeadm.yaml.j2),
+# so every kubelet requests its serving cert via a kubernetes.io/kubelet-serving CSR
+# that nothing approves by default. Without an approved cert, kubectl logs/exec/
+# port-forward to that node fail with "remote error: tls: internal error".
+
+# Only node names from the inventory (c1-c3, w1-w5) may get a serving cert
+providerRegex: ^[cw][0-9]+\.clt\.milco\.casa$
+
+# Every IP SAN in the CSR must fall in one of these. kubelet node-ip is
+# "{{ host_ipv4 }},{{ host_ipv6 }}"; the IPv6 prefix lives in vault
+# (vault_ipv6_network) and this repo is public, so allow global unicast
+# instead of the exact /64. The name regex and DNS check still apply.
+providerIpPrefixes:
+  - 10.1.1.0/24
+  - 2000::/3
+
+# Leave CSRs that don't match pending for manual review instead of denying them
+skipDenyStep: true
+
+# Run on the control plane too, so approvals keep working if workers are unhealthy
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule

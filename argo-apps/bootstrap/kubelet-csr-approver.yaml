@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: kubelet-csr-approver
+  namespace: argocd
+spec:
+  description: Auto-approve kubelet serving certificate CSRs
+  destinations:
+    - namespace: argocd
+      server: '*'
+    - namespace: kubelet-csr-approver
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  sourceRepos:
+    - https://github.com/ipenguin/bare-metal-kubernetes.git
+    - https://postfinance.github.io/kubelet-csr-approver

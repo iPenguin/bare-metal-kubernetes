@@ -10,6 +10,7 @@ resources:
   - harbor.yaml
   - homelab.yaml
   - keycloak.yaml
+  - kubelet-csr-approver.yaml
   - kubernetes-reflector.yaml
   - lldap.yaml
   - minio.yaml
