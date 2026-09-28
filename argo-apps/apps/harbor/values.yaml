@@ -28,7 +28,7 @@ persistence:
     registry:
       storageClass: "ceph-block"
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 50Gi
     database:
       storageClass: "ceph-block"
       size: 1Gi
