@@ -26,60 +26,77 @@ spec:
       labels:
         app.kubernetes.io/name: comfy
     spec:
-      tolerations:
-        - key: "nvidia.com/gpu"
-          operator: "Equal"
-          effect: "NoSchedule"
+      runtimeClassName: nvidia
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-              - matchExpressions:
-                  - key: nvidia.com/gpu.present
-                    operator: In
-                    values:
-                      - "true"
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                      - comfy
-              topologyKey: "kubernetes.io/hostname"
+            - matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: In
+                values:
+                - "true"
+      containers:
+      - command:
+        - /bin/bash
+        - /opt/ai-init/comfy.sh
+        env:
+        - name: HOME
+          value: /srv/ai
+        - name: APP_DIR
+          value: /srv/ai/comfy
+        - name: COMFY_VERSION
+          value: v0.38.0
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        image: harbor.clt.milco.casa/homelab/ai-base:latest
+        imagePullPolicy: Always
+        name: primary
+        ports:
+        - containerPort: 8188
+          protocol: TCP
+        # first start (or a version bump) downloads python, torch and requirements; allow up to an hour
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8188
+          periodSeconds: 30
+          failureThreshold: 120
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8188
+          periodSeconds: 30
+        resources:
+          limits:
+            memory: 48Gi
+            nvidia.com/gpu: 1
+          requests:
+            memory: 1Gi
+        securityContext:
+          runAsGroup: 1000
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /srv
+          name: srv
+        - mountPath: /opt/ai-init
+          name: ai-init
+          readOnly: true
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: "OnRootMismatch"
-      containers:
-        - name: primary
-          image: docker.io/ipenguin/ubuntu-24.04-cuda:v1.0.10
-          command: ["/srv/ai/comfy/comfy.sh"]
-          ports:
-            - containerPort: 8188
-          env:
-            - name: HOME
-              value: "/srv/ai"
-          securityContext:
-            privileged: true
-            runAsUser: 1000
-            runAsGroup: 1000
-          resources:
-            requests:
-              memory: "1Gi"
-            limits:
-              memory: "48Gi"
-          volumeMounts:
-            - name: srv
-              mountPath: "/srv"
-            - name: usr-lib-x86
-              mountPath: /usr/lib/x86_64-linux-gnu
-              readOnly: true
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
       volumes:
-        - name: srv
-          persistentVolumeClaim:
-            claimName: ai-applications
-        - name: usr-lib-x86
-          hostPath:
-            path: /usr/lib/x86_64-linux-gnu
-            type: Directory
+      - name: srv
+        persistentVolumeClaim:
+          claimName: ai-applications
+      - configMap:
+          name: ai-init-scripts
+          defaultMode: 0755
+        name: ai-init

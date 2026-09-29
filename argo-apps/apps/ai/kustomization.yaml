@@ -10,4 +10,5 @@ resources:
 configMapGenerator:
   - name: ai-init-scripts
     files:
+      - scripts/comfy.sh
       - scripts/easy.sh
