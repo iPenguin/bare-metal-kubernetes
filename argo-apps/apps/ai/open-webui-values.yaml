@@ -2,6 +2,7 @@
 ollama:
   enabled: true
   ollama:
+    # adds the nvidia.com/gpu limit and the nvidia.com/gpu toleration to the ollama pod
     gpu:
       enabled: true
       type: 'nvidia'
@@ -10,9 +11,28 @@ ollama:
       pull:
         - llama3
         - mistral
-        - qwen3.8
+        - qwen3:8b
       run:
         - llama3
+  # same standard as comfy/easy: the nvidia runtime injects the driver libraries
+  runtimeClassName: nvidia
+  extraEnv:
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: compute,utility
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: nvidia.com/gpu.present
+            operator: In
+            values:
+            - "true"
+  resources:
+    limits:
+      memory: 16Gi
+    requests:
+      memory: 1Gi
   persistentVolume:
     enabled: true
     size: 100Gi
@@ -78,14 +98,6 @@ service:
   type: ClusterIP
   port: 8080
 
-nodeSelector:
-  nvidia.com/gpu.present: "true"
-
-tolerations:
-  - key: "nvidia.com/gpu"
-    operator: "Equal"
-    effect: "NoSchedule"
-
 ingress:
   enabled: true
   className: "traefik"
@@ -106,9 +118,8 @@ persistence:
   provider: local
   storageClass: "ceph-block"
 
-env:
-  - name: OLLAMA_BASE_URL
-    value: "http://ollama.ai-namespace:11434"
+# OLLAMA_BASE_URLS is set by the chart to point at the bundled ollama service
+extraEnvVars:
   - name: WEBUI_SECRET_KEY
     valueFrom:
       secretKeyRef:
