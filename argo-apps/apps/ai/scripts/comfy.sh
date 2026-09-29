@@ -10,7 +10,8 @@ COMFY_REPO="${COMFY_REPO:-https://github.com/comfyanonymous/ComfyUI.git}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.13}"
 # cu130 needs driver >= 580 and is what upstream requires for RTX 20 series and newer
 TORCH_BACKEND="${TORCH_BACKEND:-cu130}"
-COMFY_PORT="${COMFY_PORT:-8188}"
+# not COMFY_PORT: kubernetes sets that to tcp://<ip>:8188 for the comfy service
+LISTEN_PORT="${LISTEN_PORT:-8188}"
 
 SRC_DIR="$APP_DIR/ComfyUI"
 VENV_DIR="$APP_DIR/venv-py$PYTHON_VERSION"
@@ -57,4 +58,4 @@ fi
 "$VENV_DIR/bin/python" -c 'import torch; print("torch", torch.__version__, "cuda:", torch.cuda.is_available())'
 
 cd "$SRC_DIR"
-exec "$VENV_DIR/bin/python" main.py --listen 0.0.0.0 --port "$COMFY_PORT" --enable-manager
+exec "$VENV_DIR/bin/python" main.py --listen 0.0.0.0 --port "$LISTEN_PORT" --enable-manager
