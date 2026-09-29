@@ -64,6 +64,15 @@ config:
           deviceIDStrategy: "uuid"
           nvidiaCTKPath: "/usr/bin/nvidia-ctk"
         mpsRoot: "/tmp/nvidia-mps"
+      # time-slicing: advertise each GPU as N nvidia.com/gpu so several pods can share it.
+      # no memory isolation -- the pods share the card's VRAM and can OOM each other
+      sharing:
+        timeSlicing:
+          renameByDefault: false
+          failRequestsGreaterThanOne: true
+          resources:
+            - name: nvidia.com/gpu
+              replicas: {{ nvidia_gpu_replicas | default(4) }}
 
 # Disable MPS (Multi-Process Service) for simplicity
 mps:
