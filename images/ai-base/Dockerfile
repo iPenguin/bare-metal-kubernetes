@@ -6,6 +6,8 @@ FROM ${BASE_IMAGE}
 
 # curl/bzip2/unzip: installers fetch micromamba and zip releases
 # libgl1/libglib2.0-0: loaded by opencv at runtime
+# pciutils: torchruntime (Easy Diffusion) detects GPUs via `lspci -nn`, and silently
+#           falls back to CPU-only torch if lspci is missing
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bzip2 \
@@ -14,6 +16,7 @@ RUN apt-get update \
     git \
     libgl1 \
     libglib2.0-0 \
+    pciutils \
     unzip \
   && rm -rf /var/lib/apt/lists/*
 

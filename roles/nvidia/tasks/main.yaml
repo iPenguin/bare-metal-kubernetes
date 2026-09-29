@@ -1,4 +1,11 @@
 ---
+# ansible_facts['kernel'] is needed below; other roles gather facts but are skipped with --tags nvidia
+- name: populate facts
+  ansible.builtin.setup:
+    gather_subset:
+      - min
+  when: ansible_facts['kernel'] is not defined
+
 - name: check for nvidia card
   ansible.builtin.command:
     cmd: "lspci -nn -d 10de:"
@@ -34,15 +41,18 @@
         state: present
 
     # dkms needs headers to build the driver module; without them a kernel upgrade leaves no nvidia.ko
-    - name: Install NVIDIA Container Toolkit
+    # blackwell (RTX 50xx) only runs on the open kernel modules; they also cover turing/ampere (RTX 30xx).
+    # installing a new branch replaces the old nvidia-driver-*-open package via apt conflicts
+    - name: Install NVIDIA driver and Container Toolkit
       ansible.builtin.apt:
         name:
           - "linux-headers-{{ ansible_facts['kernel'] }}"
           - linux-headers-generic
           - nvidia-container-toolkit
-          - nvidia-driver-575-open
+          - "nvidia-driver-{{ nvidia_driver_branch }}-open"
         state: present
         update_cache: yes
+      register: nvidia_driver_install
 
     - name: Check for Secure boot
       ansible.builtin.command:
@@ -64,6 +74,13 @@
       ansible.builtin.command:
         cmd: "dkms autoinstall -k {{ ansible_facts['kernel'] }}"
       when: "'installed' not in nvidia_dkms.stdout"
+
+    # the old module stays loaded until reboot; nvidia-smi fails with "Driver/library version mismatch" until then
+    - name: Reboot to load the new nvidia driver
+      ansible.builtin.reboot:
+        msg: "Rebooting to load nvidia driver {{ nvidia_driver_branch }}"
+        reboot_timeout: 900
+      when: nvidia_driver_install is changed
 
     - name: Load nvidia kernel module
       ansible.builtin.command:
