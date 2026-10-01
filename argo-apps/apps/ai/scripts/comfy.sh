@@ -58,4 +58,5 @@ fi
 "$VENV_DIR/bin/python" -c 'import torch; print("torch", torch.__version__, "cuda:", torch.cuda.is_available())'
 
 cd "$SRC_DIR"
-exec "$VENV_DIR/bin/python" main.py --listen 0.0.0.0 --port "$LISTEN_PORT" --enable-manager
+# bind both families: the comfy service is dual-stack and asyncio makes a "::" socket IPv6-only
+exec "$VENV_DIR/bin/python" main.py --listen 0.0.0.0,:: --port "$LISTEN_PORT" --enable-manager

@@ -22,13 +22,32 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: easy
-  ipFamilyPolicy: SingleStack
+  ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
+    - IPv6
   ports:
     - protocol: TCP
       port: 9000
       targetPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui
+spec:
+  # pods from the open-webui chart (release ai-applications)
+  selector:
+    app.kubernetes.io/instance: ai-applications
+    app.kubernetes.io/component: open-webui
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -57,3 +76,13 @@ spec:
                 name: easy
                 port:
                   number: 9000
+    - host: ai.clt.milco.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: open-webui
+                port:
+                  number: 8080

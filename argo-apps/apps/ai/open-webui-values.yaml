@@ -98,10 +98,23 @@ service:
   type: ClusterIP
   port: 8080
 
+# the chart's service has no ipFamilies option, so ingress.yaml has a dual-stack open-webui
+# service and the ingress for ai.clt.milco.casa instead
 ingress:
-  enabled: true
-  className: "traefik"
-  host: "ai.clt.milco.casa"
+  enabled: false
+
+# start.sh hands extra args to uvicorn after its own --host 0.0.0.0 (IPv4 only); the later empty
+# --host wins and binds both 0.0.0.0 and [::]. Passing args replaces start.sh's default
+# --workers/--ws-per-message-deflate, so they're repeated here.
+args:
+  - bash
+  - start.sh
+  - --host
+  - ""
+  - --workers
+  - "1"
+  - --ws-per-message-deflate
+  - "true"
 
 resources:
   limits:

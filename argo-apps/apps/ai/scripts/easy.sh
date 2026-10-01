@@ -25,6 +25,7 @@ fi
 if [ ! -f "$APP_DIR/config.yaml" ]; then
   cat > "$APP_DIR/config.yaml" <<'CONFIG'
 net:
+  bind_ip: ""
   listen_port: 9000
   listen_to_network: true
 render_devices: auto
@@ -32,6 +33,12 @@ ui:
   open_browser_on_start: false
 update_branch: main
 CONFIG
+fi
+
+# An empty bind_ip makes uvicorn listen on both 0.0.0.0 and [::] for the dual-stack easy service
+# (the default 0.0.0.0 is IPv4 only); add it to configs seeded before this was set
+if ! grep -q '^  bind_ip:' "$APP_DIR/config.yaml"; then
+  sed -i 's/^net:$/net:\n  bind_ip: ""/' "$APP_DIR/config.yaml"
 fi
 
 exec "$APP_DIR/start.sh"
