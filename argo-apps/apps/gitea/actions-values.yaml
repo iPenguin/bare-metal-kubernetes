@@ -17,6 +17,12 @@ statefulset:
   persistence:
     size: 5Gi
 
+  # docker's image/build storage for the dind sidecar; CUDA image builds need several GB
+  extraVolumes:
+    - name: docker-data
+      emptyDir:
+        sizeLimit: 50Gi
+
   runner:
     config: |
       log:
@@ -37,6 +43,9 @@ statefulset:
         force_pull: false
 
   dind:
+    extraVolumeMounts:
+      - name: docker-data
+        mountPath: /var/lib/docker
     # Cilium runs in tunnel mode, so pod MTU is below 1500; keep docker's
     # bridge networks (default and per-job) under it to avoid stalled TLS.
     extraArgs:

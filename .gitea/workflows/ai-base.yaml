@@ -1,0 +1,101 @@
+# Builds images/ai-base and pushes it to Harbor.
+# Rebuilds on Dockerfile changes, when nvidia publishes a new base image, and weekly for OS patches.
+#
+# Requires a Harbor robot account with push access to the homelab project, stored as
+# repository (or org) Actions secrets HARBOR_USERNAME and HARBOR_PASSWORD.
+---
+name: ai-base
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - images/ai-base/**
+      - .gitea/workflows/ai-base.yaml
+  # daily check for a new base image digest; rebuilds weekly regardless
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+
+env:
+  REGISTRY: harbor.clt.milco.casa
+  IMAGE: harbor.clt.milco.casa/homelab/ai-base
+  CONTEXT: images/ai-base
+  SKOPEO: quay.io/skopeo/stable:v1.22
+  # a bit under 168h so the daily cron doesn't push the weekly rebuild out to 8 days
+  MAX_AGE_SECONDS: "601200"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Dockerfile's ARG BASE_IMAGE default is the source of truth for the tag; the build
+      # is pinned to the digest resolved here so the label below matches what was built.
+      - name: Resolve base image
+        id: base
+        run: |
+          name=$(sed -n 's/^ARG BASE_IMAGE=//p' "$CONTEXT/Dockerfile")
+          if [ -z "$name" ]; then
+            echo "no ARG BASE_IMAGE default in $CONTEXT/Dockerfile" >&2
+            exit 1
+          fi
+          digest=$(docker run --rm "$SKOPEO" inspect --no-tags "docker://$name" | jq -r .Digest)
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "base image: $name@$digest"
+
+      - name: Check whether a rebuild is due
+        id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_DIGEST: ${{ steps.base.outputs.digest }}
+        run: |
+          rebuild() { echo "rebuilding: $1"; echo "build=true" >> "$GITHUB_OUTPUT"; exit 0; }
+
+          [ "$EVENT" = schedule ] || rebuild "triggered by $EVENT"
+
+          current=$(docker run --rm "$SKOPEO" inspect --no-tags "docker://$IMAGE:latest") \
+            || rebuild "$IMAGE:latest not found"
+
+          built_from=$(echo "$current" | jq -r '.Labels["org.opencontainers.image.base.digest"] // ""')
+          [ "$built_from" = "$BASE_DIGEST" ] || rebuild "base image changed (${built_from:-unknown} -> $BASE_DIGEST)"
+
+          age=$(( $(date +%s) - $(date -d "$(echo "$current" | jq -r .Created)" +%s) ))
+          [ "$age" -lt "$MAX_AGE_SECONDS" ] || rebuild "last build is $((age / 3600))h old"
+
+          echo "up to date, skipping build"
+          echo "build=false" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Harbor
+        if: steps.check.outputs.build == 'true'
+        env:
+          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+        run: echo "$HARBOR_PASSWORD" | docker login "$REGISTRY" -u "$HARBOR_USERNAME" --password-stdin
+
+      # dated tag alongside latest so deployments can pin a known-good build
+      - name: Build and push
+        if: steps.check.outputs.build == 'true'
+        env:
+          BASE_NAME: ${{ steps.base.outputs.name }}
+          BASE_DIGEST: ${{ steps.base.outputs.digest }}
+          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
+          REVISION: ${{ github.sha }}
+        run: |
+          date_tag=$(date -u +%Y%m%d)
+          docker build \
+            --pull \
+            --provenance=false \
+            --build-arg "BASE_IMAGE=$BASE_NAME@$BASE_DIGEST" \
+            --label "org.opencontainers.image.base.name=$BASE_NAME" \
+            --label "org.opencontainers.image.base.digest=$BASE_DIGEST" \
+            --label "org.opencontainers.image.source=$SOURCE_URL" \
+            --label "org.opencontainers.image.revision=$REVISION" \
+            --tag "$IMAGE:latest" \
+            --tag "$IMAGE:$date_tag" \
+            "$CONTEXT"
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:$date_tag"
