@@ -2,10 +2,15 @@
 # Install (on first run) and launch Easy Diffusion on the shared ai-applications volume.
 # The official installer bootstraps its own conda/python env, clones the app, installs
 # modules and self-updates on every start, so after the first run this just launches it.
+# Its model folders are symlinks into MODELS_DIR, which is shared with the other AI apps.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/srv/ai/easy}"
 INSTALLER_URL="${INSTALLER_URL:-https://github.com/easydiffusion/easydiffusion/releases/latest/download/Easy-Diffusion-Linux.zip}"
+MODELS_DIR="${MODELS_DIR:-/srv/models}"
+# easy diffusion folder name -> shared (ComfyUI-named) folder
+MODEL_LINKS=(stable-diffusion:checkpoints vae:vae lora:loras embeddings:embeddings
+  controlnet:controlnet hypernetwork:hypernetworks realesrgan:upscale_models)
 
 mkdir -p "$APP_DIR"
 cd "$APP_DIR"
@@ -40,5 +45,25 @@ fi
 if ! grep -q '^  bind_ip:' "$APP_DIR/config.yaml"; then
   sed -i 's/^net:$/net:\n  bind_ip: ""/' "$APP_DIR/config.yaml"
 fi
+
+# Replace each model folder with a symlink into the shared dir, moving anything already
+# downloaded there first. -n never overwrites a shared file (and exits non-zero when it skips
+# one, hence the || true); on a name clash the leftovers are kept in <folder>.unshared for
+# manual cleanup.
+mkdir -p "$APP_DIR/models"
+for link in "${MODEL_LINKS[@]}"; do
+  src="$APP_DIR/models/${link%%:*}"
+  dst="$MODELS_DIR/${link##*:}"
+  mkdir -p "$dst"
+  [ -L "$src" ] && continue
+  if [ -d "$src" ]; then
+    find "$src" -mindepth 1 -maxdepth 1 -exec mv -n -t "$dst" {} + || true
+    if ! rmdir "$src" 2>/dev/null; then
+      echo "WARNING: $src has files that already exist in $dst, keeping them in $src.unshared"
+      mv "$src" "$src.unshared"
+    fi
+  fi
+  ln -s "$dst" "$src"
+done
 
 exec "$APP_DIR/start.sh"
