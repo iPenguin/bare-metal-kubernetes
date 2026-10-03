@@ -54,6 +54,10 @@ service:
 ingress:
   enabled: true
   className: traefik
+  annotations:
+    # ssh (port 22) is only exposed on the traefik-ssh LoadBalancer, which also serves
+    # http/https, so point git at it rather than the main traefik service
+    external-dns.alpha.kubernetes.io/target: traefik-ssh.clt.milco.casa
   hosts:
     - host: git.clt.milco.casa
       paths:
