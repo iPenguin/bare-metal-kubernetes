@@ -1,8 +1,9 @@
 #!/bin/bash
 # Install (on first run or version change) and launch ComfyUI on the shared ai-applications volume.
 # The ai-base image has no python, so uv bootstraps a standalone interpreter and venv on the
-# volume. Bump COMFY_VERSION to upgrade; models/outputs/custom_nodes in the checkout are kept.
+# volume. Bump COMFY_VERSION to upgrade; custom_nodes in the checkout are kept.
 # Models live in MODELS_DIR (shared with the other AI apps), registered via extra_model_paths.yaml.
+# Input and output images live in DATA_DIR, outside the checkout.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/srv/ai/comfy}"
@@ -14,6 +15,7 @@ TORCH_BACKEND="${TORCH_BACKEND:-cu130}"
 # not COMFY_PORT: kubernetes sets that to tcp://<ip>:8188 for the comfy service
 LISTEN_PORT="${LISTEN_PORT:-8188}"
 MODELS_DIR="${MODELS_DIR:-/srv/models}"
+DATA_DIR="${DATA_DIR:-/srv/data/comfyui}"
 
 SRC_DIR="$APP_DIR/ComfyUI"
 VENV_DIR="$APP_DIR/venv-py$PYTHON_VERSION"
@@ -85,7 +87,17 @@ for t in "${MODEL_TYPES[@]}" clip:text_encoders unet:diffusion_models; do
   find "$src" -mindepth 1 -maxdepth 1 ! -name 'put_*_here' -exec mv -n -t "$MODELS_DIR/${t##*:}" {} + || true
 done
 
+# Same for input/output images left in the checkout from before DATA_DIR existed; the
+# placeholder files tracked by git stay
+for d in input output; do
+  mkdir -p "$DATA_DIR/$d"
+  [ -d "$SRC_DIR/$d" ] || continue
+  find "$SRC_DIR/$d" -mindepth 1 -maxdepth 1 ! -name '*_here' ! -name example.png \
+    -exec mv -n -t "$DATA_DIR/$d" {} + || true
+done
+
 cd "$SRC_DIR"
 # bind both families: the comfy service is dual-stack and asyncio makes a "::" socket IPv6-only
 exec "$VENV_DIR/bin/python" main.py --listen 0.0.0.0,:: --port "$LISTEN_PORT" --enable-manager \
-  --extra-model-paths-config "$MODEL_PATHS"
+  --extra-model-paths-config "$MODEL_PATHS" \
+  --input-directory "$DATA_DIR/input" --output-directory "$DATA_DIR/output"
