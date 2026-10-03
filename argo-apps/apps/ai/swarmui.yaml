@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swarmui
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: swarmui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: swarmui
+    spec:
+      runtimeClassName: nvidia
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: In
+                values:
+                - "true"
+      containers:
+      - command:
+        - /bin/bash
+        - /opt/ai-init/swarmui.sh
+        env:
+        - name: HOME
+          value: /srv/ai
+        - name: APP_DIR
+          value: /srv/ai/swarmui
+        - name: SWARM_VERSION
+          value: 0.9.8-Beta
+        - name: COMFY_VERSION
+          value: v0.38.0
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        image: harbor.clt.milco.casa/homelab/ai-base:latest
+        imagePullPolicy: Always
+        name: primary
+        ports:
+        - containerPort: 7801
+          protocol: TCP
+        # first start (or a version bump) downloads .NET, builds SwarmUI and installs python, torch
+        # and requirements; allow up to an hour
+        startupProbe:
+          httpGet:
+            path: /
+            port: 7801
+          periodSeconds: 30
+          failureThreshold: 120
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 7801
+          periodSeconds: 30
+        resources:
+          limits:
+            memory: 48Gi
+            nvidia.com/gpu: 1
+          requests:
+            memory: 1Gi
+        securityContext:
+          runAsGroup: 1000
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /srv
+          name: srv
+        - mountPath: /opt/ai-init
+          name: ai-init
+          readOnly: true
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+      volumes:
+      - name: srv
+        persistentVolumeClaim:
+          claimName: ai-applications
+      - configMap:
+          name: ai-init-scripts
+          defaultMode: 0755
+        name: ai-init
