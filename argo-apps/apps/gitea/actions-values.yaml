@@ -1,0 +1,44 @@
+---
+enabled: true
+
+giteaRootURL: https://git.clt.milco.casa
+
+# Created by the `gitea` ansible role; the same token is handed to gitea via
+# GITEA_RUNNER_REGISTRATION_TOKEN so it is accepted as a global runner token.
+existingSecret: gitea-runner-token
+existingSecretKey: token
+
+global:
+  storageClass: "ceph-block"
+
+statefulset:
+  replicas: 1
+  timezone: America/New_York
+  persistence:
+    size: 5Gi
+
+  runner:
+    config: |
+      log:
+        level: info
+      runner:
+        file: .runner
+        capacity: 2
+        timeout: 3h
+        labels:
+          - "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest"
+          - "ubuntu-24.04:docker://docker.gitea.com/runner-images:ubuntu-24.04"
+          - "ubuntu-22.04:docker://docker.gitea.com/runner-images:ubuntu-22.04"
+      cache:
+        enabled: false
+      container:
+        require_docker: true
+        docker_timeout: 300s
+        force_pull: false
+
+  dind:
+    # Cilium runs in tunnel mode, so pod MTU is below 1500; keep docker's
+    # bridge networks (default and per-job) under it to avoid stalled TLS.
+    extraArgs:
+      - --mtu=1400
+      - --default-network-opt=bridge=com.docker.network.driver.mtu=1400

@@ -1,0 +1,33 @@
+---
+
+- name: Create gitea namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: gitea
+    state: present
+
+- name: Look up existing Gitea runner registration token
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: gitea-runner-token
+    namespace: gitea
+  register: _gitea_runner_token
+  no_log: true
+
+# Generated once so re-runs don't rotate the token out from under gitea.
+- name: Create Gitea runner registration token
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: gitea-runner-token
+        namespace: gitea
+      type: Opaque
+      stringData:
+        token: "{{ lookup('ansible.builtin.password', '/dev/null', length=48, chars=['ascii_letters', 'digits']) }}"
+  when: _gitea_runner_token.resources | length == 0
+  no_log: true

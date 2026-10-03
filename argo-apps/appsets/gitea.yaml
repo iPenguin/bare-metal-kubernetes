@@ -33,7 +33,14 @@ spec:
           ref: valuesSrc
         - repoURL: 'https://dl.gitea.io/charts/'
           chart: gitea
-          targetRevision: 12.6.0
+          targetRevision: 12.7.0
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/gitea/values.yaml'
+        - repoURL: 'https://dl.gitea.io/charts/'
+          chart: actions
+          targetRevision: 0.1.2
+          helm:
+            releaseName: gitea-actions
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/gitea/actions-values.yaml'
