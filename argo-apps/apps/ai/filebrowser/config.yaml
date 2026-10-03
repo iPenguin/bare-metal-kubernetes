@@ -1,0 +1,42 @@
+server:
+  cacheDir: /tmp/filebrowser
+  sources:
+    - path: /srv
+      name: ai
+      config:
+        defaultEnabled: true
+        defaultPermissions:
+          view: true
+          download: true
+          modify: true
+          delete: true
+          create: true
+          configured: true
+        rules:
+          - folderName: ".filebrowser"
+  filesystem:
+    createFilePermission: "664"
+    createDirectoryPermission: "2775"
+http:
+  port: 8080
+  externalUrl: "https://files.clt.milco.casa"
+  trustProxyHeaders: true
+auth:
+  methods:
+    password:
+      enabled: false
+    oidc:
+      enabled: true
+      clientId: filebrowser
+      # clientSecret comes from FILEBROWSER_OIDC_CLIENT_SECRET
+      issuerUrl: "https://sso.clt.milco.casa/realms/homelab"
+      scopes: "openid email profile groups"
+      userIdentifier: preferred_username
+      ## Keycloak's "groups" client scope emits bare group names
+      groupsClaim: groups
+      adminGroup: "app-filebrowser-admins"
+      userGroups:
+        - "app-filebrowser-admins"
+        - "app-filebrowser-users"
+frontend:
+  name: "AI Files"

@@ -1,0 +1,102 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filebrowser
+  namespace: ai
+spec:
+  replicas: 1
+  strategy:
+    # sqlite database lives on the shared volume; never run two copies
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: filebrowser
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: filebrowser
+    spec:
+      initContainers:
+      - name: init-db-dir
+        image: docker.io/gtstef/filebrowser:2.1.0-beta
+        command: ["/bin/sh", "-c", "mkdir -p /srv/.filebrowser"]
+        securityContext:
+          runAsGroup: 1000
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /srv
+          name: srv
+      containers:
+      - name: primary
+        image: docker.io/gtstef/filebrowser:2.1.0-beta
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: FILEBROWSER_CONFIG
+          value: /config/config.yaml
+        - name: FILEBROWSER_DATABASE_PATH
+          value: /srv/.filebrowser/database.sqlite
+        - name: FILEBROWSER_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: filebrowser-secrets
+              key: client-secret
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 30
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 30
+          failureThreshold: 5
+        resources:
+          limits:
+            memory: 2Gi
+          requests:
+            memory: 128Mi
+        securityContext:
+          runAsGroup: 1000
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /srv
+          name: srv
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: srv
+        persistentVolumeClaim:
+          claimName: ai-applications
+      - name: config
+        configMap:
+          name: filebrowser-config
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: filebrowser
+spec:
+  selector:
+    app.kubernetes.io/name: filebrowser
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

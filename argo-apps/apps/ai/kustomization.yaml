@@ -5,6 +5,8 @@ namespace: ai
 resources:
   - comfy.yaml
   - easy.yaml
+  - filebrowser.yaml
+  - filebrowser-secrets.yaml
   - ingress.yaml
   - open-webui-secrets.yaml
 configMapGenerator:
@@ -12,3 +14,6 @@ configMapGenerator:
     files:
       - scripts/comfy.sh
       - scripts/easy.sh
+  - name: filebrowser-config
+    files:
+      - filebrowser/config.yaml

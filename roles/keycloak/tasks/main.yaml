@@ -373,6 +373,42 @@
       - email
       - groups
 
+- name: Require FileBrowser client secret to be set
+  ansible.builtin.fail:
+    msg: >-
+      filebrowser_client_secret is not set in hosts/group_vars/all/apps.yaml.
+      Generate one (openssl rand -hex 32), then run:
+        ansible-vault encrypt_string --name filebrowser_client_secret '<secret>'
+      and replace the placeholder value.
+  when: filebrowser_client_secret in ['REPLACE_ME_WITH_ansible-vault_encrypt_string', 'REPLACE_ME', '']
+
+- name: Create FileBrowser OIDC client in Keycloak
+  community.general.keycloak_client:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ keycloak_admin_password }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    client_id: filebrowser
+    secret: "{{ filebrowser_client_secret }}"
+    client_authenticator_type: client-secret
+    protocol: openid-connect
+    enabled: true
+    public_client: false
+    standard_flow_enabled: true
+    direct_access_grants_enabled: false
+    service_accounts_enabled: false
+    redirect_uris:
+      - "https://files.{{ lan_domain }}/api/auth/oidc/callback"
+    web_origins:
+      - "https://files.{{ lan_domain }}"
+    default_client_scopes:
+      - openid
+      - profile
+      - email
+      - groups
+
 - name: Get Keycloak admin token
   ansible.builtin.uri:
     url: "{{ keycloak.url }}/realms/{{ keycloak.admin_realm }}/protocol/openid-connect/token"
@@ -520,6 +556,28 @@
     body_format: json
     body:
       secret: "{{ argocd_client_secret }}"
+    status_code: [204]
+  no_log: true
+
+- name: Look up filebrowser client UUID
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients?clientId=filebrowser"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+    return_content: true
+  register: _filebrowser_client_lookup
+
+- name: Force-set filebrowser client secret
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients/{{ _filebrowser_client_lookup.json[0].id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ _keycloak_token.json.access_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      secret: "{{ filebrowser_client_secret }}"
     status_code: [204]
   no_log: true
 

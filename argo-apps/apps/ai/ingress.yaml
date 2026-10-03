@@ -76,6 +76,16 @@ spec:
                 name: easy
                 port:
                   number: 9000
+    - host: files.clt.milco.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: filebrowser
+                port:
+                  number: 8080
     - host: ai.clt.milco.casa
       http:
         paths:
