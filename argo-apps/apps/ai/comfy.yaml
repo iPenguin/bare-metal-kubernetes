@@ -27,12 +27,13 @@ spec:
         app.kubernetes.io/name: comfy
     spec:
       runtimeClassName: nvidia
+      # always on the best gpu (labelled by the nvidia ansible role)
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: nvidia.com/gpu.present
+              - key: clt.milco.casa/gpu-best
                 operator: In
                 values:
                 - "true"

@@ -14,12 +14,21 @@ spec:
         app.kubernetes.io/name: swarmui
     spec:
       runtimeClassName: nvidia
+      # any gpu node, but the best gpu (labelled by the nvidia ansible role) when it has room
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
               - key: nvidia.com/gpu.present
+                operator: In
+                values:
+                - "true"
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: clt.milco.casa/gpu-best
                 operator: In
                 values:
                 - "true"

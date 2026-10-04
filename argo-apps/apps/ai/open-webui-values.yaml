@@ -19,12 +19,13 @@ ollama:
   extraEnv:
     - name: NVIDIA_DRIVER_CAPABILITIES
       value: compute,utility
+  # always on the slowest gpu (labelled by the nvidia ansible role), leaving the fast ones for image gen
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
         - matchExpressions:
-          - key: nvidia.com/gpu.present
+          - key: clt.milco.casa/gpu-slowest
             operator: In
             values:
             - "true"

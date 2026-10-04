@@ -31,3 +31,59 @@
     update_repo_cache: true
     values: "{{ lookup('template', 'nvidia-plugin-values.yaml.j2') | from_yaml }}"
   delegate_to: "{{ k8s_controller }}"
+
+# Rank the GPU nodes from the labels gpu-feature-discovery puts on them (compute capability, then
+# VRAM) and mark the fastest and slowest so workloads can pin to them:
+#   clt.milco.casa/gpu-best=true     every node with the top score (comfy requires it, swarm/easy prefer it)
+#   clt.milco.casa/gpu-slowest=true  every node with the bottom score (ollama requires it)
+# With a single GPU node it gets both. Ranked from the cluster, not the play hosts, so --limit
+# can't skew it. A node with several cards is ranked by the card GFD reports.
+- name: Get GPU nodes
+  run_once: true
+  kubernetes.core.k8s_info:
+    kind: Node
+    label_selectors:
+      - nvidia.com/gpu.present=true
+  register: nvidia_gpu_nodes
+  delegate_to: "{{ k8s_controller }}"
+
+- name: Score GPU nodes
+  run_once: true
+  vars:
+    labels: "{{ item.metadata.labels }}"
+  ansible.builtin.set_fact:
+    nvidia_gpu_scores: >-
+      {{ nvidia_gpu_scores | default({}) | combine({item.metadata.name:
+           (labels['nvidia.com/gpu.compute.major'] | int) * 100000000
+           + (labels['nvidia.com/gpu.compute.minor'] | int) * 1000000
+           + (labels['nvidia.com/gpu.memory'] | int)}) }}
+  loop: "{{ nvidia_gpu_nodes.resources }}"
+  loop_control:
+    label: "{{ item.metadata.name }}"
+  # GFD labels a node shortly after the device plugin first starts on it
+  when: "'nvidia.com/gpu.memory' in item.metadata.labels"
+
+- name: Warn about GPU nodes gpu-feature-discovery hasn't labelled yet
+  run_once: true
+  ansible.builtin.debug:
+    msg: >-
+      WARN -- no gpu-feature-discovery labels on
+      {{ nvidia_gpu_nodes.resources | map(attribute='metadata.name') | difference(nvidia_gpu_scores | default({}) | list) | join(', ') }};
+      they are left out of the gpu-best/gpu-slowest ranking, re-run with --tags nvidia once GFD has labelled them
+  when: nvidia_gpu_nodes.resources | length != nvidia_gpu_scores | default({}) | length
+
+- name: Label best and slowest GPU nodes
+  run_once: true
+  vars:
+    best: "{{ nvidia_gpu_scores[item] == nvidia_gpu_scores.values() | max }}"
+    slowest: "{{ nvidia_gpu_scores[item] == nvidia_gpu_scores.values() | min }}"
+  ansible.builtin.command:
+    cmd: >-
+      kubectl label node {{ item }} --overwrite
+      clt.milco.casa/gpu-best{{ '=true' if best else '-' }}
+      clt.milco.casa/gpu-slowest{{ '=true' if slowest else '-' }}
+  loop: "{{ nvidia_gpu_scores | default({}) | list }}"
+  register: nvidia_gpu_label
+  # prints "not labeled" when nothing changed, "labeled"/"unlabeled" otherwise
+  changed_when: "'not labeled' not in nvidia_gpu_label.stdout"
+  delegate_to: "{{ k8s_controller }}"
