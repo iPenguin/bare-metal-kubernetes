@@ -5,6 +5,9 @@ metadata:
   namespace: ai
 spec:
   replicas: 1
+  strategy:
+    # the install, build and venv live on the shared volume; never run two copies of the script
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: swarmui

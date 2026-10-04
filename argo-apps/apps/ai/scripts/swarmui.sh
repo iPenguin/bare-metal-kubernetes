@@ -133,6 +133,12 @@ if [ ! -f "$SRC_DIR/Data/Backends.fds" ]; then
 BACKENDS
 fi
 
+# Restore NuGet packages before launch-linux.sh builds, so its own restore is a no-op. .NET tries
+# each address in turn with no fallback race, so in the dual-stack pod it hangs on api.nuget.org's
+# IPv6 addresses until the restore fails; IPv4 only for this step, SwarmUI itself still binds both.
+echo "Restoring SwarmUI NuGet packages"
+DOTNET_SYSTEM_NET_DISABLEIPV6=1 dotnet restore "$SRC_DIR/src/SwarmUI.csproj"
+
 # The seeded Host of "*" binds both families for the dual-stack swarmui service; it can't go on
 # the command line because launch-linux.sh passes its args on unquoted and the shell would glob it.
 # launch-linux.sh builds SwarmUI when the checkout has moved and relaunches it when it exits to
