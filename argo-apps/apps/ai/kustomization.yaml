@@ -7,6 +7,7 @@ resources:
   - easy.yaml
   - filebrowser.yaml
   - filebrowser-secrets.yaml
+  - forge.yaml
   - ingress.yaml
   - open-webui-secrets.yaml
   - swarmui.yaml
@@ -15,6 +16,7 @@ configMapGenerator:
     files:
       - scripts/comfy.sh
       - scripts/easy.sh
+      - scripts/forge.sh
       - scripts/swarmui.sh
   - name: filebrowser-config
     files:

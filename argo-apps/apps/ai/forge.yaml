@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge
+  namespace: ai
+spec:
+  replicas: 1
+  strategy:
+    # the install and venv live on the shared volume; never run two copies of the script
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forge
+    spec:
+      runtimeClassName: nvidia
+      # any gpu node, but the best gpu (labelled by the nvidia ansible role) when it has room
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: In
+                values:
+                - "true"
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: clt.milco.casa/gpu-best
+                operator: In
+                values:
+                - "true"
+      containers:
+      - command:
+        - /bin/bash
+        - /opt/ai-init/forge.sh
+        env:
+        - name: HOME
+          value: /srv/ai
+        - name: APP_DIR
+          value: /srv/ai/forge
+        - name: FORGE_VERSION
+          value: dfdcbab685e57677014f05a3309b48cc87383167
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        image: harbor.clt.milco.casa/homelab/ai-base:latest
+        imagePullPolicy: Always
+        name: primary
+        ports:
+        - containerPort: 7860
+          protocol: TCP
+        # first start (or a version bump) downloads python, torch and requirements; allow up to an hour
+        startupProbe:
+          httpGet:
+            path: /
+            port: 7860
+          periodSeconds: 30
+          failureThreshold: 120
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 7860
+          periodSeconds: 30
+        resources:
+          limits:
+            memory: 48Gi
+            nvidia.com/gpu: 1
+          requests:
+            memory: 1Gi
+        securityContext:
+          runAsGroup: 1000
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /srv
+          name: srv
+        - mountPath: /opt/ai-init
+          name: ai-init
+          readOnly: true
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+      volumes:
+      - name: srv
+        persistentVolumeClaim:
+          claimName: ai-applications
+      - configMap:
+          name: ai-init-scripts
+          defaultMode: 0755
+        name: ai-init
