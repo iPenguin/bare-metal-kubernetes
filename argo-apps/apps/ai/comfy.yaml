@@ -47,7 +47,7 @@ spec:
         - name: APP_DIR
           value: /srv/ai/comfy
         - name: COMFY_VERSION
-          value: v0.38.0
+          value: v0.39.2
         - name: NVIDIA_DRIVER_CAPABILITIES
           value: compute,utility
         image: harbor.clt.milco.casa/homelab/ai-base:latest
