@@ -70,7 +70,7 @@ spec:
           periodSeconds: 30
         resources:
           limits:
-            memory: 48Gi
+            memory: 72Gi
             nvidia.com/gpu: 1
           requests:
             memory: 1Gi
