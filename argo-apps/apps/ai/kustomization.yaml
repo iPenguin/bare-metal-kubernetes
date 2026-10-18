@@ -3,6 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: ai
 resources:
+  - ai-toolkit.yaml
   - comfy.yaml
   - easy.yaml
   - filebrowser.yaml
@@ -14,6 +15,7 @@ resources:
 configMapGenerator:
   - name: ai-init-scripts
     files:
+      - scripts/ai-toolkit.sh
       - scripts/comfy.sh
       - scripts/easy.sh
       - scripts/forge.sh

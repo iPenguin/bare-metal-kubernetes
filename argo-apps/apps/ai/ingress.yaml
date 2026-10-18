@@ -81,6 +81,22 @@ spec:
       port: 8080
       targetPort: 8080
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-toolkit
+spec:
+  selector:
+    app.kubernetes.io/name: ai-toolkit
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ports:
+    - protocol: TCP
+      port: 8675
+      targetPort: 8675
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -128,6 +144,16 @@ spec:
                 name: forge
                 port:
                   number: 7860
+    - host: ai-toolkit.clt.milco.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-toolkit
+                port:
+                  number: 8675
     - host: files.clt.milco.casa
       http:
         paths:
