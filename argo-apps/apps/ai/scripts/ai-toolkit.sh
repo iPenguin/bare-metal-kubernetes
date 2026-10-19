@@ -5,6 +5,7 @@
 # ai-toolkit has no release tags, so AI_TOOLKIT_VERSION is a commit; bump it to upgrade.
 # Configs and datasets live on the volume; output goes wherever a job's training_folder points
 # (e.g. /srv/models/loras/aitk so ComfyUI sees the LoRAs). See docs/ai-toolkit.md.
+# The checkout's datasets/ (input) and output/ folders, the UI's defaults, are symlinks into DATA_DIR.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/srv/ai/ai-toolkit}"
@@ -18,6 +19,7 @@ TORCH_PACKAGES="${TORCH_PACKAGES:-torch==2.13.0 torchvision==0.28.0 torchaudio==
 # the UI needs Node > 20
 NODE_VERSION="${NODE_VERSION:-22.20.0}"
 LISTEN_PORT="${LISTEN_PORT:-8675}"
+DATA_DIR="${DATA_DIR:-/srv/data/ai-toolkit}"
 
 SRC_DIR="$APP_DIR/ai-toolkit"
 # the UI looks for the trainer's venv at <checkout>/venv or <checkout>/.venv
@@ -75,6 +77,25 @@ if [ "$(cat "$STAMP" 2>/dev/null || true)" != "$AI_TOOLKIT_VERSION" ]; then
   (cd "$SRC_DIR/ui" && npm install && npm run update_db && npm run build)
   echo "$AI_TOOLKIT_VERSION" > "$STAMP"
 fi
+
+# Keep datasets (input) and training runs (output) in DATA_DIR, outside the checkout, like the
+# other AI apps. Anything already in the checkout is moved there first; -n never overwrites (and
+# exits non-zero when it skips, hence the || true); on a name clash the leftovers stay in
+# <folder>.unshared for manual cleanup.
+for d in datasets:input output:output; do
+  src="$SRC_DIR/${d%%:*}"
+  dst="$DATA_DIR/${d##*:}"
+  mkdir -p "$dst"
+  [ -L "$src" ] && continue
+  if [ -d "$src" ]; then
+    find "$src" -mindepth 1 -maxdepth 1 -exec mv -n -t "$dst" {} + || true
+    if ! rmdir "$src" 2>/dev/null; then
+      echo "WARNING: $src has files that already exist in $dst, keeping them in $src.unshared"
+      mv "$src" "$src.unshared"
+    fi
+  fi
+  ln -s "$dst" "$src"
+done
 
 "$VENV_DIR/bin/python" -c 'import torch; print("torch", torch.__version__, "cuda:", torch.cuda.is_available())'
 
