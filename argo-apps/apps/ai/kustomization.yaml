@@ -11,6 +11,7 @@ resources:
   - forge.yaml
   - ingress.yaml
   - open-webui-secrets.yaml
+  - sd-scripts.yaml
   - swarmui.yaml
 configMapGenerator:
   - name: ai-init-scripts
@@ -19,6 +20,7 @@ configMapGenerator:
       - scripts/comfy.sh
       - scripts/easy.sh
       - scripts/forge.sh
+      - scripts/sd-scripts.sh
       - scripts/swarmui.sh
   - name: filebrowser-config
     files:
