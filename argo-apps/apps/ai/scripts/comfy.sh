@@ -16,6 +16,8 @@ TORCH_BACKEND="${TORCH_BACKEND:-cu130}"
 LISTEN_PORT="${LISTEN_PORT:-8188}"
 MODELS_DIR="${MODELS_DIR:-/srv/models}"
 DATA_DIR="${DATA_DIR:-/srv/data/comfyui}"
+# extra ComfyUI flags, space separated, e.g. "--lowvram --reserve-vram 2 --disable-dynamic-vram"
+COMFY_EXTRA_ARGS="${COMFY_EXTRA_ARGS:-}"
 
 SRC_DIR="$APP_DIR/ComfyUI"
 VENV_DIR="$APP_DIR/venv-py$PYTHON_VERSION"
@@ -96,8 +98,12 @@ for d in input output; do
     -exec mv -n -t "$DATA_DIR/$d" {} + || true
 done
 
+read -r -a extra_args <<< "$COMFY_EXTRA_ARGS"
+[ ${#extra_args[@]} -eq 0 ] || echo "Extra ComfyUI args: ${extra_args[*]}"
+
 cd "$SRC_DIR"
 # bind both families: the comfy service is dual-stack and asyncio makes a "::" socket IPv6-only
 exec "$VENV_DIR/bin/python" main.py --listen 0.0.0.0,:: --port "$LISTEN_PORT" --enable-manager \
   --extra-model-paths-config "$MODEL_PATHS" \
-  --input-directory "$DATA_DIR/input" --output-directory "$DATA_DIR/output"
+  --input-directory "$DATA_DIR/input" --output-directory "$DATA_DIR/output" \
+  ${extra_args[@]+"${extra_args[@]}"}

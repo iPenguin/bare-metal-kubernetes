@@ -48,6 +48,11 @@ spec:
           value: /srv/ai/comfy
         - name: COMFY_VERSION
           value: v0.39.2
+        # extra flags for main.py, e.g. "--lowvram --reserve-vram 2 --disable-dynamic-vram"
+        # (--extra-model-paths-config is always passed). One-off without a commit:
+        #   kubectl -n ai set env deploy/comfy COMFY_EXTRA_ARGS="--lowvram --reserve-vram 2"
+        - name: COMFY_EXTRA_ARGS
+          value: ""
         - name: NVIDIA_DRIVER_CAPABILITIES
           value: compute,utility
         image: harbor.clt.milco.casa/homelab/ai-base:latest
