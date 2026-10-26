@@ -31,6 +31,15 @@
     name: "{{ common_utils | union( debian_utils ) }}"
     state: latest
 
+# lvm2-monitor's stop runs `vgchange --monitor n`, which scans every block device. At shutdown the
+# network is already down, so reads on mapped Ceph RBD devices block until systemd kills it (90s).
+- name: Keep LVM from scanning Ceph RBD and NBD devices
+  ansible.builtin.lineinfile:
+    path: /etc/lvm/lvm.conf
+    insertafter: '^devices \{'
+    regexp: '^\s*global_filter\s*='
+    line: '	global_filter = [ "r|^/dev/rbd.*|", "r|^/dev/nbd.*|" ]'
+
 - name: Add users
   include_tasks: users.yaml
   loop: "{{ remote_users }}"
