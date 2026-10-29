@@ -42,4 +42,9 @@ lldap_users:
     email: "svc_ldap@{{ lan_domain }}"
     groups:
       - lldap_admin
-
+  - name: svc_grokbot
+    first_name: Grok
+    last_name: Bot
+    email: "svc_grokbot@{{ lan_domain }}"
+    groups:
+      - app-gitea-users
