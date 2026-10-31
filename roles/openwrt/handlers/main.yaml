@@ -20,10 +20,10 @@
     name: firewall
     state: restarted
 
-- name: restart network
+- name: reload network
   community.general.openwrt_init:
     name: network
-    state: restarted
+    state: reloaded
 
 - name: restart rpcd
   community.general.openwrt_init:
@@ -33,9 +33,4 @@
 - name: restart uhttpd
   community.general.openwrt_init:
     name: uhttpd
-    state: restarted
-
-- name: restart wireguard
-  community.general.openwrt_init:
-    name: wireguard
     state: restarted

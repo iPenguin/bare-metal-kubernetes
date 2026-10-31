@@ -19,6 +19,3 @@ cert_namespaces:
 remote_users:
   - user: ansible
     ssh_pub_key: ~/.ssh/id_ed25519.pub
-
-vpn_clients:
-  - laptop

@@ -1,0 +1,22 @@
+---
+#
+# WireGuard server on the OpenWrt router.
+#
+# This role installs the packages. The interface and peers are templated into
+# /etc/config/network and the firewall into /etc/config/firewall by the openwrt
+# role (network.j2 and firewall.j2), using wireguard and router.interfaces in
+# group_vars/all/network.yaml and the vault_wireguard_* keys.
+#
+# Run: ansible-playbook run.yaml --tags wireguard
+#
+
+- name: Install WireGuard packages
+  ansible.builtin.apk:
+    name:
+      - luci-proto-wireguard
+      - wireguard-tools
+      - kmod-wireguard
+    state: present
+    update_cache: yes
+
+...

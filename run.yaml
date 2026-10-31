@@ -1,5 +1,15 @@
 ---
 
+- name: Setup WireGuard VPN on the router
+  hosts: router
+  gather_facts: false
+  remote_user: root
+  tags:
+    - never
+    - wireguard
+  roles:
+    - role: wireguard
+
 - name: Setup OpenWrt router
   hosts: router
   gather_facts: false

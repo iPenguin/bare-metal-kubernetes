@@ -1,0 +1,12 @@
+---
+
+- name: Configure firewall
+  ansible.builtin.template:
+    src: firewall.j2
+    dest: /etc/config/firewall
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart firewall
+
+...

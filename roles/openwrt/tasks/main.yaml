@@ -19,24 +19,16 @@
     - ansible
     - packages
 
-# - name: Wireguard VPN setup
-#   include_tasks: vpn.yaml
-#   vars:
-#     ansible_user: root
-#     wireguard_port: 51820
-#     vpn_network: "10.0.0.0/24"
-#     server_ip: "10.0.0.1"
-#     # can be generated with: openssl rand -base64 20 | base32 -w 0 | tr -d '='
-#     totp_secret: "{{ vault_totp_secret }}"
-#   tags:
-#     - wireguard
-#     - networking
-#     - packages
-
 - name: Update networking
-  include_tasks: update-networking.yaml
+  import_tasks: update-networking.yaml
   tags:
     - networking
+    - wireguard
+
+- name: Update firewall
+  import_tasks: update-firewall.yaml
+  tags:
+    - firewall
     - wireguard
 
 - name: Update dns

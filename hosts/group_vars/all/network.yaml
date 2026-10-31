@@ -52,6 +52,17 @@ network:
       start: "{{ ipv6_network }}::21"
       end: "{{ ipv6_network }}::100"
 
+# Remote access VPN on the router. Clients reach the LAN (split tunnel).
+# Peers hold their own private key; only the public key lives here.
+wireguard:
+  port: 51820
+  address: 10.1.2.1/24
+  peers:
+    - name: laptop
+      public_key: "{{ vault_wireguard_client_public_key }}"
+      preshared_key: "{{ vault_wireguard_preshared_key }}"
+      ipv4: 10.1.2.2
+
 router:
   ula_prefix: "fd5b:996d:3c79::/48"
   interfaces:
@@ -80,15 +91,13 @@ router:
       peerdns: 0
       dns_search: "{{ lan_domain }}"
       dns_servers: "{{ network.ipv6.external_dns }}"
-    # - name: vpn
-    #   proto: wireguard
-    #   ip6assign: 64
-    #   private_key: "{{ vault_wireguard_private_key }}"
-    #   # preshared_key: "{{ vault_wireguard_preshared_key }}"
-    #   # port: 51820
-    #   addresses:
-    #     - 10.1.2.1/24
-    #     - fd00:10:1:2::1/128
+    - name: vpn
+      proto: wireguard
+      private_key: "{{ vault_wireguard_private_key }}"
+      listen_port: "{{ wireguard.port }}"
+      addresses:
+        - "{{ wireguard.address }}"
+      peers: "{{ wireguard.peers }}"
   devices:
     - name: wan
       mac: 04:F4:1C:42:32:18

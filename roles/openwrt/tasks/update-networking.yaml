@@ -1,10 +1,5 @@
 ---
 
-- name: Start service httpd, if not running
-  community.general.openwrt_init:
-    state: restarted
-    name: network
-
 - name: Configure network interfaces
   ansible.builtin.template:
     src: network.j2
@@ -12,6 +7,6 @@
     owner: root
     group: root
     mode: '0600'
-  notify: restart network
+  notify: reload network
 
 ...
