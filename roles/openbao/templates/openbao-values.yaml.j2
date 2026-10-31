@@ -41,7 +41,6 @@ server:
 
         seal "transit" {
           address         = "{{ openbao_pi_addr }}"
-          token           = "${BAO_TRANSIT_TOKEN}"
           disable_renewal = "false"
           key_name        = "{{ openbao_pi_transit_key }}"
           mount_path      = "transit/"
@@ -54,7 +53,9 @@ server:
     BAO_CACERT: /etc/openbao/pi-ca/ca.crt
 
   extraSecretEnvironmentVars:
-    - envName: BAO_TRANSIT_TOKEN
+    # The transit seal reads its token from BAO_TOKEN; OpenBao does not expand
+    # ${VAR} inside the config file.
+    - envName: BAO_TOKEN
       secretName: openbao-transit-token
       secretKey: token
 
@@ -88,5 +89,7 @@ server:
 
   livenessProbe:
     enabled: true
-    path: "/v1/sys/health?standbyok=true"
+    # Uninitialized (501) and sealed (503) must not fail liveness, or the
+    # pods are killed before cluster-init can run.
+    path: "/v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204"
     initialDelaySeconds: 60

@@ -1,0 +1,523 @@
+---
+
+# Run-once playbook for sections H and I of docs/openbao-bootstrap.md:
+# initialize cluster-OpenBao, wait for Transit auto-unseal, then enable
+# all auth methods (AppRole, Kubernetes, OIDC) and create policies/tokens.
+#
+# Prerequisites (must complete before running):
+# - Section C-F complete: Pi-OpenBao running, unsealed, transit key + policy present
+# - Section G complete: Helm chart deployed (run.yaml --tags openbao)
+# - openbao_client_secret set in hosts/group_vars/all/apps.yaml
+# - vault_openbao_minio_access_key / vault_openbao_minio_secret_key set in
+#   vaults/group_vars/all/openbao.yaml (used for daily Raft snapshot uploads)
+#
+# Usage (fresh bootstrap):
+#   ansible-playbook openbao-cluster-init.yaml --tags openbao-cluster-init
+#
+# Usage (re-run auth config only, cluster already initialized):
+#   Delete .openbao-cluster-init.json, then re-run the same command.
+#   Init tasks are skipped (cluster already initialized); auth config is idempotent.
+#
+# Captured material is written to:
+#   .openbao-cluster-init.json         (raw, shred after confirming vault file)
+#   vaults/group_vars/all/openbao_generated.yaml   (ansible-vault encrypted)
+
+- name: Initialize and configure cluster-OpenBao
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  tags:
+    - never
+    - openbao-cluster-init
+  vars:
+    _ns: "{{ openbao_namespace | default('openbao') }}"
+    _pod: openbao-0
+    _capture_file: "{{ playbook_dir }}/.openbao-cluster-init.json"
+    _generated_vault_file: "{{ playbook_dir }}/vaults/group_vars/all/openbao_generated.yaml"
+    _bao_addr: http://127.0.0.1:8200
+    _oidc_discovery_url: "https://sso.{{ lan_domain }}/realms/homelab"
+    _oidc_client_id: openbao
+    openbao_ingress_host: "bao.{{ lan_domain }}"
+
+  pre_tasks:
+    - name: Check for existing cluster capture file
+      ansible.builtin.stat:
+        path: "{{ _capture_file }}"
+      register: _capture_stat
+
+    - name: Refuse to overwrite existing capture file
+      ansible.builtin.fail:
+        msg: >-
+          {{ _capture_file }} already exists. If recovery keys and root token
+          are already saved in {{ _generated_vault_file }}, delete the capture
+          file and re-run to reconcile auth methods only. The cluster init tasks
+          will be skipped automatically (cluster is already initialized).
+      when: _capture_stat.stat.exists
+
+    - name: Require openbao_client_secret to be set
+      ansible.builtin.fail:
+        msg: >-
+          openbao_client_secret is not set in hosts/group_vars/all/apps.yaml.
+          Create the OpenBao client in Keycloak, then run:
+            ansible-vault encrypt_string --name openbao_client_secret '<secret>'
+          and replace the placeholder value.
+      when: openbao_client_secret in ['REPLACE_ME_WITH_ansible-vault_encrypt_string', 'REPLACE_ME', '']
+
+    - name: Require MinIO credentials to be set
+      ansible.builtin.fail:
+        msg: >-
+          vault_openbao_minio_access_key and vault_openbao_minio_secret_key must
+          be set in vaults/group_vars/all/openbao.yaml before cluster init.
+          These are the MinIO credentials used by the daily Raft snapshot job.
+      when: >-
+        vault_openbao_minio_access_key | default('REPLACE_ME') == 'REPLACE_ME'
+        or vault_openbao_minio_secret_key | default('REPLACE_ME') == 'REPLACE_ME'
+
+    # Ensure the two secrets the pods reference at startup exist before we wait
+    # for them to be Running. The openbao role skips these when vault vars are
+    # still REPLACE_ME (e.g. if the role ran before pi-init). Creating them here
+    # lets stuck pods start and makes this playbook self-healing.
+
+    - name: Require vault_openbao_pi_autounseal_token to be set
+      ansible.builtin.fail:
+        msg: >-
+          vault_openbao_pi_autounseal_token is still REPLACE_ME.
+          Run openbao-pi-init.yaml first so the Pi transit autounseal token
+          is encrypted into vaults/group_vars/all/openbao_generated.yaml.
+      when: vault_openbao_pi_autounseal_token in ['REPLACE_ME', '']
+
+    - name: Create openbao-transit-token secret (if missing)
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: openbao-transit-token
+            namespace: "{{ _ns }}"
+          type: Opaque
+          stringData:
+            token: "{{ vault_openbao_pi_autounseal_token }}"
+      no_log: true
+
+    - name: Require vault_openbao_internal_ca_cert to be set
+      ansible.builtin.fail:
+        msg: >-
+          vault_openbao_internal_ca_cert is still REPLACE_ME.
+          Follow Section A of docs/openbao-bootstrap.md to mint the internal CA.
+      when: vault_openbao_internal_ca_cert in ['REPLACE_ME', '']
+
+    - name: Create openbao-internal-ca secret (if missing)
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: openbao-internal-ca
+            namespace: "{{ _ns }}"
+          type: Opaque
+          stringData:
+            ca.crt: "{{ vault_openbao_internal_ca_cert }}"
+      no_log: true
+
+    - name: Wait for openbao-0 pod to be Running
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: "{{ _ns }}"
+        name: "{{ _pod }}"
+      register: _pod_info
+      until: >-
+        (_pod_info.resources | length > 0)
+        and (_pod_info.resources[0].status.phase == 'Running')
+      retries: 30
+      delay: 10
+
+    - name: Check cluster init status
+      vars:
+        _script: "BAO_ADDR={{ _bao_addr }} bao status -format=json"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _status_raw
+      # bao status exits 2 when sealed/uninitialized, 0 when unsealed — both OK here
+      failed_when: _status_raw.return_code not in [0, 2]
+      changed_when: false
+
+    - name: Parse cluster status
+      ansible.builtin.set_fact:
+        _cluster_status: "{{ _status_raw.stdout | from_json }}"
+
+  tasks:
+    # ==========================================================================
+    # Phase 1 — Cluster initialization (Section H)
+    # ==========================================================================
+
+    - name: Initialize cluster-OpenBao (recovery-shares=5, threshold=3)
+      vars:
+        _script: >-
+            BAO_ADDR={{ _bao_addr }}
+            bao operator init
+            -recovery-shares=5
+            -recovery-threshold=3
+            -format=json
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _init_raw
+      when: not _cluster_status.initialized
+      no_log: true
+
+    - name: Persist raw init output to control node
+      ansible.builtin.copy:
+        content: "{{ _init_raw.stdout }}"
+        dest: "{{ _capture_file }}"
+        mode: "0600"
+      when: not _cluster_status.initialized
+      no_log: true
+
+    - name: Parse init output
+      ansible.builtin.set_fact:
+        _cluster_init: "{{ _init_raw.stdout | from_json }}"
+      when: not _cluster_status.initialized
+      no_log: true
+
+    - name: Wait for cluster to auto-unseal via Pi Transit
+      vars:
+        _script: "BAO_ADDR={{ _bao_addr }} bao status -format=json"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _post_init_status
+      until: not (_post_init_status.stdout | from_json).sealed
+      retries: 12
+      delay: 5
+      failed_when: _post_init_status.return_code not in [0, 2]
+      changed_when: false
+      when: not _cluster_status.initialized
+
+    # ---- Auto-persist cluster secrets to vault ----
+
+    - name: Encrypt vault_openbao_cluster_recovery_keys
+      ansible.builtin.shell: |
+        printf '%s' {{ (_cluster_init.recovery_keys_b64 | join('\n')) | quote }} |
+        ansible-vault encrypt_string \
+          --stdin-name vault_openbao_cluster_recovery_keys
+      register: _enc_recovery_keys
+      when: _cluster_init is defined
+      no_log: true
+      changed_when: true
+
+    - name: Encrypt vault_openbao_cluster_root_token
+      ansible.builtin.shell: |
+        printf '%s' {{ _cluster_init.root_token | quote }} |
+        ansible-vault encrypt_string \
+          --stdin-name vault_openbao_cluster_root_token
+      register: _enc_cluster_root_token
+      when: _cluster_init is defined
+      no_log: true
+      changed_when: true
+
+    - name: Read existing openbao_generated.yaml
+      ansible.builtin.slurp:
+        src: "{{ _generated_vault_file }}"
+      register: _existing_generated
+      failed_when: false
+
+    - name: Append cluster secrets to openbao_generated.yaml
+      ansible.builtin.copy:
+        content: |
+          {{ (_existing_generated.content | b64decode) if (_existing_generated.content is defined) else '---\n# Auto-generated by OpenBao bootstrap playbooks\n' }}
+
+          # ---- Cluster-OpenBao secrets (openbao-cluster-init.yaml) ----
+          {{ _enc_recovery_keys.stdout | regex_replace('\nEncryption successful\n?$', '') }}
+
+          {{ _enc_cluster_root_token.stdout | regex_replace('\nEncryption successful\n?$', '') }}
+        dest: "{{ _generated_vault_file }}"
+        mode: "0600"
+      when: _cluster_init is defined
+      no_log: true
+
+    # ---- Resolve root token for auth configuration ----
+
+    - name: Set cluster root token
+      ansible.builtin.set_fact:
+        _cluster_root_token: "{{ _cluster_init.root_token if (_cluster_init is defined) else vault_openbao_cluster_root_token }}"
+      no_log: true
+
+    - name: Fail if cluster root token unavailable for auth configuration
+      ansible.builtin.fail:
+        msg: >-
+          Cluster is already initialized but vault_openbao_cluster_root_token
+          is not set. Ensure vaults/group_vars/all/openbao_generated.yaml
+          contains the encrypted token from the initial cluster init run,
+          or pass --extra-vars vault_openbao_cluster_root_token=<token>.
+      when: _cluster_root_token in ['', 'REPLACE_ME']
+
+    - name: Set auth command prefix
+      ansible.builtin.set_fact:
+        _bao: "BAO_ADDR={{ _bao_addr }} BAO_TOKEN='{{ _cluster_root_token }}'"
+      no_log: true
+
+    # ==========================================================================
+    # Phase 2 — Auth methods, policies, K8s secrets (Section I)
+    # ==========================================================================
+
+    # ---- KV v2 secrets engine ----
+
+    - name: Enable KV v2 secrets engine
+      vars:
+        _script: "{{ _bao }} bao secrets enable -path=kv kv-v2"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _kv_result
+      failed_when: >-
+        _kv_result.return_code != 0
+        and 'path is already in use' not in (_kv_result.stderr | default(''))
+      changed_when: _kv_result.return_code == 0
+      no_log: true
+
+    # ---- AppRole auth ----
+
+    - name: Enable AppRole auth method
+      vars:
+        _script: "{{ _bao }} bao auth enable approle"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _approle_result
+      failed_when: >-
+        _approle_result.return_code != 0
+        and 'path is already in use' not in (_approle_result.stderr | default(''))
+      changed_when: _approle_result.return_code == 0
+      no_log: true
+
+    # ---- Kubernetes auth ----
+
+    - name: Enable Kubernetes auth method
+      vars:
+        _script: "{{ _bao }} bao auth enable kubernetes"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _k8s_auth_result
+      failed_when: >-
+        _k8s_auth_result.return_code != 0
+        and 'path is already in use' not in (_k8s_auth_result.stderr | default(''))
+      changed_when: _k8s_auth_result.return_code == 0
+      no_log: true
+
+    - name: Configure Kubernetes auth
+      vars:
+        _script: >-
+            {{ _bao }}
+            bao write auth/kubernetes/config
+            kubernetes_host=https://kubernetes.default.svc
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
+    # ---- OIDC auth ----
+
+    - name: Enable OIDC auth method
+      vars:
+        _script: "{{ _bao }} bao auth enable oidc"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _oidc_result
+      failed_when: >-
+        _oidc_result.return_code != 0
+        and 'path is already in use' not in (_oidc_result.stderr | default(''))
+      changed_when: _oidc_result.return_code == 0
+      no_log: true
+
+    - name: Configure OIDC
+      vars:
+        _script: >-
+            {{ _bao }}
+            bao write auth/oidc/config
+            oidc_discovery_url={{ _oidc_discovery_url | quote }}
+            oidc_client_id={{ _oidc_client_id | quote }}
+            oidc_client_secret={{ openbao_client_secret | quote }}
+            default_role=admin
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
+    - name: Configure OIDC admin role
+      vars:
+        _script: >-
+            {{ _bao }}
+            bao write auth/oidc/role/admin
+            bound_audiences={{ _oidc_client_id | quote }}
+            allowed_redirect_uris=https://{{ openbao_ingress_host }}/ui/vault/auth/oidc/oidc/callback
+            allowed_redirect_uris=https://{{ openbao_ingress_host }}/oidc/callback
+            user_claim=preferred_username
+            groups_claim=groups
+            policies=admin
+            oidc_scopes=openid,profile,email,groups
+            2>&1; echo "RC=$?"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _oidc_role
+      no_log: true
+      failed_when: false
+
+    - name: Fail if OIDC admin role was not written
+      ansible.builtin.fail:
+        msg: "{{ _oidc_role.stdout | default('no output') }}"
+      when: "'RC=0' not in (_oidc_role.stdout | default(''))"
+
+    # ---- Policies ----
+
+    - name: Write admin policy
+      vars:
+        _script: |
+            {{ _bao }} bao policy write admin - <<'POLICY'
+            path "*" {
+              capabilities = ["create", "read", "update", "delete", "list", "sudo"]
+            }
+            POLICY
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
+    - name: Write eso policy
+      vars:
+        _script: |
+            {{ _bao }} bao policy write eso - <<'POLICY'
+            # Read-only placeholder — per-namespace paths added at migration time.
+            path "kv/data/*" {
+              capabilities = ["read"]
+            }
+            POLICY
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
+    - name: Write raft-snapshot policy
+      vars:
+        _script: |
+            {{ _bao }} bao policy write raft-snapshot - <<'POLICY'
+            path "sys/storage/raft/snapshot" {
+              capabilities = ["read"]
+            }
+            POLICY
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
+    # ---- Kubernetes roles ----
+
+    - name: Write ESO Kubernetes role
+      vars:
+        _script: >-
+            {{ _bao }}
+            bao write auth/kubernetes/role/eso
+            bound_service_account_names=external-secrets
+            bound_service_account_namespaces=external-secrets
+            policies=eso
+            ttl=1h
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
+    # ---- Raft snapshot token and K8s secrets ----
+
+    - name: Check if raft-snapshot-token secret exists
+      kubernetes.core.k8s_info:
+        kind: Secret
+        namespace: "{{ _ns }}"
+        name: openbao-raft-snapshot-token
+      register: _snap_token_secret
+
+    - name: Mint raft-snapshot token
+      vars:
+        _script: >-
+            {{ _bao }}
+            bao token create
+            -policy=raft-snapshot
+            -orphan
+            -period=720h
+            -display-name=raft-snapshot
+            -format=json
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _snap_token_raw
+      when: _snap_token_secret.resources | length == 0
+      no_log: true
+
+    - name: Create openbao-raft-snapshot-token K8s secret
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: openbao-raft-snapshot-token
+            namespace: "{{ _ns }}"
+          type: Opaque
+          stringData:
+            token: "{{ (_snap_token_raw.stdout | from_json).auth.client_token }}"
+      when: _snap_token_secret.resources | length == 0
+      no_log: true
+
+    - name: Create openbao-raft-snapshot-minio K8s secret
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: openbao-raft-snapshot-minio
+            namespace: "{{ _ns }}"
+          type: Opaque
+          stringData:
+            access_key: "{{ vault_openbao_minio_access_key }}"
+            secret_key: "{{ vault_openbao_minio_secret_key }}"
+      no_log: true
+
+  post_tasks:
+    - name: Report completion
+      ansible.builtin.debug:
+        msg:
+          - "Cluster-OpenBao initialized and configured."
+          - ""
+          - "Auth methods enabled: approle / kubernetes / oidc"
+          - "Policies: admin / eso / raft-snapshot"
+          - "KV v2 secrets engine: kv/"
+          - "K8s secrets: openbao-raft-snapshot-token, openbao-raft-snapshot-minio"
+          - ""
+          - "Encrypted secrets written to: {{ _generated_vault_file }}"
+          - "Raw capture in: {{ _capture_file }} (shred after verifying vault file)"
+          - ""
+          - "Smoke tests (Section J of docs/openbao-bootstrap.md):"
+          - "  https://{{ openbao_ingress_host }} -> Sign in via OIDC"
+          - "  kubectl -n {{ _ns }} exec {{ _pod }} -- bao status"
+          - "  kubectl -n {{ _ns }} exec {{ _pod }} -- bao operator raft list-peers"

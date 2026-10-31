@@ -5,13 +5,14 @@
 # and mint the autounseal token for the cluster.
 #
 # Idempotent: if OpenBao is already initialized, the playbook skips
-# init/unseal/token-mint and only reconciles the transit engine, the
-# autounseal key, and the autounseal policy (those need a root token
-# from the vault).
+# init and only reconciles the transit engine, the autounseal key, and the
+# autounseal policy (those need a root token from the vault).
 #
 # Captured secrets from a first run (root token, 5 unseal keys, autounseal
-# token) are written to .openbao-pi-init.json on the control node. Section
-# E of the runbook covers persisting them into the vault.
+# token) are written to .openbao-pi-init.json on the control node and then
+# encrypted into vaults/group_vars/all/openbao_generated.yaml. If a run dies
+# after init (for example the encrypt step), re-run it: it resumes from the
+# capture file instead of re-initializing.
 #
 # Usage:
 #   ansible-playbook openbao-pi-init.yaml --tags openbao-pi-init
@@ -43,19 +44,30 @@
       vars:
         ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
-    - name: Refuse to overwrite an existing capture file
-      ansible.builtin.fail:
-        msg: >-
-          {{ openbao_pi_init_output }} already exists. Move or delete it
-          before re-running this playbook so previously captured root keys
-          are not silently overwritten.
+    - name: Check whether the encrypted secrets file already exists
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/vaults/group_vars/all/openbao_generated.yaml"
+      register: _generated_file
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Read the existing capture file (resume after a failed run)
+      ansible.builtin.slurp:
+        src: "{{ openbao_pi_init_output }}"
+      register: _init_capture_content
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
       when: _init_capture.stat.exists
+      no_log: true
 
     - name: Confirm openbao.service is active
       ansible.builtin.command: systemctl is-active openbao.service
       register: _bao_service_state
       changed_when: false
-      failed_when: false
 
     # The unit is Type=notify; older bao binaries never send READY=1, so
     # systemd may sit in "activating" forever even though the TLS listener
@@ -91,6 +103,18 @@
       ansible.builtin.set_fact:
         _bao_status: "{{ _bao_status_raw.stdout | from_json }}"
 
+    - name: Refuse a capture file that does not match this OpenBao
+      ansible.builtin.fail:
+        msg: >-
+          {{ openbao_pi_init_output }} exists but OpenBao is not initialized,
+          so the file is stale. Move it aside before re-running.
+      when: _init_capture.stat.exists and not _bao_status.initialized
+
+    - name: Split the capture file into init output and autounseal token
+      ansible.builtin.set_fact:
+        _cap_parts: "{{ (_init_capture_content.content | b64decode).split('---') if _init_capture.stat.exists else [''] }}"
+      no_log: true
+
   tasks:
     - name: Initialize OpenBao (5 shares, threshold 3)
       ansible.builtin.command: >-
@@ -115,10 +139,11 @@
       when: not _bao_status.initialized
       no_log: true
 
-    - name: Parse init output
+    # set_fact turns JSON-looking strings into dicts, so parse once, here.
+    - name: Parse init output (fresh or from the capture file)
       ansible.builtin.set_fact:
-        _bao_init: "{{ _bao_init_raw.stdout | from_json }}"
-      when: not _bao_status.initialized
+        _bao_init: "{{ (_bao_init_raw.stdout if _bao_init_raw.stdout is defined else (_cap_parts[0] | trim)) | from_json }}"
+      when: not _bao_status.initialized or _init_capture.stat.exists
       no_log: true
 
     - name: Unseal OpenBao with the first 3 captured keys
@@ -126,7 +151,20 @@
         /usr/local/bin/bao operator unseal {{ item }}
       environment: "{{ _bao_env }}"
       loop: "{{ _bao_init.unseal_keys_b64[:3] }}"
-      when: _bao_init is defined
+      when: _bao_init is defined and _bao_status.sealed
+      no_log: true
+
+    - name: Unseal OpenBao with stored keys (re-run against sealed instance)
+      ansible.builtin.command: >-
+        /usr/local/bin/bao operator unseal {{ item }}
+      environment: "{{ _bao_env }}"
+      loop: "{{ (vault_openbao_pi_unseal_keys.splitlines() | reject('equalto', '') | list)[:3] }}"
+      when:
+        - _bao_init is not defined
+        - _bao_status.sealed
+        - vault_openbao_pi_unseal_keys is string
+        - vault_openbao_pi_unseal_keys | length > 0
+        - vault_openbao_pi_unseal_keys != 'REPLACE_ME'
       no_log: true
 
     - name: Refresh status after potential init/unseal
@@ -180,7 +218,6 @@
       environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
       register: _bao_transit_keys_raw
       changed_when: false
-      failed_when: false
 
     - name: Create the autounseal transit key
       ansible.builtin.command: >-
@@ -223,33 +260,109 @@
         -format=json
       environment: "{{ _bao_env | combine({'BAO_TOKEN': _bao_root_token}) }}"
       register: _bao_autounseal_token_raw
-      when: _bao_init is defined
+      when: _bao_init is defined and ((_cap_parts[1:] + [''])[0] | trim | length == 0)
       no_log: true
 
     - name: Append autounseal token to capture file
       ansible.builtin.copy:
         content: |
-          {{ _bao_init_raw.stdout }}
+          {{ _bao_init | to_json }}
           ---
-          {{ _bao_autounseal_token_raw.stdout }}
+          {{ _bao_autounseal_token_raw.stdout | from_json | to_json }}
         dest: "{{ openbao_pi_init_output }}"
         mode: "0600"
       connection: local
       become: false
       vars:
         ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      when: _bao_autounseal_token_raw.stdout is defined
+      no_log: true
+
+    - name: Pick the autounseal token (fresh or from the capture file)
+      ansible.builtin.set_fact:
+        _bao_token: "{{ (_bao_autounseal_token_raw.stdout if _bao_autounseal_token_raw.stdout is defined else ((_cap_parts[1:] + [''])[0] | trim)) | from_json }}"
       when: _bao_init is defined
       no_log: true
+
+    # ---- Auto-persist Pi secrets to vaults/group_vars/all/openbao_generated.yaml ----
+    # Uses ansible-vault encrypt_string so the generated file is safe to commit.
+    # The file sorts after openbao.yaml (underscore > period in ASCII) so these
+    # values override the REPLACE_ME placeholders at runtime.
+
+    - name: Encrypt vault_openbao_pi_unseal_keys
+      ansible.builtin.shell: |
+        printf '%s' "$PLAINTEXT" |
+        ansible-vault encrypt_string \
+          --stdin-name vault_openbao_pi_unseal_keys
+      environment:
+        PLAINTEXT: "{{ _bao_init.unseal_keys_b64 | join('\n') }}"
+      register: _enc_unseal_keys
+      when: _bao_init is defined and not _generated_file.stat.exists
+      changed_when: true
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Encrypt vault_openbao_pi_root_token
+      ansible.builtin.shell: |
+        printf '%s' "$PLAINTEXT" |
+        ansible-vault encrypt_string \
+          --stdin-name vault_openbao_pi_root_token
+      environment:
+        PLAINTEXT: "{{ _bao_init.root_token }}"
+      register: _enc_pi_root_token
+      when: _bao_init is defined and not _generated_file.stat.exists
+      changed_when: true
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Encrypt vault_openbao_pi_autounseal_token
+      ansible.builtin.shell: |
+        printf '%s' "$PLAINTEXT" |
+        ansible-vault encrypt_string \
+          --stdin-name vault_openbao_pi_autounseal_token
+      environment:
+        PLAINTEXT: "{{ _bao_token.auth.client_token }}"
+      register: _enc_autounseal_token
+      when: _bao_init is defined and not _generated_file.stat.exists
+      changed_when: true
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Write Pi secrets to openbao_generated.yaml
+      ansible.builtin.copy:
+        content: |
+          ---
+          # Auto-generated by openbao-pi-init.yaml — do not edit manually.
+          # Cluster init secrets will be appended by openbao-cluster-init.yaml.
+          {{ _enc_unseal_keys.stdout | regex_replace('\nEncryption successful\n?$', '') }}
+
+          {{ _enc_pi_root_token.stdout | regex_replace('\nEncryption successful\n?$', '') }}
+
+          {{ _enc_autounseal_token.stdout | regex_replace('\nEncryption successful\n?$', '') }}
+        dest: "{{ playbook_dir }}/vaults/group_vars/all/openbao_generated.yaml"
+        mode: "0600"
+      when: _bao_init is defined and not _generated_file.stat.exists
+      no_log: true
+      connection: local
+      become: false
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
     - name: Report next steps after a fresh init
       ansible.builtin.debug:
         msg:
           - "Pi-OpenBao is initialized and unsealed."
-          - "Captured secrets are in: {{ openbao_pi_init_output }}"
-          - "Follow section E of docs/openbao-bootstrap.md to encrypt"
-          - "vault_openbao_pi_unseal_keys, vault_openbao_pi_root_token,"
-          - "and vault_openbao_pi_autounseal_token into the vault, then"
-          - "shred the capture file."
+          - "Secrets encrypted and written to: vaults/group_vars/all/openbao_generated.yaml"
+          - "Raw capture also in: {{ openbao_pi_init_output }}"
+          - "Next: run section F (ansible-playbook run.yaml --tags openbao-pi)"
+          - "Then deploy the cluster: ansible-playbook run.yaml --tags openbao"
+          - "Then init the cluster: ansible-playbook openbao-cluster-init.yaml --tags openbao-cluster-init"
       when: _bao_init is defined
 
     - name: Report no-op

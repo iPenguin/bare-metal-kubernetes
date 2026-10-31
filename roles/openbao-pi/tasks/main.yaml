@@ -125,6 +125,7 @@
   when:
     - vault_openbao_pi_unseal_keys is defined
     - vault_openbao_pi_unseal_keys | length > 0
+    - vault_openbao_pi_unseal_keys != 'REPLACE_ME'
   no_log: true
 
 - name: Render systemd unit
