@@ -1,0 +1,13 @@
+---
+# Ansible collections. Python packages are in requirements.txt.
+#   ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: ansible.posix
+    version: 1.2.0
+  - name: community.general
+    version: 10.7.0
+  - name: kubernetes.core
+    version: 5.3.0
+  - name: nn708.openwrt
+    version: 0.4.1
+  - name: community.hashi_vault

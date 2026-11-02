@@ -3,3 +3,4 @@ jmespath==1.0.1
 kubernetes==33.1.0
 python-ldap==3.4.5
 passlib==1.7.4
+hvac==2.3.0

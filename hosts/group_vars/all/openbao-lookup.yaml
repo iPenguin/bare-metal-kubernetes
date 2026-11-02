@@ -1,0 +1,12 @@
+---
+# Connection settings for community.hashi_vault lookups against OpenBao.
+# Use as:
+#   "{{ (lookup('community.hashi_vault.vault_kv2_get', 'apps/<ns>/<name>', **openbao_conn)).secret.<key> }}"
+# Each lookup logs in with the `ansible` AppRole (15m token); the role_id and
+# secret_id are written by openbao-cluster-init.yaml into openbao_generated.yaml.
+openbao_conn:
+  url: "https://bao.{{ lan_domain }}"
+  engine_mount_point: kv
+  auth_method: approle
+  role_id: "{{ vault_openbao_ansible_role_id }}"
+  secret_id: "{{ vault_openbao_ansible_secret_id }}"
