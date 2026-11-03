@@ -19,7 +19,7 @@ spec:
     spec:
       initContainers:
       - name: init-db-dir
-        image: docker.io/gtstef/filebrowser:2.1.0-beta
+        image: docker.io/gtstef/filebrowser:2.1.4-beta
         command: ["/bin/sh", "-c", "mkdir -p /srv/.filebrowser"]
         securityContext:
           runAsGroup: 1000
@@ -29,7 +29,7 @@ spec:
           name: srv
       containers:
       - name: primary
-        image: docker.io/gtstef/filebrowser:2.1.0-beta
+        image: docker.io/gtstef/filebrowser:2.1.4-beta
         imagePullPolicy: IfNotPresent
         env:
         - name: FILEBROWSER_CONFIG
