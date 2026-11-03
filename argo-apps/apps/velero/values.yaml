@@ -72,7 +72,6 @@ schedules:
       ttl: 8760h  # 1 year
       includedNamespaces:
         - cert-manager
-        - concourse
         - gitea
         - keycloak
         - lldap

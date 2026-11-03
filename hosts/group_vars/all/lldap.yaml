@@ -10,8 +10,6 @@ lldap_http_url: "https://lldap.{{ lan_domain }}"
 lldap_groups:
   - name: app-argocd-admins
   - name: app-argocd-users
-  - name: app-concourse-admins
-  - name: app-concourse-users
   - name: app-filebrowser-admins
   - name: app-filebrowser-users
   - name: app-gitea-admins
@@ -30,7 +28,6 @@ lldap_users:
     email: "{{ site_admin_email }}"
     groups:
       - app-argocd-admins
-      - app-concourse-admins
       - app-filebrowser-admins
       - app-gitea-admins
       - app-harbor-admins
