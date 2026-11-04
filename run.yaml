@@ -199,6 +199,8 @@
     - lldap
   connection: local
   become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   roles:
     - role: lldap
 
@@ -212,6 +214,8 @@
     - domain
   connection: local
   become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   roles:
     - role: keycloak
 
@@ -236,6 +240,8 @@
     - minio
   connection: local
   become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   roles:
     - role: minio
       when:
@@ -251,6 +257,8 @@
     - gitea
   connection: local
   become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   roles:
     - role: gitea
       when:
