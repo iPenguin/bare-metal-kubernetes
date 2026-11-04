@@ -83,6 +83,12 @@ signing:
 gitea:
   admin:
     existingSecret: gitea-secrets
+  additionalConfigFromEnvs:
+    - name: GITEA__DATABASE__PASSWD
+      valueFrom:
+        secretKeyRef:
+          name: gitea-postgresql
+          key: password
   metrics:
     enabled: false
   openid:
@@ -137,7 +143,7 @@ postgresql:
   global:
     postgresql:
       auth:
-        password: giteapassword
+        existingSecret: gitea-postgresql
         database: gitea
         username: gitea
       service:
