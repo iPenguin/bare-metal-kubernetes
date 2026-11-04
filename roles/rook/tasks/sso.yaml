@@ -1,0 +1,66 @@
+---
+# Ceph dashboard SAML SSO through Keycloak. Rook has no setting for this, so it
+# is set inside Ceph with the toolbox pod. Only users in the lldap group
+# app-ceph-admins get a dashboard account, so only they can log in.
+- name: Wait for the Rook toolbox
+  ansible.builtin.command:
+    argv: "{{ _ceph_kubectl + ['rollout', 'status', 'deploy/rook-ceph-tools', '--timeout=120s'] }}"
+  changed_when: false
+
+# Keycloak's IdP metadata says it wants signed authn requests, and python3-saml then
+# refuses settings that have no SP certificate, so setup needs one. The mgr reads the
+# cert and key from its own filesystem, so they are copied to the active mgr pod and
+# removed again. Keycloak does not verify the signature (client signature is off), so
+# a new cert is made on every run.
+- name: Configure Ceph dashboard SAML SSO
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: |
+      set -euo pipefail
+      kc() { kubectl --kubeconfig /etc/kubernetes/admin.conf -n {{ rook_namespace | quote }} "$@"; }
+      tools=deploy/rook-ceph-tools
+      active=$(kc exec $tools -- ceph mgr stat --format json | sed -n 's/.*"active_name": *"\([^"]*\)".*/\1/p')
+      mgr=$(kc get pod -l "app=rook-ceph-mgr,ceph_daemon_id=$active" -o name)
+      d=$(kc exec $tools -- mktemp -d)
+      trap 'kc exec $tools -- rm -rf "$d"; kc exec "$mgr" -c mgr -- rm -f /tmp/sso-sp.crt /tmp/sso-sp.key' EXIT
+      kc exec $tools -- openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+        -subj "/CN=ceph.{{ lan_domain }}" -keyout "$d/sp.key" -out "$d/sp.crt" 2>/dev/null
+      for f in crt key; do
+        kc exec $tools -- cat "$d/sp.$f" | kc exec -i "$mgr" -c mgr -- sh -c "cat > /tmp/sso-sp.$f"
+      done
+      kc exec $tools -- ceph dashboard sso setup saml2 \
+        https://ceph.{{ lan_domain }} \
+        {{ (keycloak.url ~ '/realms/' ~ keycloak.realm ~ '/protocol/saml/descriptor') | quote }} \
+        username {{ (keycloak.url ~ '/realms/' ~ keycloak.realm) | quote }} \
+        /tmp/sso-sp.crt /tmp/sso-sp.key >/dev/null
+  register: _ceph_sso_setup
+  changed_when: true
+
+- name: Check Ceph dashboard SSO status
+  ansible.builtin.command:
+    argv: "{{ _ceph_exec + ['ceph', 'dashboard', 'sso', 'status'] }}"
+  register: _ceph_sso_status
+  changed_when: false
+
+# on 19.2.3 SSO already reads enabled after setup, and enable then fails with EPERM
+- name: Enable Ceph dashboard SAML SSO
+  ansible.builtin.command:
+    argv: "{{ _ceph_exec + ['ceph', 'dashboard', 'sso', 'enable', 'saml2'] }}"
+  when: "'enabled' not in _ceph_sso_status.stdout"
+  changed_when: true
+
+- name: Create Ceph dashboard accounts for SSO admins
+  ansible.builtin.command:
+    argv: >-
+      {{ _ceph_exec + ['sh', '-c', _ceph_user_script, '_', item.name] }}
+  vars:
+    _ceph_user_script: >-
+      ceph dashboard ac-user-show "$1" >/dev/null 2>&1 && exit 0;
+      head -c 24 /dev/urandom | base64 > /tmp/ssouser.pw &&
+      ceph dashboard ac-user-create "$1" -i /tmp/ssouser.pw administrator >/dev/null;
+      rc=$?; rm -f /tmp/ssouser.pw; test $rc -eq 0 && echo created
+  loop: "{{ lldap_users | selectattr('groups', 'defined') | selectattr('groups', 'contains', 'app-ceph-admins') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _ceph_users
+  changed_when: "'created' in _ceph_users.stdout"

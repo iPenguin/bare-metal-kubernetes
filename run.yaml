@@ -219,6 +219,23 @@
   roles:
     - role: keycloak
 
+- name: Configure Ceph dashboard SSO
+  hosts:
+    - controllers
+  run_once: true
+  tags:
+    - ceph-sso
+  become: true
+  vars:
+    _ceph_kubectl: ['kubectl', '--kubeconfig', /etc/kubernetes/admin.conf, '-n', "{{ rook_namespace }}"]
+    _ceph_exec: "{{ _ceph_kubectl + ['exec', 'deploy/rook-ceph-tools', '--'] }}"
+  tasks:
+    - name: Set up SAML SSO for the Ceph dashboard
+      ansible.builtin.include_role:
+        name: rook
+        tasks_from: sso.yaml
+      when: inventory_hostname == k8s_controller
+
 - name: Deploy Argo CD
   hosts:
     - controllers
