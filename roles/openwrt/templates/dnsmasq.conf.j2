@@ -2,11 +2,9 @@
 srv-host={{ srv.name }},{{ srv.target }},{{ srv.port }},{{ srv.priority }},{{ srv.weight }}
 {% endfor %}
 
-address=/traefik.clt.milco.casa/{{ network_services.traefik.ipv4 }}
-address=/traefik.clt.milco.casa/{{ network_services.traefik.ipv6 }}
-
-address=/traefik-ssh.clt.milco.casa/{{ network_services['traefik-ssh'].ipv4 }}
-address=/traefik-ssh.clt.milco.casa/{{ network_services['traefik-ssh'].ipv6 }}
+# host-record, not address=: dnsmasq only follows a cname to a local host record
+host-record=traefik.clt.milco.casa,{{ network_services.traefik.ipv4 }},{{ network_services.traefik.ipv6 }}
+host-record=traefik-ssh.clt.milco.casa,{{ network_services['traefik-ssh'].ipv4 }},{{ network_services['traefik-ssh'].ipv6 }}
 cname=git.clt.milco.casa,traefik-ssh.clt.milco.casa
 
 {% for host in clt_cname_records | default([]) %}
