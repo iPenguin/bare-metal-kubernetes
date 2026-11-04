@@ -1,0 +1,475 @@
+---
+# Deploy version bumps, and only what changed.
+#
+#   ansible-playbook -i hosts -i vaults upgrade.yaml
+#
+# It diffs hosts/group_vars/all/versions.yaml, requirements.txt, requirements.yml
+# and argo-apps/ between the last deployed commit and HEAD, maps changed version
+# variables to run.yaml tags, runs a --check --diff pass, asks, then deploys.
+# Last deployed commit lives in the state file outside the repo.
+#
+# First run (record what is already deployed, then exit):
+#   ansible-playbook -i hosts -i vaults upgrade.yaml -e upgrade_baseline=<sha>
+#
+# Options (-e):
+#   upgrade_optin=cilium,rook   also deploy these opt-in components (see upgrade_components)
+#   upgrade_ack=kubernetes      mark a component done (e.g. you ran it by hand)
+#   upgrade_yes=true            skip the prompt after the check pass
+#   upgrade_to=<ref>            deploy up to this commit instead of HEAD
+#
+# Never builds or pushes images; Gitea builds ai-base on push to master.
+
+- name: Plan and run upgrades
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    upgrade_optin: []
+    upgrade_ack: []
+    upgrade_yes: false
+    upgrade_baseline: ""
+    upgrade_to: HEAD
+    upgrade_versions_path: hosts/group_vars/all/versions.yaml
+    upgrade_state_dir: >-
+      {{ lookup('ansible.builtin.env', 'XDG_STATE_HOME')
+      | default(lookup('ansible.builtin.env', 'HOME') ~ '/.local/state', true) }}/homelab-ansible
+    upgrade_state_file: "{{ upgrade_state_dir }}/upgrade-state.json"
+    # Components run in this order. `variables` are the versions.yaml keys that trigger them.
+    # `tags` / `skip_tags` are passed to run.yaml. `rolling` runs one node at a time
+    # (groups in order), waiting for the node to be Ready (and the VIP, on controllers).
+    # `optin: true` components never run unless named in upgrade_optin.
+    # `kind: manual` components are only reported with the command to run.
+    upgrade_components:
+      helm:
+        variables: [helm_version]
+        tags: [helm]
+      cert_manager:
+        variables: [cert_manager_version]
+        tags: [certs]
+      sealed_secrets:
+        variables: [sealed_secrets_version]
+        tags: [secrets]
+        skip_tags: [openbao]
+      argo:
+        variables: [argocd_chart_version]
+        tags: [argo]
+        skip_tags: [argo-apps]
+      kube_vip:
+        variables: [kube_vip_version]
+        tags: [vip]
+        rolling: [controllers]
+      crio:
+        variables: [crio_version, crun_version]
+        tags: [crio]
+        rolling: [workers, controllers]
+      containerd:
+        variables: [containerd_version]
+        tags: [containerd]
+        rolling: [workers, controllers]
+      eso:
+        variables: [external_secrets_version]
+        tags: [eso]
+        optin: true
+      openbao:
+        variables: [openbao_chart_version, openbao_image_version]
+        tags: [openbao]
+        skip_tags: [eso]
+        optin: true
+      openbao_pi:
+        variables: [openbao_pi_binary_version]
+        tags: [openbao-pi]
+        optin: true
+      cilium:
+        variables: [cilium_version, cilium_cli_version]
+        tags: [cni]
+        optin: true
+      rook:
+        variables: [rook_version, ceph_version]
+        tags: [rook]
+        skip_tags: [time]
+        optin: true
+      nvidia:
+        variables: [nvidia_driver_branch, nvidia_k8s_plugin_version]
+        tags: [nvidia]
+        optin: true
+      kubernetes:
+        variables: [kubernetes_version]
+        kind: manual
+        command: ansible-playbook kubernetes-upgrade.yaml
+    # versions.yaml keys that no play in run.yaml consumes
+    upgrade_not_deployed:
+      metallb_version: "metallb role leaves chart_version blank, so this variable has no effect"
+      harbor_chart_version: "unused; the harbor appset pins its own chart version"
+      keycloak_version: "unused; the keycloak appset pins its own chart version"
+      ai_image_version: "only used by argo-apps/apps/ai/tasks, not by run.yaml"
+  tasks:
+    - name: Normalize list options
+      ansible.builtin.set_fact:
+        _optin: "{{ upgrade_optin if upgrade_optin is not string else upgrade_optin.split(',') | map('trim') | reject('equalto', '') | list }}"
+        _ack: "{{ upgrade_ack if upgrade_ack is not string else upgrade_ack.split(',') | map('trim') | reject('equalto', '') | list }}"
+        _stamp: "{{ '%Y%m%d-%H%M%S' | strftime }}"
+
+    - name: Create state directory
+      ansible.builtin.file:
+        path: "{{ upgrade_state_dir }}"
+        state: directory
+        mode: "0700"
+      check_mode: false
+
+    - name: Look for the state file
+      ansible.builtin.stat:
+        path: "{{ upgrade_state_file }}"
+      register: _state_stat
+
+    - name: Load the state file
+      ansible.builtin.slurp:
+        src: "{{ upgrade_state_file }}"
+      register: _state_raw
+      when: _state_stat.stat.exists
+
+    - name: Parse the state file
+      ansible.builtin.set_fact:
+        _state: "{{ (_state_raw.content | b64decode | from_json) if _state_stat.stat.exists else {} }}"
+
+    - name: Resolve the commit to deploy
+      ansible.builtin.command:
+        argv: [git, rev-parse, --verify, "{{ upgrade_to }}^{commit}"]
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _to
+      changed_when: false
+      check_mode: false
+
+    - name: Record a baseline and stop
+      when: upgrade_baseline | length > 0
+      block:
+        - name: Resolve the baseline commit
+          ansible.builtin.command:
+            argv: [git, rev-parse, --verify, "{{ upgrade_baseline }}^{commit}"]
+            chdir: "{{ playbook_dir }}"
+          register: _baseline
+          changed_when: false
+          check_mode: false
+
+        - name: Write the baseline state
+          ansible.builtin.copy:
+            dest: "{{ upgrade_state_file }}"
+            content: >-
+              {{ {'commit': _baseline.stdout, 'pending': _state.pending | default([]), 'deployed_at': _state.deployed_at | default('baseline ' ~ _stamp)}
+              | to_nice_json }}
+            mode: "0600"
+
+        - name: Baseline recorded
+          ansible.builtin.debug:
+            msg: "Last deployed commit set to {{ _baseline.stdout }}. Run again without upgrade_baseline to deploy changes since then."
+
+    - name: Stop after recording the baseline
+      ansible.builtin.meta: end_play
+      when: upgrade_baseline | length > 0
+
+    - name: Require a recorded deployment
+      ansible.builtin.assert:
+        that: _state.commit is defined
+        fail_msg: >-
+          No state at {{ upgrade_state_file }}. Record the commit that is deployed now with
+          -e upgrade_baseline=<sha> (use HEAD if everything in HEAD is already deployed).
+
+    - name: Check the last deployed commit still exists
+      ansible.builtin.command:
+        argv: [git, rev-parse, --verify, "{{ _state.commit }}^{commit}"]
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _from
+      changed_when: false
+      check_mode: false
+
+    - name: Look at uncommitted changes
+      ansible.builtin.command:
+        argv: [git, status, --porcelain, --untracked-files=no]
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _dirty
+      changed_when: false
+      check_mode: false
+
+    - name: Refuse to deploy uncommitted version pins
+      ansible.builtin.assert:
+        that: >-
+          _dirty.stdout_lines
+          | select('search', '(' ~ upgrade_versions_path ~ '|requirements\.txt|requirements\.yml)$')
+          | list | length == 0
+        fail_msg: "versions.yaml, requirements.txt or requirements.yml has uncommitted edits. Commit or stash them; this plan only sees committed changes."
+
+    - name: Read versions at the last deployed commit
+      ansible.builtin.command:
+        argv: [git, show, "{{ _from.stdout }}:{{ upgrade_versions_path }}"]
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _old_raw
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Read versions at the target commit
+      ansible.builtin.command:
+        argv: [git, show, "{{ _to.stdout }}:{{ upgrade_versions_path }}"]
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _new_raw
+      changed_when: false
+      check_mode: false
+
+    - name: List files changed between the commits
+      ansible.builtin.command:
+        argv: [git, diff, --name-only, "{{ _from.stdout }}", "{{ _to.stdout }}"]
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _files
+      changed_when: false
+      check_mode: false
+
+    - name: List chart changes in the appsets  # noqa: command-instead-of-module
+      ansible.builtin.shell: >-
+        set -o pipefail;
+        git diff -U0 {{ _from.stdout }} {{ _to.stdout }} -- argo-apps/appsets
+        | grep -E '^[+-][[:space:]]+(chart|targetRevision):' || true
+      args:
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _appset_charts
+      changed_when: false
+      check_mode: false
+
+    - name: Work out what changed
+      ansible.builtin.set_fact:
+        _changed_vars: >-
+          {{ ((_new | dict2items | difference(_old | dict2items))
+          + (_old | dict2items | difference(_new | dict2items)))
+          | map(attribute='key') | unique | list }}
+        _changed_files: "{{ _files.stdout_lines }}"
+        _pending: "{{ _state.pending | default([]) }}"
+      vars:
+        _old: "{{ (_old_raw.stdout | from_yaml) if _old_raw.rc == 0 else {} }}"
+        _new: "{{ _new_raw.stdout | from_yaml }}"
+
+    - name: Match changes to components
+      ansible.builtin.set_fact:
+        _plan: "{{ _plan_json | from_json }}"
+      vars:
+        _plan_json: >-
+          {%- set plan = {'run': [], 'optin': [], 'manual': []} -%}
+          {%- for name, c in upgrade_components.items() -%}
+          {%- if (c.variables | intersect(_changed_vars) | length > 0 or name in _pending) and name not in _ack -%}
+          {%- if c.kind | default('run') == 'manual' -%}
+          {%- set _ = plan.manual.append(name) -%}
+          {%- elif c.optin | default(false) and name not in _optin -%}
+          {%- set _ = plan.optin.append(name) -%}
+          {%- else -%}
+          {%- set _ = plan.run.append(name) -%}
+          {%- endif -%}
+          {%- endif -%}
+          {%- endfor -%}
+          {{ plan | to_json }}
+
+    - name: Build the step list
+      ansible.builtin.set_fact:
+        _steps: "{{ _steps_json | from_json }}"
+      vars:
+        _inv: "{% for i in ansible_inventory_sources %}-i {{ i | quote }} {% endfor %}"
+        _steps_json: >-
+          {%- set out = [] -%}
+          {%- if 'requirements.txt' in _changed_files -%}
+          {%- set _ = out.append({'name': 'pip install -r requirements.txt',
+              'check': (ansible_playbook_python | quote) ~ ' -m pip install --dry-run -r requirements.txt',
+              'cmd': (ansible_playbook_python | quote) ~ ' -m pip install -r requirements.txt',
+              'health': []}) -%}
+          {%- endif -%}
+          {%- if 'requirements.yml' in _changed_files -%}
+          {%- set _ = out.append({'name': 'ansible-galaxy collection install',
+              'check': 'echo "requirements.yml changed: collections would be installed"',
+              'cmd': 'ansible-galaxy collection install -r requirements.yml',
+              'health': []}) -%}
+          {%- endif -%}
+          {%- for name in _plan.run -%}
+          {%- set c = upgrade_components[name] -%}
+          {%- set skip = (' --skip-tags ' ~ (c.skip_tags | join(','))) if c.skip_tags | default([]) else '' -%}
+          {%- set base = 'ansible-playbook run.yaml ' ~ _inv ~ '--tags ' ~ (c.tags | join(',')) ~ skip -%}
+          {%- if c.rolling | default([]) -%}
+          {%- set ns = namespace(first=true) -%}
+          {%- for g in c.rolling -%}
+          {%- for h in groups[g] -%}
+          {%- set _ = out.append({'name': name ~ ' on ' ~ h,
+              'check': (base ~ ' --check --diff') if ns.first else '',
+              'cmd': base ~ ' --limit ' ~ (h | quote),
+              'health': ['node'] + (['vip'] if h in groups['controllers'] else []),
+              'host': h}) -%}
+          {%- set ns.first = false -%}
+          {%- endfor -%}
+          {%- endfor -%}
+          {%- else -%}
+          {%- set _ = out.append({'name': name, 'check': base ~ ' --check --diff', 'cmd': base, 'health': []}) -%}
+          {%- endif -%}
+          {%- endfor -%}
+          {{ out | to_json }}
+
+    - name: Check what the remotes have
+      ansible.builtin.shell: |
+        set -o pipefail
+        for r in origin homelab; do
+          sha=$(timeout 20 git ls-remote --heads "$r" master 2>/dev/null | cut -f1 || true)
+          if [ -z "$sha" ]; then echo "$r: unreachable"
+          elif [ "$sha" = "{{ _to.stdout }}" ]; then echo "$r: master is at {{ _to.stdout[:8] }}"
+          elif git merge-base --is-ancestor "{{ _to.stdout }}" "$sha" 2>/dev/null; then echo "$r: master is ahead of {{ _to.stdout[:8] }} (contains it)"
+          else echo "$r: master is $(echo "$sha" | cut -c1-8), does NOT contain {{ _to.stdout[:8] }}"
+          fi
+        done
+      args:
+        chdir: "{{ playbook_dir }}"
+        executable: /bin/bash
+      register: _remotes
+      changed_when: false
+      check_mode: false
+
+    - name: Show the plan
+      ansible.builtin.debug:
+        msg: "{{ _report | split('\n') | reject('equalto', '') | list }}"
+      vars:
+        _argo_names: >-
+          {{ _changed_files | select('match', '^argo-apps/(apps|appsets|bootstrap)/') | map('split', '/') | map(attribute=2)
+          | map('split', '.') | map('first') | unique | sort | list }}
+        _image_files: "{{ _changed_files | select('match', '^(images/ai-base/|\\.gitea/workflows/ai-base\\.yaml$)') | list }}"
+        _unmapped: >-
+          {{ _changed_vars | difference(upgrade_components.values() | map(attribute='variables') | flatten) | difference(upgrade_not_deployed.keys()
+          | list) }}
+        _report: |
+          Deploying {{ _from.stdout[:8] }}..{{ _to.stdout[:8] }}
+          Changed version variables: {{ _changed_vars | join(', ') or 'none' }}
+          Will run: {{ (_steps | map(attribute='name') | list) | join(' | ') or 'nothing' }}
+          {% for n in _plan.optin %}
+          SKIPPED (opt-in, add -e upgrade_optin={{ n }}): {{ n }} ({{ upgrade_components[n].variables | intersect(_changed_vars) | join(', ') or 'pending' }})
+          {% endfor %}
+          {% for n in _plan.manual %}
+          MANUAL: {{ n }} changed. Run `{{ upgrade_components[n].command }}` yourself, then -e upgrade_ack={{ n }}
+          {% endfor %}
+          {% for v in _changed_vars if v in upgrade_not_deployed %}
+          NO EFFECT: {{ v }}: {{ upgrade_not_deployed[v] }}
+          {% endfor %}
+          {% for v in _unmapped %}
+          UNMAPPED: {{ v }} changed but has no component in upgrade_components
+          {% endfor %}
+          Handled by Argo (syncs from GitHub master): {{ _argo_names | join(', ') or 'no argo-apps changes' }}
+          {% if _appset_charts.stdout %}
+          Appset chart changes:
+          {{ _appset_charts.stdout }}
+          {% endif %}
+          {% if _image_files %}
+          ai-base inputs changed ({{ _image_files | join(', ') }}). Gitea builds and pushes it on push to master on the homelab remote; this playbook does not.
+          {% else %}
+          ai-base inputs unchanged.
+          {% endif %}
+          Remotes: {{ _remotes.stdout_lines | join('; ') }}
+          {% set others = _dirty.stdout_lines | reject('search', 'versions\.yaml|requirements') | list %}
+          {% if others %}
+          WARNING: uncommitted edits are deployed as-is by run.yaml: {{ others | map('regex_replace', '^.{3}', '') | join(', ') }}
+          {% endif %}
+
+    - name: Nothing to deploy
+      when: _steps | length == 0
+      block:
+        - name: Say so
+          ansible.builtin.debug:
+            msg: nothing to deploy
+
+        - name: Advance the state file past changes that need no deploy
+          ansible.builtin.copy:
+            dest: "{{ upgrade_state_file }}"
+            content: >-
+              {{ {'commit': _to.stdout, 'pending': (_plan.optin + _plan.manual) | unique | list, 'deployed_at': _state.deployed_at | default('')}
+              | to_nice_json }}
+            mode: "0600"
+          when: _to.stdout != _from.stdout or (_plan.optin + _plan.manual) | sort != _pending | sort
+
+    - name: Stop when there is nothing to deploy, or when only planning
+      ansible.builtin.meta: end_play
+      when: _steps | length == 0 or ansible_check_mode
+
+    - name: Write the check script
+      ansible.builtin.copy:
+        dest: "{{ upgrade_state_dir }}/upgrade-{{ _stamp }}-check.sh"
+        mode: "0700"
+        content: |
+          set -euo pipefail
+          cd {{ playbook_dir | quote }}
+          {% for s in _steps if s.check %}
+          echo '== check: {{ s.name }}'
+          {{ s.check }}
+          {% endfor %}
+
+    - name: Run the --check --diff pass
+      ansible.builtin.shell: |
+        set -o pipefail
+        bash {{ upgrade_state_dir }}/upgrade-{{ _stamp }}-check.sh 2>&1 | tee {{ upgrade_state_dir }}/upgrade-{{ _stamp }}-check.log
+      args:
+        executable: /bin/bash
+      register: _check
+      changed_when: false
+
+    - name: Show the check output
+      ansible.builtin.debug:
+        var: _check.stdout_lines
+
+    - name: Ask before deploying
+      ansible.builtin.pause:
+        prompt: "Deploy {{ _steps | length }} step(s) for real? Type yes to continue"
+      register: _answer
+      when: not upgrade_yes | bool
+
+    - name: Stop unless confirmed
+      ansible.builtin.assert:
+        that: upgrade_yes | bool or _answer.user_input | lower == 'yes'
+        fail_msg: Not confirmed. Nothing deployed and the state file is unchanged.
+
+    - name: Write the deploy script
+      ansible.builtin.copy:
+        dest: "{{ upgrade_state_dir }}/upgrade-{{ _stamp }}-apply.sh"
+        mode: "0700"
+        content: |
+          set -euo pipefail
+          cd {{ playbook_dir | quote }}
+          {% for s in _steps %}
+          echo '== deploy: {{ s.name }}'
+          {{ s.cmd }}
+          {% for h in s.health %}
+          {% if h == 'node' %}
+          kubectl wait --for=condition=Ready node/{{ s.host | quote }} --timeout=300s
+          {% else %}
+          echo 'waiting for the API VIP {{ network_services.vip.ipv4 }}:6443'
+          for i in $(seq 1 30); do
+            if (exec 3<>/dev/tcp/{{ network_services.vip.ipv4 }}/6443) 2>/dev/null; then break; fi
+            if [ "$i" -eq 30 ]; then echo 'VIP did not answer, stopping' >&2; exit 1; fi
+            sleep 2
+          done
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+
+    - name: Deploy
+      ansible.builtin.shell: |
+        set -o pipefail
+        bash {{ upgrade_state_dir }}/upgrade-{{ _stamp }}-apply.sh 2>&1 | tee {{ upgrade_state_dir }}/upgrade-{{ _stamp }}-apply.log
+      args:
+        executable: /bin/bash
+      register: _apply
+      changed_when: true
+
+    - name: Show the deploy output
+      ansible.builtin.debug:
+        var: _apply.stdout_lines
+
+    - name: Record the deployed commit
+      ansible.builtin.copy:
+        dest: "{{ upgrade_state_file }}"
+        content: "{{ {'commit': _to.stdout, 'pending': (_plan.optin + _plan.manual) | unique | list, 'deployed_at': _stamp} | to_nice_json }}\n"
+        mode: "0600"
+...
