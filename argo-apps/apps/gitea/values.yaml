@@ -55,9 +55,10 @@ ingress:
   enabled: true
   className: traefik
   annotations:
-    # ssh (port 22) is only exposed on the traefik-ssh LoadBalancer, which also serves
-    # http/https, so point git at it rather than the main traefik service
-    external-dns.alpha.kubernetes.io/target: traefik-ssh.clt.milco.casa
+    # ssh (port 22) is only exposed on the traefik-ssh LoadBalancer, so git.clt.milco.casa
+    # is written to the router by Ansible (dnsmasq.conf.j2) as the traefik-ssh IPs.
+    # Any value other than dns-controller makes ExternalDNS skip this ingress.
+    external-dns.alpha.kubernetes.io/controller: ansible
   hosts:
     - host: git.clt.milco.casa
       paths:

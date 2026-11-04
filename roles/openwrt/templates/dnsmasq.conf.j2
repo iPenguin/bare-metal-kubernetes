@@ -5,6 +5,10 @@ srv-host={{ srv.name }},{{ srv.target }},{{ srv.port }},{{ srv.priority }},{{ sr
 address=/traefik.clt.milco.casa/{{ network_services.traefik.ipv4 }}
 address=/traefik.clt.milco.casa/{{ network_services.traefik.ipv6 }}
 
+address=/traefik-ssh.clt.milco.casa/{{ network_services['traefik-ssh'].ipv4 }}
+address=/traefik-ssh.clt.milco.casa/{{ network_services['traefik-ssh'].ipv6 }}
+cname=git.clt.milco.casa,traefik-ssh.clt.milco.casa
+
 {% for host in clt_cname_records | default([]) %}
 cname={{ host }}.clt.milco.casa,traefik.clt.milco.casa
 {% endfor %}

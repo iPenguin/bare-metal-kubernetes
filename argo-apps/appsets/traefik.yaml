@@ -19,6 +19,7 @@ spec:
               input:
                 parameters:
                   hostname: '{{ .host }}.clt.milco.casa'
+                  secondary: traefik-ssh.clt.milco.casa
   template:
     metadata:
       name: traefik
@@ -49,3 +50,7 @@ spec:
               service:
                 annotations:
                   metallb.io/loadBalancerIPs: {{ .ipv4_address }},{{ .ipv6_address }}
+                additionalServices:
+                  ssh:
+                    annotations:
+                      metallb.io/loadBalancerIPs: "{{ .secondary_ipv4 }},{{ .secondary_ipv6 }}"

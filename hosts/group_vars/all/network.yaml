@@ -27,8 +27,8 @@ network_services:
     ipv4: "{{ ipv4_network }}.25"
     ipv6: "{{ ipv6_network }}::25"
   traefik-ssh:
-    ipv4: "{{ ipv4_network }}.26"
-    ipv6: "{{ ipv6_network }}::26"
+    ipv4: "{{ ipv4_network }}.23"
+    ipv6: "{{ ipv6_network }}::23"
 
 network:
   ipv4:
