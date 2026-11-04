@@ -2,7 +2,7 @@
 
 ai_image_version: 1.0.9
 
-argocd_chart_version: 9.5.0
+argocd_chart_version: 9.7.1
 
 ceph_version: 19.2.3
 cert_manager_version: 1.17.1
@@ -10,13 +10,13 @@ cilium_version: 1.17.2
 cilium_cli_version: 0.17.0
 containerd_version: 2.0.1
 crio_version: 1.33.2
-crun_version: 1.19
+crun_version: 1.19.1
 
 harbor_chart_version: 1.17.1
 helm_version: 3.16.4
 
 keycloak_version: 22.0.1-1
-kube_vip_version: 0.8.7
+kube_vip_version: 0.8.10
 kubernetes_version: 1.33.3
 
 metallb_version: 0.14.8

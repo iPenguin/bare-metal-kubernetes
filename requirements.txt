@@ -1,5 +1,5 @@
 dnspython==2.7.0
-jmespath==1.0.1
+jmespath==1.1.0
 kubernetes==33.1.0
 python-ldap==3.4.5
 passlib==1.7.4
