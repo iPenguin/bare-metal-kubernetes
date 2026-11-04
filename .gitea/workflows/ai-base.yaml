@@ -30,7 +30,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The Dockerfile's ARG BASE_IMAGE default is the source of truth for the tag; the build
       # is pinned to the digest resolved here so the label below matches what was built.

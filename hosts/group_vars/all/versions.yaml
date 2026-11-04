@@ -13,7 +13,7 @@ crio_version: 1.33.2
 crun_version: 1.19.1
 
 harbor_chart_version: 1.17.1
-helm_version: 3.16.4
+helm_version: 3.22.1
 
 keycloak_version: 22.0.1-1
 kube_vip_version: 0.8.10

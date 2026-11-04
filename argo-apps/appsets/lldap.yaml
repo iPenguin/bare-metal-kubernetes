@@ -33,7 +33,7 @@ spec:
           ref: valuesSrc
         - repoURL: 'https://djjudas21.github.io/charts/'
           chart: lldap
-          targetRevision: 0.6.3
+          targetRevision: 0.6.4
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/lldap/values.yaml'

@@ -1,6 +1,6 @@
-dnspython==2.7.0
+dnspython==2.9.2
 jmespath==1.1.0
 kubernetes==33.1.0
-python-ldap==3.4.5
+python-ldap==3.4.8
 passlib==1.7.4
 hvac==2.3.0
