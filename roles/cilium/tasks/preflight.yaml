@@ -1,0 +1,143 @@
+---
+# Cilium pre-flight check, run before a MINOR upgrade (1.17 -> 1.18 -> ...).
+# https://docs.cilium.io/en/v1.18/operations/upgrade/
+# Runs on the first controller only. It compares the installed release with
+# cilium_version, so it does nothing on a first install or a patch-only bump.
+# It installs the temporary cilium-preflight release, waits for it, and always
+# removes it. A failed check fails the play, so the Cilium upgrade after it never runs.
+- name: Look up the installed Cilium release
+  kubernetes.core.helm_info:
+    name: cilium
+    release_namespace: "{{ cilium_namespace }}"
+    kubeconfig: /etc/kubernetes/admin.conf
+  register: _cilium_release
+
+- name: Work out whether this is a minor upgrade
+  ansible.builtin.set_fact:
+    _cilium_installed: "{{ _cilium_release.status.app_version | default('') }}"
+    _cilium_minor_step: >-
+      {{ (cilium_version.split('.')[1] | int) - (_cilium_release.status.app_version.split('.')[1] | int)
+      if _cilium_release.status is defined else 0 }}
+    _cilium_preflight: >-
+      {{ _cilium_release.status is defined
+      and _cilium_release.status.app_version.split('.')[:2] != cilium_version.split('.')[:2] }}
+
+- name: Refuse to skip a Cilium minor version
+  ansible.builtin.assert:
+    that: _cilium_minor_step | int == 1
+    fail_msg: >-
+      Cilium {{ _cilium_installed }} to {{ cilium_version }} is not a single minor step.
+      Upgrade one minor at a time.
+  when: _cilium_preflight | bool
+
+- name: Say what the pre-flight will do
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'Cilium ' ~ _cilium_installed ~ ' to ' ~ cilium_version ~ ': running the pre-flight check'
+      if _cilium_preflight | bool else
+      'Cilium pre-flight not needed: ' ~ (_cilium_installed or 'not installed') ~ ' to ' ~ cilium_version ~ ' is not a minor upgrade' }}
+
+- name: Run the pre-flight check
+  when: _cilium_preflight | bool and not ansible_check_mode
+  block:
+    - name: Read the node kernel versions
+      kubernetes.core.k8s_info:
+        kind: Node
+        kubeconfig: /etc/kubernetes/admin.conf
+      register: _cilium_nodes
+
+    - name: Require kernel 5.10 or newer on every node
+      ansible.builtin.assert:
+        that: item.status.nodeInfo.kernelVersion is version('5.10', '>=')
+        fail_msg: "{{ item.metadata.name }} runs kernel {{ item.status.nodeInfo.kernelVersion }}, Cilium needs 5.10 or newer"
+        quiet: true
+      loop: "{{ _cilium_nodes.resources }}"
+      loop_control:
+        label: "{{ item.metadata.name }}"
+
+    - name: Count the Cilium agent pods
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: "{{ cilium_namespace }}"
+        label_selectors: [k8s-app=cilium]
+        kubeconfig: /etc/kubernetes/admin.conf
+      register: _cilium_agents
+
+    - name: Remove a leftover pre-flight release
+      kubernetes.core.helm:
+        name: cilium-preflight
+        release_namespace: "{{ cilium_namespace }}"
+        kubeconfig: /etc/kubernetes/admin.conf
+        state: absent
+        wait: true
+
+    # Keep k8sServiceHost and k8sServicePort in line with templates/cilium-values.yaml.j2.
+    # kube-proxy replacement needs them.
+    - name: Install the pre-flight release
+      kubernetes.core.helm:
+        name: cilium-preflight
+        chart_ref: cilium/cilium
+        chart_version: "{{ cilium_version }}"
+        release_namespace: "{{ cilium_namespace }}"
+        kubeconfig: /etc/kubernetes/admin.conf
+        values:
+          preflight:
+            enabled: true
+          agent: false
+          operator:
+            enabled: false
+          k8sServiceHost: "{{ k8s_controller }}"
+          k8sServicePort: "6443"
+        state: present
+
+    - name: Wait for the pre-flight DaemonSet
+      kubernetes.core.k8s_info:
+        kind: DaemonSet
+        name: cilium-pre-flight-check
+        namespace: "{{ cilium_namespace }}"
+        kubeconfig: /etc/kubernetes/admin.conf
+      register: _cilium_pf_ds
+      until: >-
+        _cilium_pf_ds.resources | length == 1
+        and _cilium_pf_ds.resources[0].status.numberReady | default(0) | int == _cilium_agents.resources | length
+      retries: 60
+      delay: 10
+      failed_when: false
+
+    - name: Wait for the pre-flight Deployment
+      kubernetes.core.k8s_info:
+        kind: Deployment
+        name: cilium-pre-flight-check
+        namespace: "{{ cilium_namespace }}"
+        kubeconfig: /etc/kubernetes/admin.conf
+      register: _cilium_pf_deploy
+      until: >-
+        _cilium_pf_deploy.resources | length == 1
+        and _cilium_pf_deploy.resources[0].status.readyReplicas | default(0) | int == 1
+      retries: 60
+      delay: 10
+      failed_when: false
+
+    - name: Require the pre-flight check to pass
+      ansible.builtin.assert:
+        that:
+          - _cilium_pf_ds.resources | length == 1
+          - _cilium_pf_ds.resources[0].status.numberReady | default(0) | int == _cilium_agents.resources | length
+          - _cilium_pf_deploy.resources | length == 1
+          - _cilium_pf_deploy.resources[0].status.readyReplicas | default(0) | int == 1
+        fail_msg: >-
+          Cilium pre-flight failed after 10 minutes: DaemonSet cilium-pre-flight-check is
+          {{ _cilium_pf_ds.resources[0].status.numberReady | default(0) if _cilium_pf_ds.resources | length else 0 }}/{{ _cilium_agents.resources | length }} ready,
+          Deployment is {{ _cilium_pf_deploy.resources[0].status.readyReplicas | default(0) if _cilium_pf_deploy.resources | length else 0 }}/1 ready.
+          Look at the pods with kubectl -n {{ cilium_namespace }} get pods -l k8s-app=cilium-pre-flight-check
+          and the logs of the cilium-pre-flight-check Deployment for the failing policy or identity.
+          Cilium was not upgraded.
+        success_msg: Cilium pre-flight passed
+  always:
+    - name: Remove the pre-flight release
+      kubernetes.core.helm:
+        name: cilium-preflight
+        release_namespace: "{{ cilium_namespace }}"
+        kubeconfig: /etc/kubernetes/admin.conf
+        state: absent
+        wait: true

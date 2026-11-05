@@ -81,6 +81,25 @@
   roles:
     - role: helm
 
+- name: Cilium pre-flight check
+  hosts:
+    - controllers
+  run_once: true
+  any_errors_fatal: true
+  become: true
+  tags:
+    - cluster
+    - cni
+    - cilium-preflight
+  tasks:
+    - name: Check that Cilium can be upgraded
+      ansible.builtin.include_role:
+        name: cilium
+        tasks_from: preflight.yaml
+      when:
+        - k8s_cni == 'cilium'
+        - inventory_hostname == k8s_controller
+
 - name: configure CNI
   hosts:
     - controllers
