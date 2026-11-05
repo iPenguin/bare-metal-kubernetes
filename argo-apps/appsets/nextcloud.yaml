@@ -28,7 +28,7 @@ spec:
       sources:
         - repoURL: 'https://nextcloud.github.io/helm'
           chart: nextcloud
-          targetRevision: 9.0.4
+          targetRevision: 9.1.4
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/nextcloud/{{.path.basename}}/values.yaml'
