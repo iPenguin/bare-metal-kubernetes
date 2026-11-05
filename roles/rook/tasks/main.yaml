@@ -81,4 +81,43 @@
       kubernetes.core.k8s:
         src: /tmp/rook-toolbox.yaml
         state: present
+
+    # the dashboard serves a self-signed cert, so Traefik skips verifying it
+    - name: Create Traefik ServersTransport for the Ceph dashboard
+      kubernetes.core.k8s:
+        kubeconfig: /etc/kubernetes/admin.conf
+        state: present
+        definition:
+          apiVersion: traefik.io/v1alpha1
+          kind: ServersTransport
+          metadata:
+            name: ceph-dashboard
+            namespace: "{{ rook_namespace }}"
+          spec:
+            insecureSkipVerify: true
+
+    # an IngressRoute, because Traefik only reads the serverstransport annotation
+    # from a Service and Rook owns the dashboard Service
+    - name: Expose the Ceph dashboard through Traefik
+      kubernetes.core.k8s:
+        kubeconfig: /etc/kubernetes/admin.conf
+        state: present
+        definition:
+          apiVersion: traefik.io/v1alpha1
+          kind: IngressRoute
+          metadata:
+            name: ceph-dashboard
+            namespace: "{{ rook_namespace }}"
+          spec:
+            entryPoints:
+              - websecure
+            routes:
+              - match: "Host(`ceph.{{ lan_domain }}`)"
+                kind: Rule
+                services:
+                  - name: rook-ceph-mgr-dashboard
+                    port: 8443
+                    scheme: https
+                    serversTransport: ceph-dashboard
+            tls: {}
 ...

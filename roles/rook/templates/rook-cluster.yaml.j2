@@ -34,7 +34,8 @@ cephClusterSpec:
         enabled: true
   dashboard:
     enabled: true
-    ssl: false
+    # SAML SSO needs the mgr to see https requests, so Traefik talks https to it
+    ssl: true
   network:
     connections:
       encryption:
@@ -125,15 +126,7 @@ cephClusterSpec:
     # wait until healthy
     pgHealthCheckTimeout: 0
 
-ingress:
-  dashboard:
-    host:
-      name: ceph.{{ lan_domain }}
-      path: /
-    ingressClassName: traefik
-    tls:
-      - hosts:
-          - ceph.{{ lan_domain }}
+# the dashboard is exposed by the IngressRoute in tasks/main.yaml, not the chart's ingress
 
 cephBlockPools:
   - name: ceph-blockpool

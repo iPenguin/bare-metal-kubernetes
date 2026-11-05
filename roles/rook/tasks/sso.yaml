@@ -10,8 +10,8 @@
 # Keycloak's IdP metadata says it wants signed authn requests, and python3-saml then
 # refuses settings that have no SP certificate, so setup needs one. The mgr reads the
 # cert and key from its own filesystem, so they are copied to the active mgr pod and
-# removed again. Keycloak does not verify the signature (client signature is off), so
-# a new cert is made on every run.
+# removed again. With a cert Ceph requires signed and encrypted assertions, so Keycloak
+# gets the same cert below. A new cert is made on every run and both sides follow it.
 - name: Configure Ceph dashboard SAML SSO
   ansible.builtin.shell:
     executable: /bin/bash
@@ -33,8 +33,131 @@
         {{ (keycloak.url ~ '/realms/' ~ keycloak.realm ~ '/protocol/saml/descriptor') | quote }} \
         username {{ (keycloak.url ~ '/realms/' ~ keycloak.realm) | quote }} \
         /tmp/sso-sp.crt /tmp/sso-sp.key >/dev/null
+      kc exec $tools -- cat "$d/sp.crt"
   register: _ceph_sso_setup
   changed_when: true
+
+- name: Keep the SP certificate as one base64 line for Keycloak
+  ansible.builtin.set_fact:
+    _ceph_sp_cert: "{{ _ceph_sso_setup.stdout_lines | select('match', '^[A-Za-z0-9+/=]+$') | join('') }}"
+
+- name: Check the SP certificate was captured
+  ansible.builtin.assert:
+    that: _ceph_sp_cert | length > 500
+    fail_msg: "no certificate in the setup output, so Keycloak could not encrypt assertions"
+
+- name: Get Keycloak passwords
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: keycloak-passwords
+    namespace: keycloak
+  register: _keycloak_secrets
+
+- name: Create Ceph dashboard SAML client in Keycloak
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  community.general.keycloak_client:
+    auth_keycloak_url: "{{ keycloak.url }}"
+    auth_username: "{{ keycloak.admin_username }}"
+    auth_password: "{{ _keycloak_secrets.resources[0].data['adminPassword'] | b64decode }}"
+    auth_realm: "{{ keycloak.admin_realm }}"
+    realm: "{{ keycloak.realm }}"
+    state: present
+    client_id: "https://ceph.{{ lan_domain }}/auth/saml2/metadata"
+    name: ceph
+    protocol: saml
+    enabled: true
+    root_url: "https://ceph.{{ lan_domain }}"
+    base_url: "https://ceph.{{ lan_domain }}"
+    redirect_uris:
+      - "https://ceph.{{ lan_domain }}/auth/saml2"
+    attributes:
+      saml_name_id_format: username
+      saml_force_name_id_format: "true"
+      saml.server.signature: "true"
+      saml.assertion.signature: "true"
+      saml.client.signature: "false"
+      saml.encrypt: "true"
+      saml.encryption.certificate: "{{ _ceph_sp_cert }}"
+      saml.force.post.binding: "true"
+      saml_single_logout_service_url_redirect: "https://ceph.{{ lan_domain }}/auth/saml2/logout"
+    protocol_mappers:
+      - name: username
+        protocol: saml
+        protocolMapper: saml-user-property-mapper
+        config:
+          user.attribute: username
+          attribute.name: username
+          attribute.nameformat: Basic
+          friendly.name: username
+  register: _ceph_kc_client
+  no_log: true
+
+- name: Check Keycloak stored the SP certificate
+  ansible.builtin.assert:
+    that: "'saml.encryption.certificate' in _ceph_kc_client.end_state.attributes"
+    fail_msg: "Keycloak dropped saml.encryption.certificate"
+
+# python3-saml rejects a response with duplicate Attribute names. The default role_list
+# and saml_organization scopes add attributes Ceph does not use, and Keycloak ignores
+# defaultClientScopes on a client update, so they are detached with the admin API.
+- name: Get a Keycloak admin token
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/realms/{{ keycloak.admin_realm }}/protocol/openid-connect/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      client_id: admin-cli
+      grant_type: password
+      username: "{{ keycloak.admin_username }}"
+      password: "{{ _keycloak_secrets.resources[0].data['adminPassword'] | b64decode }}"
+  register: _kc_token
+  no_log: true
+  changed_when: false
+
+- name: List the Ceph client default scopes
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients/{{ _ceph_kc_client.end_state.id }}/default-client-scopes"
+    headers:
+      Authorization: "Bearer {{ _kc_token.json.access_token }}"
+  register: _ceph_kc_scopes
+  no_log: true
+  changed_when: false
+
+- name: Detach the unused default scopes from the Ceph client
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  ansible.builtin.uri:
+    url: "{{ keycloak.url }}/admin/realms/{{ keycloak.realm }}/clients/{{ _ceph_kc_client.end_state.id }}/default-client-scopes/{{ item.id }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ _kc_token.json.access_token }}"
+    status_code: 204
+  loop: "{{ _ceph_kc_scopes.json | selectattr('name', 'in', ['role_list', 'saml_organization']) | list }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Check Ceph dashboard SSO status
   ansible.builtin.command:
