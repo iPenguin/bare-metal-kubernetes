@@ -33,7 +33,7 @@ spec:
           ref: valuesSrc
         - repoURL: 'https://helm.goharbor.io'
           chart: harbor
-          targetRevision: 1.17.1
+          targetRevision: 1.18.4
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/harbor/values.yaml'
