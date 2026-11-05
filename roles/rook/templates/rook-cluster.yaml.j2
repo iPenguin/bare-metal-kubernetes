@@ -19,6 +19,16 @@ cephClusterSpec:
     image: quay.io/ceph/ceph:v{{ ceph_version }}
     allowUnsupported: false
 
+  # CephX key rotation for the Ceph CVE fix (needs Rook >= 1.19.9).
+  # keyGeneration must be higher than status.cephx.daemon generation on the CephCluster.
+  # Rotates mon, mgr, osd, mds, rgw, crash and exporter keys to aes256k. Leave csi alone
+  # (aes256k CSI keys need kernel >= 7.0 on every node). Do not set allowedCiphers yet.
+  security:
+    cephx:
+      daemon:
+        keyRotationPolicy: KeyGeneration
+        keyGeneration: 2
+
   # Important: clear this folder on the host if you recreate the cluster
   dataDirHostPath: /var/lib/rook
 

@@ -6,7 +6,7 @@
 
 - name: Download k8s gpg keys
   ansible.builtin.uri:
-    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/Release.key
+    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/Release.key
     dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
     status_code:
       - 200
@@ -21,7 +21,7 @@
   ansible.builtin.blockinfile:
     path: /etc/apt/sources.list.d/kubernetes.list
     block: |
-      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version[:-2] }}/deb/ /
+      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
     create: yes
     state: present
 
