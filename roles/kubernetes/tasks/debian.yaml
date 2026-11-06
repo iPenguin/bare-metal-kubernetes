@@ -31,9 +31,9 @@
 - name: install kubectl kubeadm and kubelet
   ansible.builtin.apt:
     name:
-      - kubeadm={{ kubernetes_version }}-1.1
-      - kubectl={{ kubernetes_version }}-1.1
-      - kubelet={{ kubernetes_version }}-1.1
+      - kubeadm={{ kubernetes_version }}-*
+      - kubectl={{ kubernetes_version }}-*
+      - kubelet={{ kubernetes_version }}-*
     allow_change_held_packages: yes
     state: present
     update_cache: yes
