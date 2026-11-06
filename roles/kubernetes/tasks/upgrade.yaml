@@ -109,7 +109,7 @@
       - node
       - "{{ inventory_hostname }}"
       - -o
-      - "jsonpath={.spec.unschedulable}"
+      - "jsonpath={.spec.unschedulable}|{.metadata.annotations.milco\\.casa/k8s-upgrade-cordon}"
   register: _node_precordon_raw
   changed_when: false
   delegate_to: "{{ k8s_controller }}"
@@ -117,7 +117,11 @@
 
 - name: Set pre-cordon fact
   ansible.builtin.set_fact:
-    _k8s_upgrade_was_cordoned: "{{ _node_precordon_raw.stdout | bool }}"
+    # A cordon this playbook made (marked by the annotation, e.g. left by a
+    # failed run) is not a maintenance cordon, so the node gets uncordoned.
+    _k8s_upgrade_was_cordoned: >-
+      {{ (_node_precordon_raw.stdout.split('|')[0] | bool)
+         and _node_precordon_raw.stdout.split('|')[1] != 'true' }}
 
 - name: Pre-mutation per-node safety checks (cgroup for 1.35+)
   when: kubernetes_version is version('1.35.0', '>=')
@@ -259,6 +263,21 @@
 
 - name: Upgrade node with drain, packages, kubeadm, runtime, kubelet
   block:
+    - name: Mark that this playbook owns the cordon
+      when: not (_k8s_upgrade_was_cordoned | bool)
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - annotate
+          - --overwrite
+          - node
+          - "{{ inventory_hostname }}"
+          - milco.casa/k8s-upgrade-cordon=true
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
     - name: Drain node (respect PDBs; no force-delete; deletes emptyDir data)
       ansible.builtin.command:
         argv:
@@ -581,6 +600,20 @@
           - /etc/kubernetes/admin.conf
           - uncordon
           - "{{ inventory_hostname }}"
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Remove the playbook cordon marker
+      when: not (_k8s_upgrade_was_cordoned | bool)
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - annotate
+          - node
+          - "{{ inventory_hostname }}"
+          - milco.casa/k8s-upgrade-cordon-
       delegate_to: "{{ k8s_controller }}"
       become: true
 
