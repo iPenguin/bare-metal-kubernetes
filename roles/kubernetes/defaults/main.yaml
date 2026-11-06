@@ -18,6 +18,9 @@ k8s_upgrade_ack_cgroupv2: false
 k8s_upgrade_ack_cgroup_drivers: false
 k8s_upgrade_workers_only: false
 k8s_upgrade_drain_timeout: 600s
+# Re-runs: skip nodes already on kubernetes_version/crio_version (packages +
+# reported kubelet). Set false to force drain/reinstall on every node.
+k8s_upgrade_skip_current: true
 k8s_upgrade_node_ready_timeout: 300s
 k8s_upgrade_cilium_namespace: "{{ cilium_namespace | default('kube-system') }}"
 k8s_upgrade_rook_namespace: "{{ rook_namespace | default('rook-ceph') }}"

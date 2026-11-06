@@ -109,7 +109,7 @@
       - node
       - "{{ inventory_hostname }}"
       - -o
-      - "jsonpath={.spec.unschedulable}|{.metadata.annotations.milco\\.casa/k8s-upgrade-cordon}"
+      - "jsonpath={.spec.unschedulable}|{.metadata.annotations.milco\\.casa/k8s-upgrade-cordon}|{.status.nodeInfo.kubeletVersion}"
   register: _node_precordon_raw
   changed_when: false
   delegate_to: "{{ k8s_controller }}"
@@ -122,6 +122,185 @@
     _k8s_upgrade_was_cordoned: >-
       {{ (_node_precordon_raw.stdout.split('|')[0] | bool)
          and _node_precordon_raw.stdout.split('|')[1] != 'true' }}
+    _k8s_upgrade_node_unschedulable: "{{ _node_precordon_raw.stdout.split('|')[0] | bool }}"
+    _k8s_upgrade_cordon_marker: "{{ _node_precordon_raw.stdout.split('|')[1] | default('') }}"
+    _k8s_upgrade_kubelet_reported: "{{ _node_precordon_raw.stdout.split('|')[2] | default('') }}"
+
+- name: Skip or resume when this node is already at the pinned versions
+  when: k8s_upgrade_skip_current | bool
+  block:
+    - name: Query installed kubeadm package version
+      ansible.builtin.command:
+        argv:
+          - dpkg-query
+          - -W
+          - '-f=${Version}'
+          - kubeadm
+      register: _pkg_kubeadm_ver
+      changed_when: false
+      failed_when: false
+
+    - name: Query installed kubelet package version
+      ansible.builtin.command:
+        argv:
+          - dpkg-query
+          - -W
+          - '-f=${Version}'
+          - kubelet
+      register: _pkg_kubelet_ver
+      changed_when: false
+      failed_when: false
+
+    - name: Query installed cri-o package version
+      when: k8s_runtime == 'crio'
+      ansible.builtin.command:
+        argv:
+          - dpkg-query
+          - -W
+          - '-f=${Version}'
+          - cri-o
+      register: _pkg_crio_ver
+      changed_when: false
+      failed_when: false
+
+    - name: Read kubeadm-config ClusterConfiguration on the apply host
+      when: inventory_hostname == k8s_controller
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - -n
+          - kube-system
+          - get
+          - configmap
+          - kubeadm-config
+          - -o
+          - jsonpath={.data.ClusterConfiguration}
+      register: _kubeadm_cm_cluster
+      changed_when: false
+      failed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Decide whether this host is already current
+      ansible.builtin.set_fact:
+        _k8s_upgrade_host_current: >-
+          {{
+            (
+              (_pkg_kubeadm_ver.rc | default(1)) == 0
+              and (
+                (_pkg_kubeadm_ver.stdout | default('') | trim).split(':')[-1].split('-')[0]
+                == kubernetes_version
+              )
+            )
+            and (
+              (_pkg_kubelet_ver.rc | default(1)) == 0
+              and (
+                (_pkg_kubelet_ver.stdout | default('') | trim).split(':')[-1].split('-')[0]
+                == kubernetes_version
+              )
+            )
+            and (
+              (_k8s_upgrade_kubelet_reported | default('') | trim)
+              == ('v' ~ kubernetes_version)
+            )
+            and (
+              k8s_runtime != 'crio'
+              or (
+                (_pkg_crio_ver.rc | default(1)) == 0
+                and (
+                  (_pkg_crio_ver.stdout | default('') | trim).split(':')[-1].split('-')[0]
+                  == crio_version
+                )
+              )
+            )
+            and (
+              inventory_hostname != k8s_controller
+              or (
+                (
+                  (
+                    (_kubeadm_cm_cluster.stdout | default('') | trim | length) > 0
+                  )
+                  and (
+                    (
+                      (_kubeadm_cm_cluster.stdout | from_yaml).kubernetesVersion
+                      | default('')
+                    )
+                    == ('v' ~ kubernetes_version)
+                  )
+                )
+              )
+            )
+          }}
+
+    - name: Resume after a mid-upgrade failure past install
+      when:
+        - _k8s_upgrade_host_current | bool
+        - _k8s_upgrade_node_unschedulable | bool
+        - _k8s_upgrade_cordon_marker == 'true'
+      block:
+        - name: Wait for this already-upgraded node to be Ready before uncordon
+          ansible.builtin.command:
+            argv:
+              - kubectl
+              - --kubeconfig
+              - /etc/kubernetes/admin.conf
+              - wait
+              - --for=condition=Ready
+              - node/{{ inventory_hostname }}
+              - --timeout={{ k8s_upgrade_node_ready_timeout }}
+          changed_when: false
+          delegate_to: "{{ k8s_controller }}"
+          become: true
+
+        - name: Uncordon playbook-owned cordon on already-upgraded node
+          ansible.builtin.command:
+            argv:
+              - kubectl
+              - --kubeconfig
+              - /etc/kubernetes/admin.conf
+              - uncordon
+              - "{{ inventory_hostname }}"
+          delegate_to: "{{ k8s_controller }}"
+          become: true
+
+        - name: Remove playbook cordon marker after resume uncordon
+          ansible.builtin.command:
+            argv:
+              - kubectl
+              - --kubeconfig
+              - /etc/kubernetes/admin.conf
+              - annotate
+              - node
+              - "{{ inventory_hostname }}"
+              - milco.casa/k8s-upgrade-cordon-
+          delegate_to: "{{ k8s_controller }}"
+          become: true
+
+        - name: Note resumed already-upgraded node
+          ansible.builtin.debug:
+            msg: >-
+              {{ inventory_hostname }} is already on v{{ kubernetes_version }}
+              (packages + kubelet); cleared playbook cordon and skipping
+              drain/reinstall.
+
+    - name: Note skip of already-upgraded node
+      when:
+        - _k8s_upgrade_host_current | bool
+        - not (
+            (_k8s_upgrade_node_unschedulable | bool)
+            and _k8s_upgrade_cordon_marker == 'true'
+          )
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }} is already on v{{ kubernetes_version }}
+          (packages + kubelet); skipping drain/reinstall.
+          Admin cordons without the playbook marker are left unchanged.
+
+    - name: End host when already at the pinned versions
+      when: _k8s_upgrade_host_current | bool
+      ansible.builtin.meta: end_host
 
 - name: Pre-mutation per-node safety checks (cgroup for 1.35+)
   when: kubernetes_version is version('1.35.0', '>=')

@@ -3,6 +3,11 @@
 crds:
   enabled: true
 
+# Quay, not Docker Hub: no anonymous pull rate limit, and nothing in-cluster
+# (Harbor) is needed before Rook is up on a fresh bootstrap.
+image:
+  repository: quay.io/rook/ceph
+
 nodeSelector:
   {{ lan_domain }}/node-role: storage-node
 tolerations:

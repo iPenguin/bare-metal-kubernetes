@@ -23,6 +23,10 @@
 # runtime operations and workload/network health. Post gates verify recovery.
 # Only one node at a time.
 #
+# Already-upgraded nodes are skipped on re-run (packages + kubelet match
+# pins; playbook-marked cordons are cleared). Force every node with:
+#   -e k8s_upgrade_skip_current=false
+#
 # Plays are separate so host order is guaranteed: prerequisites on the first
 # controller, then all controllers (inventory order, serial 1), then workers.
 
