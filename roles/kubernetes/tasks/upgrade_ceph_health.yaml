@@ -1,0 +1,56 @@
+---
+# Ceph health allowlist gate via rook-ceph-tools (repo: rook_namespace/deploy/rook-ceph-tools).
+# Vars: k8s_upgrade_ceph_gate_retries (default 1), k8s_upgrade_ceph_gate_delay (default 10).
+# Policy: HEALTH_OK pass; HEALTH_WARN only if every check key is in
+# k8s_upgrade_ceph_warn_allowlist (BLUESTORE_SLOW_OP_ALERT); else fail.
+- name: Fetch and evaluate Ceph health JSON via rook-ceph-tools
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - /etc/kubernetes/admin.conf
+      - -n
+      - "{{ k8s_upgrade_rook_namespace }}"
+      - exec
+      - deploy/rook-ceph-tools
+      - --
+      - ceph
+      - health
+      - detail
+      - --format
+      - json
+  register: _ceph_health_raw
+  changed_when: false
+  delegate_to: "{{ k8s_controller }}"
+  become: true
+  retries: "{{ k8s_upgrade_ceph_gate_retries | default(1) }}"
+  delay: "{{ k8s_upgrade_ceph_gate_delay | default(10) }}"
+  until:
+    - _ceph_health_raw.rc == 0
+    - >-
+      {{
+        (
+          (_ceph_health_raw.stdout | from_json).status == 'HEALTH_OK'
+        ) or (
+          (_ceph_health_raw.stdout | from_json).status == 'HEALTH_WARN'
+          and (
+            ((_ceph_health_raw.stdout | from_json).checks | default({}) | dict2items
+             | map(attribute='key')
+             | reject('in', k8s_upgrade_ceph_warn_allowlist)
+             | list | length) == 0
+          )
+        )
+      }}
+
+- name: Record Ceph gate result for messaging
+  ansible.builtin.set_fact:
+    _ceph_status: "{{ (_ceph_health_raw.stdout | from_json).status }}"
+    _ceph_disallowed: >-
+      {{
+        ((_ceph_health_raw.stdout | from_json).checks | default({}) | dict2items
+         | map(attribute='key')
+         | reject('in', k8s_upgrade_ceph_warn_allowlist)
+         | list)
+        if ((_ceph_health_raw.stdout | from_json).status == 'HEALTH_WARN')
+        else []
+      }}

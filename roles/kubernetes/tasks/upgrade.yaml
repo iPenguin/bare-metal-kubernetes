@@ -1,78 +1,439 @@
 ---
-- name: Remove existing k8s gpg key
-  ansible.builtin.file:
-    path: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
-    state: absent
+# Per-node kubeadm upgrade. Controllers play runs first (serial 1, inventory
+# order); workers play second. First controller (k8s_controller) runs
+# `kubeadm upgrade apply --yes`; every other host runs `kubeadm upgrade node`.
 
-- name: Download k8s gpg keys
-  ansible.builtin.uri:
-    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/Release.key
-    dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
-    status_code:
-      - 200
-      - 304
+- name: Refuse to run if cluster prerequisites did not pass this playbook run
+  ansible.builtin.assert:
+    that:
+      - hostvars[k8s_controller]['k8s_upgrade_prereqs_ok'] | default(false) | bool
+    fail_msg: >-
+      Cluster prerequisites did not run or failed on {{ k8s_controller }}
+      (k8s_upgrade_prereqs_ok is not true). Run the full kubernetes-upgrade.yaml
+      entrypoint; do not skip the prerequisites play with --limit.
 
-- name: Remove existing k8s repo
-  ansible.builtin.file:
-    path: /etc/apt/sources.list.d/kubernetes.list
-    state: absent
+- name: Mark that the controllers play is running this invocation
+  when: inventory_hostname in groups['controllers']
+  ansible.builtin.set_fact:
+    k8s_upgrade_controllers_play_ran: true
+  run_once: true
+  delegate_to: "{{ k8s_controller }}"
+  delegate_facts: true
 
-- name: Configure k8s repo
-  ansible.builtin.blockinfile:
-    path: /etc/apt/sources.list.d/kubernetes.list
-    block: |
-      deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
-    create: yes
-    state: present
+- name: Verify play host sequence for controllers
+  when: inventory_hostname in groups['controllers']
+  ansible.builtin.assert:
+    that:
+      - ansible_play_hosts_all == (groups['controllers'] | list)
+      - ansible_play_hosts_all | first == k8s_controller
+      - k8s_controller == (groups['controllers'] | first)
+    fail_msg: >-
+      Controller play hosts {{ ansible_play_hosts_all }} must equal
+      groups['controllers']={{ groups['controllers'] | list }} with
+      k8s_controller={{ k8s_controller }} first. Do not --limit a subset of
+      controllers that skips the apply host.
 
-- name: Kubeadm upgrade
+- name: Confirm control-plane coverage at the start of the workers play
   when:
-    - inventory_hostname in groups['controllers']
+    - inventory_hostname in groups['workers']
+    - inventory_hostname == (groups['workers'] | first)
   block:
-    - name: Create controller info list
-      set_fact:
-        controller_info: "{{ controller_info | default([]) + [h] }}"
-      loop: "{{ groups['controllers'] }}"
-      vars:
-        raw_ipv6: "{{ lookup('dig', item, 'qtype=AAAA', wantlist=True) }}"
-        filtered_ipv6: "{{ raw_ipv6 | reject('match', '^(fe80::|fd)') | list }}"
-        h:
-          hostname: "{{ item }}"
-          ipv4: "{{ lookup('dig', item, 'qtype=A') }}"
-          ipv6: "{{ filtered_ipv6[0] }}"
+    - name: List control-plane nodes
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - get
+          - nodes
+          - -l
+          - node-role.kubernetes.io/control-plane
+          - -o
+          - json
+      register: _cp_nodes_json
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
 
-    - name: Update apt packages
+    - name: Parse control-plane node names and versions
+      ansible.builtin.set_fact:
+        _cp_names: "{{ (_cp_nodes_json.stdout | from_json)['items'] | map(attribute='metadata.name') | list }}"
+        _cp_bad: >-
+          {{
+            (_cp_nodes_json.stdout | from_json)['items']
+            | rejectattr('status.nodeInfo.kubeletVersion', 'equalto', 'v' ~ kubernetes_version)
+            | map(attribute='metadata.name')
+            | list
+          }}
+        _cp_missing: "{{ groups['controllers'] | difference((_cp_nodes_json.stdout | from_json)['items'] | map(attribute='metadata.name') | list) }}"
+
+    - name: Require full inventory controller coverage from the API
+      ansible.builtin.assert:
+        that:
+          - (_cp_names | length) == (groups['controllers'] | length)
+          - (_cp_missing | length) == 0
+          - (_cp_names | length) > 0
+        fail_msg: >-
+          Control-plane node list from the API ({{ _cp_names }}) does not
+          cover inventory controllers {{ groups['controllers'] | list }}
+          (missing {{ _cp_missing }}). Empty or partial CP lists fail this gate.
+
+    - name: Require every inventory controller already on the target version before workers
+      ansible.builtin.assert:
+        that:
+          - (_cp_bad | length) == 0
+        fail_msg: >-
+          Workers play: controllers not on v{{ kubernetes_version }}: {{ _cp_bad }}.
+          Finish the controllers play first. -e k8s_upgrade_workers_only=true is
+          only for a workers --limit after the control plane is already current;
+          it does not bypass this version check.
+
+    - name: Require workers-only ack when the controllers play did not run this invocation
+      when: not (hostvars[k8s_controller]['k8s_upgrade_controllers_play_ran'] | default(false) | bool)
+      ansible.builtin.assert:
+        that:
+          - k8s_upgrade_workers_only | bool
+        fail_msg: >-
+          Workers play is running but the controllers play did not run in this
+          playbook invocation (e.g. --limit workers). Pass
+          -e k8s_upgrade_workers_only=true only after CP is already on
+          v{{ kubernetes_version }} (version and coverage checks above must be green).
+
+- name: Record whether this node was already cordoned
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - /etc/kubernetes/admin.conf
+      - get
+      - node
+      - "{{ inventory_hostname }}"
+      - -o
+      - "jsonpath={.spec.unschedulable}"
+  register: _node_precordon_raw
+  changed_when: false
+  delegate_to: "{{ k8s_controller }}"
+  become: true
+
+- name: Set pre-cordon fact
+  ansible.builtin.set_fact:
+    _k8s_upgrade_was_cordoned: "{{ _node_precordon_raw.stdout | bool }}"
+
+- name: Pre-mutation per-node safety checks (cgroup for 1.35+)
+  when: kubernetes_version is version('1.35.0', '>=')
+  block:
+    - name: Read cgroup mount type before any mutation
+      ansible.builtin.command:
+        argv: [stat, -fc, '%T', /sys/fs/cgroup]
+      register: _cgroup_fs
+      changed_when: false
+
+    - name: Require cgroup2 before mutation
+      ansible.builtin.assert:
+        that:
+          - _cgroup_fs.stdout | trim == 'cgroup2fs'
+        fail_msg: >-
+          Kubernetes {{ kubernetes_version }} requires cgroup v2 on
+          {{ inventory_hostname }} before mutation (got
+          {{ _cgroup_fs.stdout | trim }}). Ack flags do not replace this check.
+
+- name: Pre-drain etcd quorum gate on controllers
+  when: inventory_hostname in groups['controllers']
+  ansible.builtin.include_tasks: upgrade_etcd_health.yaml
+
+- name: Pre-drain health gates
+  block:
+    - name: List nodes
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - get
+          - nodes
+          - -o
+          - json
+      register: _nodes_json
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Reset Ready-node accumulators
+      ansible.builtin.set_fact:
+        _ready_nodes: []
+        _cilium_ready_nodes: []
+
+    - name: Build Ready node list (includes the upgrade target)
+      ansible.builtin.set_fact:
+        _ready_nodes: "{{ _ready_nodes | default([]) + ([item.metadata.name] if (_is_ready | bool) else []) }}"
+      vars:
+        _is_ready: >-
+          {{
+            (item.status.conditions | default([])
+             | selectattr('type', 'equalto', 'Ready')
+             | map(attribute='status')
+             | first | default('False')) == 'True'
+          }}
+      loop: "{{ (_nodes_json.stdout | from_json)['items'] }}"
+      loop_control:
+        label: "{{ item.metadata.name }}"
+
+    - name: Require all nodes Ready before drain
+      ansible.builtin.assert:
+        that:
+          - _not_ready | length == 0
+        fail_msg: >-
+          Nodes not Ready before upgrading {{ inventory_hostname }}:
+          {{ _not_ready | join(', ') }}. Fix them first.
+      vars:
+        _all_names: "{{ (_nodes_json.stdout | from_json)['items'] | map(attribute='metadata.name') | list }}"
+        _not_ready: "{{ _all_names | difference(_ready_nodes | default([])) }}"
+
+    - name: Pre-drain Ceph health gate
+      ansible.builtin.include_tasks: upgrade_ceph_health.yaml
+      vars:
+        k8s_upgrade_ceph_gate_retries: 1
+
+    - name: List Cilium agent pods
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - -n
+          - "{{ k8s_upgrade_cilium_namespace }}"
+          - get
+          - pods
+          - -l
+          - k8s-app=cilium
+          - -o
+          - json
+      register: _cilium_pods
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Build nodes with a Ready Cilium agent
+      ansible.builtin.set_fact:
+        _cilium_ready_nodes: "{{ _cilium_ready_nodes | default([]) + ([item.spec.nodeName] if (_agent_ok | bool) else []) }}"
+      vars:
+        # Pod Ready condition + Running + nonempty containerStatuses all ready.
+        _agent_ok: >-
+          {{
+            item.status.phase | default('') == 'Running'
+            and (item.spec.nodeName | default('') | length) > 0
+            and (item.status.containerStatuses | default([]) | length) > 0
+            and (item.status.containerStatuses | map(attribute='ready') | select('equalto', false) | list | length) == 0
+            and (
+              (item.status.conditions | default([])
+               | selectattr('type', 'equalto', 'Ready')
+               | map(attribute='status')
+               | first | default('False')) == 'True'
+            )
+          }}
+      loop: "{{ (_cilium_pods.stdout | from_json)['items'] | default([]) }}"
+      loop_control:
+        label: "{{ item.metadata.name | default('?') }}"
+
+    - name: Require a Ready Cilium agent on every Ready node (including the target)
+      ansible.builtin.assert:
+        that:
+          - ((_cilium_pods.stdout | from_json)['items'] | default([]) | length) > 0
+          - (_ready_nodes | default([]) | length) > 0
+          - (_ready_nodes | difference(_cilium_ready_nodes | default([])) | length) == 0
+        fail_msg: >-
+          Cilium gate failed before upgrading {{ inventory_hostname }}.
+          Ready nodes={{ _ready_nodes | default([]) }}.
+          Nodes with Ready cilium agents={{ _cilium_ready_nodes | default([]) }}.
+          Missing agents on={{ _ready_nodes | default([]) | difference(_cilium_ready_nodes | default([])) }}.
+          Empty cilium pod lists fail this gate. Agents must be Running with
+          Pod Ready=True and nonempty ready containerStatuses.
+
+  rescue:
+    - name: Health gates failed; leave node state unchanged
+      ansible.builtin.fail:
+        msg: >-
+          Pre-drain health gates failed for {{ inventory_hostname }}.
+          Node cordon state was not changed by the upgrade block.
+          Cause: {{ ansible_failed_result.msg | default(ansible_failed_result) }}
+
+- name: Upgrade node with drain, packages, kubeadm, runtime, kubelet
+  block:
+    - name: Drain node (respect PDBs; no force-delete; deletes emptyDir data)
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - drain
+          - "{{ inventory_hostname }}"
+          - --ignore-daemonsets
+          - --delete-emptydir-data
+          - --timeout={{ k8s_upgrade_drain_timeout }}
+      register: _drain
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Remove existing k8s gpg key
+      ansible.builtin.file:
+        path: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
+        state: absent
+
+    - name: Download k8s gpg keys
+      ansible.builtin.uri:
+        url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/Release.key
+        dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc
+        status_code:
+          - 200
+          - 304
+
+    - name: Remove existing k8s repo
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        state: absent
+
+    - name: Configure k8s repo
+      ansible.builtin.blockinfile:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        block: |
+          deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
+        create: true
+        state: present
+
+    - name: Install kubeadm target version first
       ansible.builtin.apt:
         name:
           - kubeadm={{ kubernetes_version }}-1.1
-        allow_change_held_packages: yes
+        allow_change_held_packages: true
         state: present
-        update_cache: yes
+        update_cache: true
 
-    - name: Upload kubeadm upgrade configuration
+    - name: Upload kubeadm UpgradeConfiguration
       ansible.builtin.template:
-        src: ../templates/kubeadm-upgrade.yaml.j2
+        src: kubeadm-upgrade.yaml.j2
         dest: /root/kubeadm-upgrade.yaml
         owner: root
         group: root
-        mode: 0640
+        mode: "0640"
 
-    - name: Upgrade kubernetes
+    - name: Run non-mutating kubeadm upgrade plan on the first controller
       ansible.builtin.command:
-        cmd: kubeadm upgrade apply --config /root/kubeadm-upgrade.yaml -y v{{ kubernetes_version }}
+        argv:
+          - kubeadm
+          - upgrade
+          - plan
+          - --config
+          - /root/kubeadm-upgrade.yaml
+      register: _upgrade_plan
       changed_when: false
+      when: inventory_hostname == k8s_controller
 
-- name: Upgrade kubelet
-  block:
-    - name: Install kubectl kubeadm and kubelet
+    - name: Show kubeadm upgrade plan
+      ansible.builtin.debug:
+        var: _upgrade_plan.stdout_lines
+      when: inventory_hostname == k8s_controller
+
+    - name: Run non-mutating kubeadm upgrade diff on the first controller
+      ansible.builtin.command:
+        argv:
+          - kubeadm
+          - upgrade
+          - diff
+          - --config
+          - /root/kubeadm-upgrade.yaml
+      register: _upgrade_diff
+      changed_when: false
+      when: inventory_hostname == k8s_controller
+
+    - name: Show kubeadm upgrade diff
+      ansible.builtin.debug:
+        var: _upgrade_diff.stdout_lines
+      when: inventory_hostname == k8s_controller
+
+    - name: kubeadm upgrade apply on the first controller (noninteractive --yes, not forceUpgrade)
+      ansible.builtin.command:
+        argv:
+          - kubeadm
+          - upgrade
+          - apply
+          - --config
+          - /root/kubeadm-upgrade.yaml
+          - --yes
+      when: inventory_hostname == k8s_controller
+
+    - name: kubeadm upgrade node on remaining controllers and workers
+      ansible.builtin.command:
+        argv:
+          - kubeadm
+          - upgrade
+          - node
+          - --config
+          - /root/kubeadm-upgrade.yaml
+      when: inventory_hostname != k8s_controller
+
+    - name: Ensure CRI-O matches the pinned version while drained
+      when: k8s_runtime == 'crio'
+      block:
+        - name: Add CRI-O signing key for target minor
+          ansible.builtin.get_url:
+            url: https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version.split('.')[0:2] | join('.') }}/deb/Release.key
+            dest: /etc/apt/trusted.gpg.d/crio.asc
+            mode: "0644"
+            force: true
+
+        - name: Add CRI-O repo for target minor
+          ansible.builtin.apt_repository:
+            repo: deb [signed-by=/etc/apt/trusted.gpg.d/crio.asc] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version.split('.')[0:2] | join('.') }}/deb/ /
+            state: present
+            filename: cri-o
+
+        - name: Install pinned cri-o package
+          ansible.builtin.apt:
+            name:
+              - cri-o={{ crio_version }}-1.1
+            allow_change_held_packages: true
+            state: present
+            update_cache: true
+
+        - name: Hold cri-o
+          ansible.builtin.dpkg_selections:
+            name: cri-o
+            selection: hold
+
+        # Always restart once while drained so a prior failed restart cannot leave
+        # an old daemon active after a successful package install on retry.
+        # Restarts the runtime daemon on this drained node only; may temporarily
+        # disrupt runtime operations and workload/network health. Post gates verify
+        # recovery (other nodes keep serving).
+        - name: Restart crio once while drained
+          ansible.builtin.systemd:
+            name: crio
+            state: restarted
+            daemon_reload: true
+            enabled: true
+
+        - name: Require crio active
+          ansible.builtin.command:
+            argv: [systemctl, is-active, crio]
+          register: _crio_active_final
+          changed_when: false
+          failed_when: _crio_active_final.rc != 0
+
+        - name: Confirm runtime answers via crictl
+          ansible.builtin.command:
+            argv: [crictl, info]
+          register: _crictl_info
+          changed_when: false
+
+    - name: Install kubectl and kubelet at the target version
       ansible.builtin.apt:
         name:
           - kubeadm={{ kubernetes_version }}-1.1
           - kubectl={{ kubernetes_version }}-1.1
           - kubelet={{ kubernetes_version }}-1.1
-        allow_change_held_packages: yes
+        allow_change_held_packages: true
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Mark k8s packages as hold
       ansible.builtin.dpkg_selections:
@@ -83,25 +444,191 @@
         - kubectl
         - kubelet
 
-    - name: Upgrade all nodes
-      ansible.builtin.command:
-        cmd: kubeadm upgrade node
-
     # kubelet serving cert CSRs are approved by kubelet-csr-approver
     # (argo-apps/appsets/kubelet-csr-approver.yaml)
-    - name: Restart kubelet
-      ansible.builtin.service:
+    - name: Reload systemd and restart kubelet
+      ansible.builtin.systemd:
         name: kubelet
         state: restarted
+        daemon_reload: true
+        enabled: true
 
-- name: Get cluster status
-  connection: local
-  become: false
-  ansible.builtin.command:
-    cmd: kubectl get nodes
-  changed_when: false
-  register: cluster_status
+    - name: Wait for this node to become Ready
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - wait
+          - --for=condition=Ready
+          - node/{{ inventory_hostname }}
+          - --timeout={{ k8s_upgrade_node_ready_timeout }}
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
 
-- name: Show cluster status
-  ansible.builtin.debug:
-    msg: "{{ cluster_status.stdout }}"
+    - name: Hard-wait for kubeadm static pods on this controller
+      when: inventory_hostname in groups['controllers']
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - -n
+          - kube-system
+          - wait
+          - --for=condition=Ready
+          - pod
+          - -l
+          - "{{ item }}"
+          - --field-selector=spec.nodeName={{ inventory_hostname }}
+          - --timeout={{ k8s_upgrade_node_ready_timeout }}
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+      loop:
+        - tier=control-plane,component=kube-apiserver
+        - tier=control-plane,component=kube-controller-manager
+        - tier=control-plane,component=kube-scheduler
+        - tier=control-plane,component=etcd
+
+    # Advertise address / cert SAN: kubeadm.yaml.j2 sets localAPIEndpoint.advertiseAddress
+    # to host ipv4 and apiServer.extraArgs advertise-address / certSANs to controller
+    # ipv4s (and ansible_default_ipv4.address). Probe that address — not 127.0.0.1.
+    - name: Probe this controller API via admin.conf and this node's advertise IPv4
+      when: inventory_hostname in groups['controllers']
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - --server
+          - "https://{{ ansible_default_ipv4.address }}:6443"
+          - get
+          - --raw
+          - /readyz
+      register: _local_readyz
+      changed_when: false
+      retries: 30
+      delay: 5
+      until: >-
+        {{ (_local_readyz.rc | default(1)) == 0
+           and ((_local_readyz.stdout | default('') | trim) == 'ok') }}
+
+    - name: Post-upgrade etcd quorum gate on controllers
+      when: inventory_hostname in groups['controllers']
+      ansible.builtin.include_tasks: upgrade_etcd_health.yaml
+
+    - name: Wait for Cilium agent Ready on this node after runtime/kubelet work
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - -n
+          - "{{ k8s_upgrade_cilium_namespace }}"
+          - get
+          - pods
+          - -l
+          - k8s-app=cilium
+          - --field-selector
+          - "spec.nodeName={{ inventory_hostname }}"
+          - -o
+          - json
+      register: _cilium_wait
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+      retries: "{{ ((k8s_upgrade_node_ready_timeout | regex_replace('[^0-9]', '') | int) / 5) | int }}"
+      delay: 5
+      vars:
+        # Same readiness rules as pre-drain _agent_ok (Pod Ready + Running +
+        # nonempty ready containerStatuses). Empty items / empty statuses => 0.
+        _cilium_ready_count: >-
+          {%- set ns = namespace(n=0) -%}
+          {%- for p in ((_cilium_wait.stdout | default('{}') | from_json)['items'] | default([])) -%}
+            {%- set statuses = p.status.containerStatuses | default([]) -%}
+            {%- set phase_ok = (p.status.phase | default('')) == 'Running' -%}
+            {%- set statuses_ok = (statuses | length) > 0
+                and (statuses | map(attribute='ready') | select('equalto', false) | list | length) == 0 -%}
+            {%- set ready_cond = (
+                  (p.status.conditions | default([])
+                   | selectattr('type', 'equalto', 'Ready')
+                   | map(attribute='status')
+                   | first | default('False')) == 'True'
+                ) -%}
+            {%- if phase_ok and statuses_ok and ready_cond -%}
+              {%- set ns.n = ns.n + 1 -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ ns.n }}
+      until:
+        - (_cilium_wait.rc | default(1)) == 0
+        - (_cilium_ready_count | int) >= 1
+
+    - name: Post-upgrade Ceph health gate before next node (modest retries)
+      ansible.builtin.include_tasks: upgrade_ceph_health.yaml
+      vars:
+        k8s_upgrade_ceph_gate_retries: 6
+        k8s_upgrade_ceph_gate_delay: 10
+
+    - name: Uncordon node when it was not pre-cordoned for maintenance
+      when: not (_k8s_upgrade_was_cordoned | bool)
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - uncordon
+          - "{{ inventory_hostname }}"
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Leave pre-cordoned node cordoned
+      when: _k8s_upgrade_was_cordoned | bool
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }} was already cordoned before this upgrade;
+          leaving it cordoned.
+
+    - name: Show cluster nodes after this host
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - get
+          - nodes
+          - -o
+          - wide
+      register: _cluster_status
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Cluster status
+      ansible.builtin.debug:
+        msg: "{{ _cluster_status.stdout_lines }}"
+
+  rescue:
+    - name: Attempt to cordon the failed node
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - /etc/kubernetes/admin.conf
+          - cordon
+          - "{{ inventory_hostname }}"
+      register: _rescue_cordon
+      failed_when: false
+      changed_when: false
+      delegate_to: "{{ k8s_controller }}"
+      become: true
+
+    - name: Fail with original cause and cordon outcome
+      ansible.builtin.fail:
+        msg: >-
+          Upgrade failed on {{ inventory_hostname }}.
+          Original cause: {{ ansible_failed_result.msg | default(ansible_failed_result.stderr | default(ansible_failed_result.stdout | default(ansible_failed_result))) }}.
+          Post-failure cordon: {{ 'succeeded' if (_rescue_cordon.rc | default(1)) == 0 else ('FAILED rc=' ~ (_rescue_cordon.rc | default('?'))) }}.
+          Do not force-delete workloads or use Ceph noout as a drain substitute.

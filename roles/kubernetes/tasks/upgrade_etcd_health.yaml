@@ -1,0 +1,31 @@
+---
+# Etcd member/cluster health via this node's static pod. No package mutation.
+# Requires: inventory_hostname is a controller.
+- name: Check etcd endpoint health/quorum via static pod on {{ inventory_hostname }}
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - /etc/kubernetes/admin.conf
+      - -n
+      - kube-system
+      - exec
+      - "etcd-{{ inventory_hostname }}"
+      - --
+      - /bin/sh
+      - -c
+      - >-
+        ETCDCTL_API=3 etcdctl
+        --endpoints=https://127.0.0.1:2379
+        --cacert=/etc/kubernetes/pki/etcd/ca.crt
+        --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt
+        --key=/etc/kubernetes/pki/etcd/healthcheck-client.key
+        endpoint health --cluster
+  register: _etcd_health
+  changed_when: false
+  failed_when: >-
+    (_etcd_health.rc != 0)
+    or ('unhealthy' in (_etcd_health.stdout | lower))
+    or ('unhealthy' in (_etcd_health.stderr | default('') | lower))
+  delegate_to: "{{ k8s_controller }}"
+  become: true

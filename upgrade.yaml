@@ -272,6 +272,21 @@
           {%- endfor -%}
           {{ plan | to_json }}
 
+    - name: Defer standalone CRI-O rolling when kubernetes-upgrade will handle runtime
+      when: "'kubernetes' in _plan.manual and 'crio' in _plan.run"
+      block:
+        - name: Remove crio from automatic rolling steps
+          ansible.builtin.set_fact:
+            _plan: "{{ _plan | combine({'run': _plan.run | reject('equalto', 'crio') | list}, recursive=True) }}"
+
+        - name: Explain CRI-O deferral
+          ansible.builtin.debug:
+            msg: >-
+              crio_version also changed, but standalone CRI-O rolling is deferred.
+              kubernetes-upgrade.yaml upgrades CRI-O while each node is drained.
+              Do not pass -e upgrade_optin=crio unless you intentionally want the
+              separate undrained crio role path in addition.
+
     - name: Build the step list
       ansible.builtin.set_fact:
         _steps: "{{ _steps_json | from_json }}"
@@ -350,7 +365,8 @@
           SKIPPED (opt-in, add -e upgrade_optin={{ n }}): {{ n }} ({{ upgrade_components[n].variables | intersect(_changed_vars) | join(', ') or 'pending' }})
           {% endfor %}
           {% for n in _plan.manual %}
-          MANUAL: {{ n }} changed. Run `{{ upgrade_components[n].command }}` yourself, then -e upgrade_ack={{ n }}
+          MANUAL: {{ n }} changed. Run `{{ upgrade_components[n].command }}` yourself
+          {% if n == 'kubernetes' %}(after etcd snapshot, pass -e k8s_upgrade_ack_etcd_snapshot=true; never bake that ack into a wrapper). {% endif %}Then -e upgrade_ack={{ n }}
           {% endfor %}
           {% for v in _changed_vars if v in upgrade_not_deployed %}
           NO EFFECT: {{ v }}: {{ upgrade_not_deployed[v] }}

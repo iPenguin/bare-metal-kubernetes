@@ -11,3 +11,18 @@ k8s_cert_renewal_log_path: /var/log/kubeadm-cert-renewal.log
 k8s_cert_renewal_minute: 15
 
 k8s_cert_renewal_hour_base: 2
+
+# kubernetes-upgrade.yaml (loaded via include_role)
+k8s_upgrade_ack_etcd_snapshot: false
+k8s_upgrade_ack_cgroupv2: false
+k8s_upgrade_ack_cgroup_drivers: false
+k8s_upgrade_workers_only: false
+k8s_upgrade_drain_timeout: 600s
+k8s_upgrade_node_ready_timeout: 300s
+k8s_upgrade_cilium_namespace: "{{ cilium_namespace | default('kube-system') }}"
+k8s_upgrade_rook_namespace: "{{ rook_namespace | default('rook-ceph') }}"
+# Only these Ceph HEALTH_WARN check codes are allowed during rolling upgrades.
+# Anything else under HEALTH_WARN (OSD_DOWN, PG_DEGRADED, PG_AVAILABILITY, ...) fails the gate.
+# BLUESTORE_SLOW_OP_ALERT matches the existing known slow-ops warning on this cluster.
+k8s_upgrade_ceph_warn_allowlist:
+  - BLUESTORE_SLOW_OP_ALERT

@@ -1,9 +1,66 @@
 ---
+# Manual Kubernetes upgrade (kubeadm + kubelet + matching CRI-O while drained).
+#
+#   ansible-playbook -i hosts -i vaults kubernetes-upgrade.yaml \
+#     -e k8s_upgrade_ack_etcd_snapshot=true
+#
+# Extra acks are NEVER implied by upgrade.yaml / the planner. For targets
+# >=1.35 also pass:
+#   -e k8s_upgrade_ack_cgroupv2=true -e k8s_upgrade_ack_cgroup_drivers=true
+#
+# This playbook does NOT snapshot etcd. forceUpgrade is intentionally unset;
+# apply uses CLI --yes (noninteractive without bypassing skew/preflight).
+# Non-mutating kubeadm upgrade plan and diff run on the first controller after
+# kubeadm is installed and must succeed before apply.
+#
+# Drain uses --ignore-daemonsets --delete-emptydir-data (NO --force, NO
+# --disable-eviction). --delete-emptydir-data intentionally deletes Pods'
+# emptyDir contents on the drained node (local ephemeral scratch is lost).
+#
+# CRI-O: while each node is drained, this path always restarts crio once so a
+# failed prior restart cannot leave an old daemon running after a successful
+# package install. That restarts the runtime daemon; it may temporarily disrupt
+# runtime operations and workload/network health. Post gates verify recovery.
+# Only one node at a time.
+#
+# Plays are separate so host order is guaranteed: prerequisites on the first
+# controller, then all controllers (inventory order, serial 1), then workers.
 
-- name: Kubernetes Upgrades
-  hosts:
-    - controllers
-    - workers
-  serial: true
+- name: Kubernetes upgrade prerequisites
+  hosts: "{{ groups['controllers'] | first }}"
+  gather_facts: false
+  become: false
+  any_errors_fatal: true
   tasks:
-    - include_tasks: roles/kubernetes/tasks/upgrade.yaml
+    - name: Load role defaults and run prerequisites
+      ansible.builtin.include_role:
+        name: kubernetes
+        tasks_from: upgrade_prereqs
+
+- name: Kubernetes controller upgrades
+  hosts: controllers
+  gather_facts: true
+  become: true
+  serial: 1
+  any_errors_fatal: true
+  max_fail_percentage: 0
+  order: inventory
+  tasks:
+    - name: Upgrade one controller
+      ansible.builtin.include_role:
+        name: kubernetes
+        tasks_from: upgrade
+
+- name: Kubernetes worker upgrades
+  hosts: workers
+  gather_facts: true
+  become: true
+  serial: 1
+  any_errors_fatal: true
+  max_fail_percentage: 0
+  order: inventory
+  tasks:
+    - name: Upgrade one worker
+      ansible.builtin.include_role:
+        name: kubernetes
+        tasks_from: upgrade

@@ -1,0 +1,111 @@
+---
+# Cluster-wide prerequisites. No package/runtime mutation.
+# Intended host: k8s_controller (groups['controllers']|first), with become.
+# Uses /etc/kubernetes/admin.conf — does not depend on the operator's laptop kubeconfig.
+
+- name: Clear prior markers for this playbook run
+  ansible.builtin.set_fact:
+    k8s_upgrade_prereqs_ok: false
+    k8s_upgrade_controllers_play_ran: false
+  # Default set_fact is not written to a fact cache across playbook invocations.
+
+- name: Require explicit etcd snapshot acknowledgement
+  ansible.builtin.assert:
+    that:
+      - k8s_upgrade_ack_etcd_snapshot | bool
+    fail_msg: >-
+      Refusing to upgrade: this playbook does not snapshot etcd.
+      Take or verify a restore-tested etcd snapshot, then re-run with
+      -e k8s_upgrade_ack_etcd_snapshot=true
+      (do not bake that extra-var into automation that skips the human step).
+      https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
+
+- name: Verify k8s_controller identity matches inventory first controller
+  ansible.builtin.assert:
+    that:
+      - k8s_controller == (groups['controllers'] | first)
+      - inventory_hostname == k8s_controller
+    fail_msg: >-
+      Prerequisites must run on k8s_controller={{ k8s_controller }}
+      (== groups['controllers']|first={{ groups['controllers'] | first }}).
+      This host is {{ inventory_hostname }}.
+
+- name: Require CRI-O minor to match Kubernetes minor before any writes
+  ansible.builtin.assert:
+    that:
+      - crio_version.split('.')[0:2] == kubernetes_version.split('.')[0:2]
+    fail_msg: >-
+      crio_version {{ crio_version }} minor does not match kubernetes_version
+      {{ kubernetes_version }}. Align both pins before kubernetes-upgrade.yaml runs
+      (this playbook restarts CRI-O once per drained node).
+  when: k8s_runtime == 'crio'
+
+- name: Read control-plane server version via admin.conf on the first controller
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - /etc/kubernetes/admin.conf
+      - version
+      - -o
+      - json
+  register: _k8s_ver_raw
+  changed_when: false
+  become: true
+
+- name: Parse current and target versions
+  ansible.builtin.set_fact:
+    _k8s_current: "{{ (_k8s_ver_raw.stdout | from_json).serverVersion.gitVersion | regex_replace('^v', '') }}"
+    _k8s_target: "{{ kubernetes_version }}"
+
+- name: Reject downgrades and multi-minor hops
+  ansible.builtin.assert:
+    that:
+      - _k8s_target is version(_k8s_current, '>=')
+      - (_k8s_current.split('.')[0] | int) == (_k8s_target.split('.')[0] | int)
+      - ((_k8s_target.split('.')[1] | int) - (_k8s_current.split('.')[1] | int)) <= 1
+    fail_msg: >-
+      Refusing upgrade from {{ _k8s_current }} to {{ _k8s_target }}.
+      Target must be >= current, same major, at most one minor ahead.
+      Patch downgrades and skipped minors are not supported.
+
+- name: Require Rook 1.20+ before targeting Kubernetes 1.36+
+  ansible.builtin.assert:
+    that:
+      - rook_version is version('1.20.0', '>=')
+    fail_msg: >-
+      kubernetes_version {{ kubernetes_version }} requires Rook >= 1.20 before 1.36
+      (pinned rook_version is {{ rook_version }}). Bump Rook first, then
+      re-check Cilium support for that Kubernetes minor.
+  when: kubernetes_version is version('1.36.0', '>=')
+
+- name: Require explicit cgroup v2 acknowledgement before Kubernetes 1.35+
+  ansible.builtin.assert:
+    that:
+      - k8s_upgrade_ack_cgroupv2 | bool
+      - k8s_upgrade_ack_cgroup_drivers | bool
+    fail_msg: >-
+      Target {{ kubernetes_version }} needs per-node cgroup v2 and matching
+      kubelet/CRI-O cgroup drivers. Verify every node, then pass
+      -e k8s_upgrade_ack_cgroupv2=true -e k8s_upgrade_ack_cgroup_drivers=true.
+      These acks are never set by the upgrade planner.
+  when: kubernetes_version is version('1.35.0', '>=')
+
+- name: Remind Cilium support must be re-checked for 1.36+
+  ansible.builtin.debug:
+    msg: >-
+      Target is Kubernetes {{ kubernetes_version }} with Cilium {{ cilium_version }}.
+      Confirm Cilium supports this Kubernetes minor before continuing.
+  when: kubernetes_version is version('1.36.0', '>=')
+
+- name: Pre-upgrade etcd quorum gate (before any node mutation)
+  ansible.builtin.include_tasks: upgrade_etcd_health.yaml
+
+- name: Pre-upgrade Ceph health gate (before any node mutation)
+  ansible.builtin.include_tasks: upgrade_ceph_health.yaml
+  vars:
+    k8s_upgrade_ceph_gate_retries: 1
+
+- name: Record that cluster prerequisites passed (this playbook run only)
+  ansible.builtin.set_fact:
+    k8s_upgrade_prereqs_ok: true
