@@ -47,7 +47,7 @@
       ansible.builtin.apt:
         name:
           - "linux-headers-{{ ansible_facts['kernel'] }}"
-          - linux-headers-generic
+          - "linux-headers-generic-hwe-{{ ansible_distribution_version }}"
           - nvidia-container-toolkit
           - "nvidia-driver-{{ nvidia_driver_branch }}-open"
         state: present

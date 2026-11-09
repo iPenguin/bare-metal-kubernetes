@@ -9,7 +9,7 @@
   kubernetes.core.helm:
     name: metallb
     chart_ref: metallb/metallb
-    chart_version:
+    chart_version: 0.15.3
     namespace: "{{ metallb_namespace }}"
     create_namespace: yes
     state: present

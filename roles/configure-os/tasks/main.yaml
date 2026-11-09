@@ -31,6 +31,12 @@
     name: "{{ common_utils | union( debian_utils ) }}"
     state: latest
 
+- name: Install Ubuntu HWE kernel
+  ansible.builtin.apt:
+    name: "linux-generic-hwe-{{ ansible_distribution_version }}"
+    state: latest
+  when: ansible_distribution == "Ubuntu"
+
 # lvm2-monitor's stop runs `vgchange --monitor n`, which scans every block device. At shutdown the
 # network is already down, so reads on mapped Ceph RBD devices block until systemd kills it (90s).
 - name: Keep LVM from scanning Ceph RBD and NBD devices
