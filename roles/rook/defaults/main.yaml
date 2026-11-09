@@ -1,1 +1,5 @@
 rook_namespace: rook-ceph
+
+# Metadata-only adoption requires explicit review of pre-change exports.
+rook_csi_adopt_existing: false
+rook_csi_export_root: /root/rook-csi-export

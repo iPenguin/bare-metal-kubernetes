@@ -101,6 +101,18 @@
 - name: Pre-upgrade etcd quorum gate (before any node mutation)
   ansible.builtin.include_tasks: upgrade_etcd_health.yaml
 
+# Shared with the Rook role: a healthy Ceph pool alone does not prove CSI works.
+- name: Pre-drain cluster-wide CSI identities and readiness gate
+  ansible.builtin.script:
+    cmd: >-
+      {{ playbook_dir }}/roles/rook/files/csi_readiness.py
+      --namespace {{ k8s_upgrade_rook_namespace | quote }}
+    executable: python3
+  changed_when: false
+  check_mode: false
+  delegate_to: "{{ k8s_controller }}"
+  become: true
+
 - name: Pre-upgrade Ceph health gate (before any node mutation)
   ansible.builtin.include_tasks: upgrade_ceph_health.yaml
   vars:

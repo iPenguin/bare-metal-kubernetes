@@ -9,19 +9,21 @@ cert_manager_version: 1.18.6
 cilium_version: 1.20.4
 cilium_cli_version: 0.20.2
 containerd_version: 2.0.1
-crio_version: 1.35.11
+crio_version: 1.36.8
 crun_version: 1.19.1
 
 helm_version: 3.22.1
 
 kube_vip_version: 0.8.10
-kubernetes_version: 1.35.10
+kubernetes_version: 1.36.6
 
 # production branch; packaged as nvidia-driver-<branch>-open in ubuntu noble-updates
 nvidia_driver_branch: 595
 nvidia_k8s_plugin_version: 0.17.3
 
 rook_version: 1.20.10
+# Matched to the ceph-csi-operator bundled with Rook 1.20.10.
+ceph_csi_drivers_version: 1.0.4
 
 sealed_secrets_version: 2.17.3
 

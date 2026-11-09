@@ -1,0 +1,14 @@
+---
+- name: Require complete CSI accounts and fully ready controller and node plugins
+  ansible.builtin.script:
+    cmd: >-
+      {{ role_path }}/files/csi_readiness.py
+      --namespace {{ rook_namespace | quote }}
+    executable: python3
+  register: _rook_csi_readiness
+  changed_when: false
+  check_mode: false
+  retries: 60
+  delay: 10
+  until: _rook_csi_readiness.rc == 0
+  when: not ansible_check_mode

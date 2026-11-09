@@ -1,0 +1,64 @@
+---
+# Run before changing the operator: export legacy/current settings first.
+- name: Create CSI rendering workspace on the controller
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: rook-csi-
+  register: _rook_csi_workspace
+  check_mode: false
+
+- name: Prepare and validate CSI migration without cluster writes
+  block:
+    - name: Render baseline CSI values
+      ansible.builtin.template:
+        src: ceph-csi-drivers.yaml.j2
+        dest: "{{ _rook_csi_workspace.path }}/baseline.yaml"
+        mode: '0600'
+      check_mode: false
+
+    - name: Export CSI state and validate pinned chart ownership and settings
+      ansible.builtin.script:
+        cmd: >-
+          csi_preflight.py
+          --namespace {{ rook_namespace | quote }}
+          --values {{ (_rook_csi_workspace.path ~ '/baseline.yaml') | quote }}
+          --output {{ (_rook_csi_workspace.path ~ '/values.yaml') | quote }}
+          --export-root {{ rook_csi_export_root | quote }}
+          --rook-version {{ rook_version | string | quote }}
+          --chart-version {{ ceph_csi_drivers_version | string | quote }}
+          --ceph-version {{ ceph_version | string | quote }}
+        executable: python3
+      register: _rook_csi_plan_raw
+      changed_when: false
+      check_mode: false
+
+    - name: Parse CSI migration plan
+      ansible.builtin.set_fact:
+        _rook_csi_plan: "{{ _rook_csi_plan_raw.stdout | from_json }}"
+
+    - name: Report retained CSI export directory
+      ansible.builtin.debug:
+        msg: "Pre-change CSI resources and rendered values retained at {{ _rook_csi_plan.export_dir }} on {{ inventory_hostname }}."
+
+    - name: Require explicit approval to adopt unowned chart resources
+      ansible.builtin.assert:
+        that:
+          - (_rook_csi_plan.adoption | length == 0) or (rook_csi_adopt_existing | bool)
+        fail_msg: >-
+          CSI ownership migration required. No operator/chart changes were made.
+          Review {{ _rook_csi_plan.export_dir }} on {{ inventory_hostname }} first.
+          Export command: kubectl --kubeconfig /etc/kubernetes/admin.conf -n {{ rook_namespace }}
+          get drivers.csi.ceph.io,operatorconfigs.csi.ceph.io,cephconnections.csi.ceph.io -o yaml.
+          Exact metadata-only adoption commands (do not run without review):
+          {{ _rook_csi_plan.adopt_commands | join('; ') }}.
+          Alternatively re-run with -e rook_csi_adopt_existing=true after reviewing exports.
+          Foreign ownership, differing RBAC and unrepresentable settings always fail closed.
+  rescue:
+    - name: Remove failed CSI rendering workspace but keep exports
+      ansible.builtin.file:
+        path: "{{ _rook_csi_workspace.path }}"
+        state: absent
+      check_mode: false
+    - name: Stop before changing Rook
+      ansible.builtin.fail:
+        msg: "CSI preflight failed: {{ ansible_failed_result.msg | default(ansible_failed_result.stderr | default('see preceding task')) }}"

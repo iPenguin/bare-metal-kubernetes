@@ -6,6 +6,7 @@
       - lvm2
       - xfsprogs
       - hdparm
+      - python3-yaml
     state: present
 
 - name: Get all host and drive info
@@ -32,6 +33,7 @@
 #   when: inventory_hostname == item.name
 
 - name: Ceph admin functions
+  become: true
   when:
     - inventory_hostname in k8s_controller
   block:
@@ -40,6 +42,15 @@
         name: rook-release
         url: https://charts.rook.io/release
         state: present
+
+    - name: Add pinned CSI drivers chart repository
+      kubernetes.core.helm_repository:
+        name: ceph-csi-operator
+        url: https://ceph.github.io/ceph-csi-operator
+        state: present
+
+    - name: Export and validate CSI configuration before operator changes
+      ansible.builtin.include_tasks: csi_prepare.yaml
 
     - name: Deploy Rook Operator Helm chart
       kubernetes.core.helm:
@@ -52,6 +63,11 @@
         values: "{{ lookup('template', 'rook-ceph.yaml.j2') | from_yaml }}"
         update_repo_cache: true
         state: present
+        wait: true
+        timeout: 10m0s
+
+    - name: Install CSI identities and drivers before the Ceph cluster
+      ansible.builtin.include_tasks: csi_install.yaml
 
     - name: Deploy Rook Cluster Helm chart
       kubernetes.core.helm:
@@ -63,6 +79,9 @@
         values: "{{ lookup('template', 'rook-cluster.yaml.j2') | from_yaml }}"
         update_repo_cache: true
         state: present
+
+    - name: Validate complete CSI rollout after cluster reconciliation
+      ansible.builtin.include_tasks: csi_readiness.yaml
 
     - name: Copy reset script to controller
       ansible.builtin.template:

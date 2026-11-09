@@ -1,0 +1,82 @@
+---
+# Rook 1.20.10 / ceph-csi-operator 1.0.4. Do not use the chart defaults alone.
+# Existing Driver/OperatorConfig specs are merged and checked by csi_preflight.py.
+cephConnections: []  # Rook owns monitors and read-affinity configuration.
+clientProfiles: []   # Rook owns cluster credentials and profiles.
+operatorConfig:
+  name: ceph-csi-operator-config
+  namespace: {{ rook_namespace }}
+  create: true
+  driverSpecDefaults:
+    clusterName: {{ rook_namespace }}
+    imageSet:
+      name: rook-csi-operator-image-set-configmap
+    snapshotPolicy: volumeSnapshot
+    nodePlugin:
+      priorityClassName: system-node-critical
+      kubeletDirPath: /var/lib/kubelet
+      enableSeLinuxHostMount: false
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Equal
+          effect: NoSchedule
+    controllerPlugin:
+      priorityClassName: system-cluster-critical
+      hostNetwork: true
+      replicas: 2
+      deploymentStrategy:
+        type: Recreate
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Equal
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ lan_domain }}/node-role
+                    operator: In
+                    values: [storage-node]
+drivers:
+  nfs:
+    enabled: false
+  nvmeof:
+    enabled: false
+{% for driver in ['rbd', 'cephfs'] %}
+  {{ driver }}:
+    enabled: true
+    name: {{ rook_namespace }}.{{ driver }}.csi.ceph.com
+    clusterName: {{ rook_namespace }}
+    imageSet:
+      name: rook-csi-operator-image-set-configmap
+    snapshotPolicy: volumeSnapshot
+    nodePlugin:
+      priorityClassName: system-node-critical
+      kubeletDirPath: /var/lib/kubelet
+      enableSeLinuxHostMount: false
+      updateStrategy:
+        type: RollingUpdate
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Equal
+          effect: NoSchedule
+    controllerPlugin:
+      priorityClassName: system-cluster-critical
+      replicas: 2
+      hostNetwork: true
+      deploymentStrategy:
+        type: Recreate
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ lan_domain }}/node-role
+                    operator: In
+                    values: [storage-node]
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Equal
+          effect: NoSchedule
+{% endfor %}

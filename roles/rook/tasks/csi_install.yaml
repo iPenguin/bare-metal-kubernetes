@@ -1,0 +1,38 @@
+---
+- name: Install CSI drivers after the Rook operator and before the Ceph cluster
+  block:
+    - name: Adopt only reviewed unowned chart resources using metadata merge patches
+      kubernetes.core.k8s:
+        kubeconfig: /etc/kubernetes/admin.conf
+        state: patched
+        merge_type: merge
+        definition: "{{ item }}"
+      loop: "{{ _rook_csi_plan.adoption }}"
+      loop_control:
+        label: "{{ item.kind }}/{{ item.metadata.name }}"
+      when: rook_csi_adopt_existing | bool
+
+    - name: Read validated CSI values from the controller
+      ansible.builtin.slurp:
+        src: "{{ _rook_csi_plan.values_file }}"
+      register: _rook_csi_validated_values
+
+    - name: Deploy pinned Ceph CSI Drivers Helm chart
+      kubernetes.core.helm:
+        name: ceph-csi-drivers
+        kubeconfig: /etc/kubernetes/admin.conf
+        chart_ref: ceph-csi-operator/ceph-csi-drivers
+        chart_version: "{{ ceph_csi_drivers_version }}"
+        namespace: "{{ rook_namespace }}"
+        values: "{{ _rook_csi_validated_values.content | b64decode | from_yaml }}"
+        reset_values: true
+        update_repo_cache: true
+        state: present
+        wait: true
+        timeout: 10m0s
+  always:
+    - name: Remove CSI rendering workspace but keep pre-change exports
+      ansible.builtin.file:
+        path: "{{ _rook_csi_workspace.path }}"
+        state: absent
+      check_mode: false
