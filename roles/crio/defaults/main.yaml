@@ -1,2 +1,4 @@
 ---
 base_os: xUbuntu_22.04
+# Match hosts/group_vars/all/kubernetes.yaml; role-only default.
+crun_bin_path: /usr/libexec/crio/crun

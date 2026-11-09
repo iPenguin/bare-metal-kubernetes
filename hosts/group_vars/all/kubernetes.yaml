@@ -3,6 +3,10 @@
 k8s_runtime: crio
 k8s_cni: cilium
 
+# Single crun for every node (incl. GPU): the binary shipped with cri-o.
+# Do not install a separate standalone crun; that would risk downgrades.
+crun_bin_path: /usr/libexec/crio/crun
+
 k8s_master_can_run_pods: no
 
 k8s_cluster_name: homelab

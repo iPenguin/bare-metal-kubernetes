@@ -119,13 +119,29 @@
           runtime_path = "/usr/bin/nvidia-container-runtime"
           runtime_type = "oci"
 
-          # Alternative crun+nvidia configuration
+          # Same bundled crun as roles/crio (crun_bin_path). crun-nvidia is plain
+          # OCI crun; GPU injection uses the nvidia runtime above.
           [crio.runtime.runtimes.crun-nvidia]
-          runtime_path = "/usr/bin/crun"
+          runtime_path = "{{ crun_bin_path }}"
           runtime_type = "oci"
 
         dest: /etc/crio/crio.conf.d/99-nvidia.conf
         mode: '0644'
+      notify: Restart CRI-O
+
+    - name: Stat nvidia-container-runtime config
+      ansible.builtin.stat:
+        path: /etc/nvidia-container-runtime/config.toml
+      register: nvidia_runtime_config
+
+    # Default toolkit config searches PATH for runc/crun. After stray /usr/bin/crun
+    # cleanup, prefer the cri-o bundled binary explicitly.
+    - name: Prefer bundled CRI-O crun for nvidia-container-runtime
+      ansible.builtin.replace:
+        path: /etc/nvidia-container-runtime/config.toml
+        regexp: '(?m)^runtimes\s*=\s*.*$'
+        replace: 'runtimes = ["{{ crun_bin_path }}", "/usr/libexec/crio/runc", "runc", "crun"]'
+      when: nvidia_runtime_config.stat.exists | default(false)
       notify: Restart CRI-O
 
 - name: Configure k8s plugin

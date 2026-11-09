@@ -65,14 +65,6 @@
     - cri-o
     - cri-tools
 
-- name: Download crun
-  ansible.builtin.get_url:
-    url: https://github.com/containers/crun/releases/download/{{ crun_version }}/crun-{{ crun_version }}-linux-amd64
-    dest: "/usr/local/bin/crun"
-    owner: root
-    group: root
-    mode: 0755
-
 - name: Ensure container path
   ansible.builtin.file:
     path: /etc/containers
@@ -118,6 +110,7 @@
     owner: root
     group: root
     mode: 0640
+  notify: Restart CRI-O
 
 - name: Link common binary
   ansible.builtin.file:
@@ -130,4 +123,30 @@
     enabled: yes
     state: started
     name: crio
+
+# Restart (if notified) before removing stray binaries so CRI-O never
+# briefly points at a path we are about to delete.
+- name: Apply pending CRI-O restarts before stray crun cleanup
+  ansible.builtin.meta: flush_handlers
+
+- name: Remove stray standalone crun from /usr/local/bin
+  ansible.builtin.file:
+    path: /usr/local/bin/crun
+    state: absent
+
+# dpkg -S rc!=0 means the path is not owned by any package (or is missing).
+# check_mode: false so --check still learns ownership before deciding to remove.
+- name: Check whether /usr/bin/crun is owned by a dpkg package
+  ansible.builtin.command:
+    cmd: dpkg -S /usr/bin/crun
+  register: crun_usr_bin_dpkg
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Remove stray non-package /usr/bin/crun
+  ansible.builtin.file:
+    path: /usr/bin/crun
+    state: absent
+  when: crun_usr_bin_dpkg.rc != 0
 ...

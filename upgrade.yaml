@@ -60,7 +60,7 @@
         tags: [vip]
         rolling: [controllers]
       crio:
-        variables: [crio_version, crun_version]
+        variables: [crio_version]
         tags: [crio]
         rolling: [workers, controllers]
       containerd:
