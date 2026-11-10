@@ -22,6 +22,10 @@ CUSTOM = {
     'CephConnection': 'cephconnections.csi.ceph.io',
     'CephCluster': 'cephclusters.ceph.rook.io',
 }
+PLUGINS = ('nodePlugin', 'controllerPlugin')
+# Scheduling the template owns outright: it replaces live values instead of being merged
+# under them, so a toleration fix in ceph-csi-drivers.yaml.j2 reaches the cluster.
+TEMPLATE_OWNED = ('tolerations',)
 
 
 def load(text):
@@ -58,6 +62,8 @@ def preserved(old, new, path=()):
     """
     if path in [('nodePlugin', 'serviceAccountName'),
                 ('controllerPlugin', 'serviceAccountName')]:
+        return []
+    if len(path) >= 2 and path[-2] in PLUGINS and path[-1] in TEMPLATE_OWNED:
         return []
     if old is None or old == '' or old == {}:
         return []
@@ -113,7 +119,20 @@ def build_values(base, live):
             if spec.get(plugin, {}).get('imagePullPolicy') == '':
                 spec[plugin].pop('imagePullPolicy')
         result['drivers'][key] = merge(result['drivers'][key], spec)
+    template_owned(result, base)
     return result
+
+
+def template_owned(result, base):
+    """Put the template's TEMPLATE_OWNED plugin fields back over merged live values."""
+    specs = [(result['operatorConfig']['driverSpecDefaults'],
+              base['operatorConfig']['driverSpecDefaults'])]
+    specs += [(result['drivers'][key], base['drivers'][key]) for key in ('rbd', 'cephfs')]
+    for target, source in specs:
+        for plugin in PLUGINS:
+            for field in TEMPLATE_OWNED:
+                if field in source.get(plugin, {}):
+                    target.setdefault(plugin, {})[field] = copy.deepcopy(source[plugin][field])
 
 
 def validate_existing(existing, rendered, namespace):

@@ -13,6 +13,14 @@
     namespace: "{{ metallb_namespace }}"
     create_namespace: yes
     state: present
+    values:
+      speaker:
+        # chart keeps its control-plane tolerations (tolerateMaster) and appends these;
+        # the speaker must announce from GPU nodes too (nvidia.com/gpu=true:NoSchedule)
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
 
 - name: Wait for Metallb to be ready
   kubernetes.core.k8s_info:

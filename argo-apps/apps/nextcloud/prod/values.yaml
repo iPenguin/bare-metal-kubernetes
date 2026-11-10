@@ -144,7 +144,7 @@ nodeSelector:
 
 tolerations:
   - key: "nvidia.com/gpu"
-    operator: "Equal"
+    operator: "Exists"
     effect: "NoSchedule"
 
 # # Post-installation job to configure Keycloak OIDC

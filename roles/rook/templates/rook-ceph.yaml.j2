@@ -10,9 +10,10 @@ image:
 
 nodeSelector:
   {{ lan_domain }}/node-role: storage-node
+# Exists matches the nvidia.com/gpu=true:NoSchedule taint the nvidia role puts on GPU nodes
 tolerations:
   - key: "nvidia.com/gpu"
-    operator: "Equal"
+    operator: "Exists"
     effect: "NoSchedule"
 
 # -- Whether the operator should watch cluster CRD in its own namespace or not

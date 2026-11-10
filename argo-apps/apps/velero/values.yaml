@@ -35,6 +35,12 @@ configuration:
 
 defaultVolumesToFsBackup: true
 deployNodeAgent: true
+nodeAgent:
+  # node-agent must run on every node for fs backups, including the tainted GPU nodes
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
 uploaderType: kopia
 
 # CRDs applied manually — see docs. Hook image churn (Bitnami deprecation,

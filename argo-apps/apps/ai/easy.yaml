@@ -85,7 +85,7 @@ spec:
       tolerations:
       - effect: NoSchedule
         key: nvidia.com/gpu
-        operator: Equal
+        operator: Exists
       volumes:
       - name: srv
         persistentVolumeClaim:

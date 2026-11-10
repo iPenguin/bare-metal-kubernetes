@@ -18,7 +18,7 @@ operatorConfig:
       enableSeLinuxHostMount: false
       tolerations:
         - key: nvidia.com/gpu
-          operator: Equal
+          operator: Exists
           effect: NoSchedule
     controllerPlugin:
       priorityClassName: system-cluster-critical
@@ -28,7 +28,7 @@ operatorConfig:
         type: Recreate
       tolerations:
         - key: nvidia.com/gpu
-          operator: Equal
+          operator: Exists
           effect: NoSchedule
       affinity:
         nodeAffinity:
@@ -59,7 +59,7 @@ drivers:
         type: RollingUpdate
       tolerations:
         - key: nvidia.com/gpu
-          operator: Equal
+          operator: Exists
           effect: NoSchedule
     controllerPlugin:
       priorityClassName: system-cluster-critical
@@ -77,6 +77,6 @@ drivers:
                     values: [storage-node]
       tolerations:
         - key: nvidia.com/gpu
-          operator: Equal
+          operator: Exists
           effect: NoSchedule
 {% endfor %}

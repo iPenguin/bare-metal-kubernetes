@@ -146,3 +146,19 @@
 
 - name: Configure k8s plugin
   include_tasks: nvidia-k8s-plugin.yaml
+
+# Keep general workloads off GPU nodes. Applied after the plugin so NFD/device-plugin
+# tolerations are in place first. Critical DaemonSets (cilium, metallb speaker, rook/ceph,
+# ceph-csi nodeplugins, velero node-agent, nvidia) and GPU apps tolerate nvidia.com/gpu.
+- name: Taint GPU node so only workloads tolerating nvidia.com/gpu schedule there
+  kubernetes.core.k8s_taint:
+    state: present
+    name: "{{ inventory_hostname }}"
+    taints:
+    - effect: NoSchedule
+      key: "nvidia.com/gpu"
+      value: "true"
+  delegate_to: "{{ k8s_controller }}"
+  when:
+    - has_nvidia_card
+    - inventory_hostname in groups['workers']
