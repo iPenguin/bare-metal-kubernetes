@@ -40,7 +40,9 @@
         create: yes
         state: present
 
-    # dkms needs headers to build the driver module; without them a kernel upgrade leaves no nvidia.ko
+    # Headers are for DKMS. Ubuntu's nvidia-driver-*-open is often satisfied by
+    # prebuilt linux-modules-nvidia-* instead, so also install the HWE modules
+    # metapackage; otherwise a GA->HWE switch leaves no nvidia.ko.
     # blackwell (RTX 50xx) only runs on the open kernel modules; they also cover turing/ampere (RTX 30xx).
     # installing a new branch replaces the old nvidia-driver-*-open package via apt conflicts
     - name: Install NVIDIA driver and Container Toolkit
@@ -48,6 +50,7 @@
         name:
           - "linux-headers-{{ ansible_facts['kernel'] }}"
           - "linux-headers-generic-hwe-{{ ansible_distribution_version }}"
+          - "linux-modules-nvidia-{{ nvidia_driver_branch }}-open-generic-hwe-{{ ansible_distribution_version }}"
           - nvidia-container-toolkit
           - "nvidia-driver-{{ nvidia_driver_branch }}-open"
         state: present
