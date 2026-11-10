@@ -2,22 +2,41 @@
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
-# Assuming one ACTVIE ethernet device enp* even if there are multiple
-# All primary network interfaces in my cluster start with enp
+# USB adapters use enx* names, so an enp* glob can pick a down onboard NIC.
+# Take the DUID from the interface that owns the IPv4 default route.
+- name: Get default-route interface
+  ansible.builtin.command: ip -4 route show default
+  register: default_route
+  changed_when: false
+
+- name: Fail if no IPv4 default route
+  ansible.builtin.fail:
+    msg: "No IPv4 default route found; cannot determine the primary interface for DUID lookup."
+  when: default_route.stdout | trim | length == 0
+
+- name: Set primary interface from default route
+  ansible.builtin.set_fact:
+    primary_nic: "{{ (default_route.stdout | regex_search('dev (\\S+)', '\\1') | default([], true) | first) | default('') }}"
+
+- name: Fail if primary interface was not parsed
+  ansible.builtin.fail:
+    msg: "Could not parse a device from the IPv4 default route: {{ default_route.stdout }}"
+  when: primary_nic | length == 0
+
 - name: Get network status
-  command: networkctl status enp*
+  ansible.builtin.command: "networkctl status {{ primary_nic }}"
   register: network_status
   changed_when: false
 
 - name: Extract DUID
-  set_fact:
-    duid: "{{ network_status.stdout | regex_search('.*DUID: .*:([a-f0-9:]+)', '\\1') | first | default('not found') }}"
+  ansible.builtin.set_fact:
+    duid: "{{ (network_status.stdout | regex_search('.*DUID: .*:([a-f0-9:]+)', '\\1') | default([], true) | first) | default('not found') }}"
 
 - name: Fail if DUID is not found
-  fail:
-    msg: "No DUID found for interface. Ensure it has an active DHCPv6 lease."
+  ansible.builtin.fail:
+    msg: "No DUID found for interface {{ primary_nic }}. Ensure it has an active DHCPv6 lease."
   when: duid == 'not found'
 
 - name: Display DUID
-  debug:
+  ansible.builtin.debug:
     msg: "The DUID is {{ duid }}"
