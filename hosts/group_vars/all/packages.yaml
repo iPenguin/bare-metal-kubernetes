@@ -3,6 +3,7 @@ common_utils:
   - gdisk
   - git
   - htop
+  - iftop
   - iperf
   - r8125-dkms
   - rsync
