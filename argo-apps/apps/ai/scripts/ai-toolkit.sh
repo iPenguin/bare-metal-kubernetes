@@ -4,7 +4,7 @@
 # standalone Python 3.12 venv and the script unpacks a Node release next to it.
 # ai-toolkit has no release tags, so AI_TOOLKIT_VERSION is a commit; bump it to upgrade.
 # Configs and datasets live on the volume; output goes wherever a job's training_folder points
-# (e.g. /srv/models/loras/aitk so ComfyUI sees the LoRAs). See docs/ai-toolkit.md.
+# (e.g. /srv/models/loras/aitk so ComfyUI sees the LoRAs). See docs/apps.md (AI trainers).
 # The checkout's datasets/ (input) and output/ folders, the UI's defaults, are symlinks into DATA_DIR.
 set -euo pipefail
 

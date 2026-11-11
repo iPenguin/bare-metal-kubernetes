@@ -5,7 +5,7 @@
 # ai-base has no python, so uv bootstraps a standalone interpreter and venv on the volume.
 # sd-scripts has no release tags, so SD_SCRIPTS_VERSION is a commit; bump it to upgrade.
 # Run configs live in CONFIG_DIR; datasets (input) and training runs (output) live in DATA_DIR,
-# outside the checkout, like the other AI apps. See docs/kohya/sd-scripts.md.
+# outside the checkout, like the other AI apps. See docs/apps.md (AI trainers).
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/srv/ai/sd-scripts}"
@@ -19,7 +19,7 @@ TORCH_PACKAGES="${TORCH_PACKAGES:-torch==2.7.1 torchvision==0.22.1}"
 DATA_DIR="${DATA_DIR:-/srv/data/sd-scripts}"
 
 SRC_DIR="$APP_DIR/sd-scripts"
-# the run scripts in docs/kohya source $APP_DIR/venv and read $APP_DIR/config
+# run scripts in $APP_DIR/config source this venv
 VENV_DIR="$APP_DIR/venv"
 CONFIG_DIR="$APP_DIR/config"
 STAMP="$VENV_DIR/.sd-scripts-version"

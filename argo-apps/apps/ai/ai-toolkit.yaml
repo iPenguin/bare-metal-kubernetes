@@ -48,7 +48,7 @@ spec:
           value: 8cf43dd
         - name: NVIDIA_DRIVER_CAPABILITIES
           value: compute,utility
-        # UI password; seal a secret named ai-toolkit-secrets with key "auth" (see docs/ai-toolkit.md)
+        # UI password; seal a secret named ai-toolkit-secrets with key "auth" (see docs/apps.md, AI trainers)
         - name: AI_TOOLKIT_AUTH
           valueFrom:
             secretKeyRef:
