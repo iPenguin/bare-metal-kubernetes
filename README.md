@@ -16,7 +16,7 @@ This repo does basic configuration for the following components:
 - **Kubernetes [metrics-server](https://github.com/kubernetes-sigs/metrics-server)** - for basic resource monitoring
 - **[Prometheus](https://prometheus.io/)/[Grafana](https://grafana.com/)** - for advanced resource monitoring and visualization
 - **[LLDAP](https://www.lldap.com/)** - For centralized Identinty Management
-- **[Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)** - For encrypting secrets
+- **[OpenBao](https://openbao.org/)** - For app secrets (External Secrets). Sealed Secrets remains only for a few leftover apps
 
 ## Setup
 
@@ -35,8 +35,19 @@ ansible-playbook -i hosts/hosts.yaml setup-workstation-dev.yaml
 ansible-playbook -i hosts/hosts.yaml setup-workstation-apps.yaml
 ```
 
-## Encrypting secrets
+## Secrets
 
-```
-kubectl create secret generic mysecret --dry-run=client --from-literal=foo=something -o json | kubeseal --controller-namespace=sealed-secrets --controller-name=sealed-secrets -o yaml > something.yaml
-```
+New app secrets go in OpenBao at `kv/apps/<namespace>/<secret-name>` and are
+synced by an ExternalSecret against ClusterSecretStore `openbao`
+(`argo-apps/apps/utils/cluster-secret-store.yaml`). Import a live Secret with
+`scripts/openbao-import-secret.sh <namespace> <secret-name>`.
+
+Kubeseal is only for the remaining SealedSecrets: `keycloak-passwords`,
+`lldap-secrets`, `minio-credentials`, `argo-oidc-secrets`, and
+`minio-oidc-credentials`. Do not add new ones.
+
+## Docs
+
+- `docs/openbao-bootstrap.md` — OpenBao stand-up and leftover secret migration
+- `docs/apps.md` — Plex, AI scaling, Nextcloud placement, Harbor
+- `docs/rook-csi-drivers.md` — Rook 1.20 CSI chart migration
