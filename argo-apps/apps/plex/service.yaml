@@ -5,8 +5,10 @@ metadata:
   name: plex-share
   annotations:
     metallb.io/loadBalancerIPs: placeholder
+    external-dns.alpha.kubernetes.io/hostname: plex-svc.clt.milco.casa
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -16,3 +18,4 @@ spec:
   ports:
     - name: plex
       port: 32400
+      targetPort: 32400

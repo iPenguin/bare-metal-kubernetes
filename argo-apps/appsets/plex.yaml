@@ -8,18 +8,16 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - matrix:
-        generators:
-          - list:
-              elements:
-                - host: plex
-          - plugin:
-              configMapRef:
-                name: dig
-              input:
-                parameters:
-                  hostname: '{{ .host }}.clt.milco.casa'
-                  secondary: 'plex-svc.clt.milco.casa'
+    # Only plex-svc is reserved in network_services and published as a
+    # dnsmasq host-record. plex.clt.milco.casa comes from the Ingress via
+    # ExternalDNS (Traefik), so digging it here was a chicken-and-egg that
+    # left this ApplicationSet generating no Application.
+    - plugin:
+        configMapRef:
+          name: dig
+        input:
+          parameters:
+            hostname: plex-svc.clt.milco.casa
   template:
     metadata:
       name: plex
@@ -45,17 +43,16 @@ spec:
                 patch: |-
                   - op: replace
                     path: /metadata/annotations/metallb.io~1loadBalancerIPs
-                    value: {{ .secondary_ipv4 }},{{ .secondary_ipv6 }}
+                    value: {{ .ipv4_address }},{{ .ipv6_address }}
         - repoURL: https://github.com/ipenguin/bare-metal-kubernetes.git
           targetRevision: master
           ref: valuesSrc
         - repoURL: 'https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages'
           chart: plex-media-server
-          targetRevision: 1.0.2
+          targetRevision: 1.9.0
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/plex/values.yaml'
             values: |-
-              service:
-                annotations:
-                  metallb.io/loadBalancerIPs: {{ .ipv4_address }},{{ .ipv6_address }}
+              extraEnv:
+                ADVERTISE_IP: "https://plex.clt.milco.casa:443,http://{{ .ipv4_address }}:32400,http://[{{ .ipv6_address }}]:32400"

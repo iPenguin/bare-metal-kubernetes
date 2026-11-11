@@ -1,66 +1,116 @@
 image:
-  tag: "1.41.7.9823-59f304c16"
+  repository: plexinc/pms-docker
+  tag: "1.43.3.10896-cb3ebc72d"
+  pullPolicy: IfNotPresent
 
 ingress:
   enabled: true
   ingressClassName: "traefik"
   url: "plex.clt.milco.casa"
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
   tls:
     - hosts:
-      - plex.clt.milco.casa
+        - plex.clt.milco.casa
 
+# Reuse the leftover 2Gi ceph-block claim from the previous install.
 pms:
   configStorage: 2Gi
+  storageClassName: ceph-block
+  configExistingClaim: pms-config-plex-plex-media-server-0
+  claimSecret:
+    name: plex-secrets
+    key: PLEX_CLAIM
+  # Hard-requires a GPU node: nvidia.com/gpu is added to limits.
+  # Affinity prefers w4's RTX 3060 so the stronger GPU on w5 stays free
+  # for AI. If w4 is full or down, it can still fall back to w5.
+  # To allow scheduling on w1–w3 without a GPU, set enabled: false and
+  # clear runtimeClassName below (software transcode only).
   gpu:
     nvidia:
-      enabled: false
+      enabled: true
+      devices: "all"
+      capabilities: "compute,video,utility"
   resources:
     requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
       cpu: "6"
-      memory: "12Gi"
+      memory: 12Gi
+  podSecurityContext:
+    # Nextcloud data is uid 33 (www-data), gid 82 (chart fsGroup), mode 2770
+    # on the data root. Do not set fsGroup here: it would chown the shared
+    # CephFS media tree. supplementalGroups is enough to traverse it.
+    supplementalGroups: [82]
+  startupProbe:
+    httpGet:
+      path: /identity
+      port: 32400
+    periodSeconds: 10
+    failureThreshold: 60
+  livenessProbe:
+    httpGet:
+      path: /identity
+      port: 32400
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 5
+  readinessProbe:
+    httpGet:
+      path: /identity
+      port: 32400
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 5
+
+# Required with pms.gpu.nvidia.enabled. Clear this if GPU is made optional.
+runtimeClassName: nvidia
 
 rclone:
-  enabled: true
-  configSecret: "plex-rclone-config"
-  # -- The remote drive that should be mounted using rclone
-  # this must be in the form of `name:[/optional/path]`
-  # this remote will be mounted at `/data/name` in the PMS container
-  remotes:
-    - "nextcloud:/Shared"
-  additionalArgs:
-    - "--vfs-cache-mode=full"
-    - "--vfs-cache-max-age=3d"
-    - "--vfs-cache-max-size=10G"
-  readOnly: true
+  enabled: false
 
 service:
   type: ClusterIP
-  ipFamilyPolicy: PreferDualStack
-  ipFamilies:
-    - IPv4
-    - IPv6
-  ports:
-    - name: plex
-      port: 32400
-nodeSelector:
-  clt.milco.casa/node-performance: medium
+  port: 32400
+
+# Prefer w4's RTX 3060 (stable GFD product label, not the dynamic
+# gpu-best/gpu-slowest rankings). Still only preferred, so it can
+# fall back to w5. The GPU resource request already limits candidates
+# to GPU nodes.
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: nvidia.com/gpu.product
+              operator: In
+              values: ["NVIDIA-GeForce-RTX-3060-SHARED"]
+
+tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
 
 extraEnv:
-  # https://account.plex.tv/en/claim
-  PLEX_CLAIM: "claim-kzzGpddu5wUfnewGCe_u"
-  PLEX_DISABLE_HWTRANSCODE: "1"
   HOSTNAME: "plex.clt.milco.casa"
-  TZ: "Americas/New_York"
+  TZ: "America/New_York"
+  PLEX_GID: "82"
 
+# Read-only bind of the Keycloak-linked Nextcloud user's files on the
+# existing nextcloud-data CephFS subvolume (same volume Nextcloud mounts
+# at /var/www/html/data with subPath data). Libraries live under
+# Shared, Videos, videos, and Music — the old rclone remote was Shared.
 extraVolumeMounts:
-  - name: dev-dri
-    mountPath: /dev/dri
+  - name: nextcloud-media
+    mountPath: /data/nextcloud
+    subPath: data/keycloak-31006b0f-2ff3-45e3-8769-3bd88dbcf5d4/files
+    readOnly: true
 
 extraVolumes:
-  - name: dev-dri
-    hostPath:
-      path: /dev/dri
-      type: Directory
-
-securityContext:
-  privileged: true
+  - name: nextcloud-media
+    persistentVolumeClaim:
+      claimName: plex-nextcloud-media
+      readOnly: true

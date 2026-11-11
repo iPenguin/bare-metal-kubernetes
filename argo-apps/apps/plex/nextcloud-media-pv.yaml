@@ -1,0 +1,43 @@
+---
+# Static PV that points at the existing nextcloud-data CephFS subvolume.
+# volumeHandle is unique so this does not collide with Nextcloud's PV.
+# Reclaim is Retain and staticVolume is true so deleting this PV/PVC
+# cannot delete Nextcloud's data.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: plex-nextcloud-media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: cephfs
+  volumeMode: Filesystem
+  csi:
+    driver: rook-ceph.cephfs.csi.ceph.com
+    volumeHandle: plex-nextcloud-media-static
+    nodeStageSecretRef:
+      name: rook-csi-cephfs-node
+      namespace: rook-ceph
+    volumeAttributes:
+      clusterID: rook-ceph
+      fsName: ceph-filesystem
+      staticVolume: "true"
+      rootPath: /volumes/csi/csi-vol-124107db-e9d5-4664-83ad-6ca99b18947b/53205a9f-4a3c-4429-b623-fae60659d06f
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-nextcloud-media
+  namespace: plex
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: cephfs
+  volumeName: plex-nextcloud-media
+  volumeMode: Filesystem

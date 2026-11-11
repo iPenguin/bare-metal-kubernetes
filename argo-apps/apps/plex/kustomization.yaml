@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - secrets.yaml
   - service.yaml
+  - nextcloud-media-pv.yaml
