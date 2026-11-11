@@ -37,6 +37,23 @@
     state: latest
   when: ansible_distribution == "Ubuntu"
 
+# Controllers uplink on RTL8125 (10ec:8125). On the 7.0 HWE kernel, in-tree r8169 times out on its
+# PHY (no carrier); the r8125 DKMS driver works. A softdep was not enough: r8169 still won the probe
+# at boot. Blacklist r8169 instead; c2's spare RTL8111 (enp3s0f0, unused) loses its driver.
+- name: Use r8125 instead of r8169 on controllers
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/r8125.conf
+    content: |
+      blacklist r8169
+      install r8169 /bin/false
+    mode: "0644"
+  register: r8125_modprobe
+  when: "'controllers' in group_names"
+
+- name: Rebuild initramfs for r8125 blacklist
+  ansible.builtin.command: update-initramfs -u -k all
+  when: r8125_modprobe is changed
+
 # lvm2-monitor's stop runs `vgchange --monitor n`, which scans every block device. At shutdown the
 # network is already down, so reads on mapped Ceph RBD devices block until systemd kills it (90s).
 - name: Keep LVM from scanning Ceph RBD and NBD devices
