@@ -69,9 +69,20 @@ trace:
 
 database:
   type: internal
+  # Chart 1.19.4 has no database.internal.existingSecret. The only existing-secret
+  # hook for core/exporter/pre-upgrade is database.external.existingSecret (key
+  # must be "password"), and it works while type stays internal. Host/user still
+  # come from the internal DB. extraEnvVars overrides the chart-generated
+  # harbor-database Secret so the DB pod uses the same value.
   internal:
-    # The initial superuser password for internal database
-    password: "GkDxfyIFnEb4QMzQLL3n"
+    extraEnvVars:
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: harbor-secrets
+            key: password
+  external:
+    existingSecret: harbor-secrets
 
 redis:
   type: internal

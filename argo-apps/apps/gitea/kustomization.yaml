@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - secrets.yaml
   - postgresql-secret.yaml
+  - valkey-secret.yaml

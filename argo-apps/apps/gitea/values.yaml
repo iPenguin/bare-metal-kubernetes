@@ -90,6 +90,23 @@ gitea:
         secretKeyRef:
           name: gitea-postgresql
           key: password
+    # Parent chart bakes valkey.global.valkey.password into queue/session/cache
+    # URLs in gitea-inline-config. Leave that password empty and override here.
+    - name: GITEA__QUEUE__CONN_STR
+      valueFrom:
+        secretKeyRef:
+          name: gitea-valkey
+          key: CONN_STR
+    - name: GITEA__SESSION__PROVIDER_CONFIG
+      valueFrom:
+        secretKeyRef:
+          name: gitea-valkey
+          key: CONN_STR
+    - name: GITEA__CACHE__HOST
+      valueFrom:
+        secretKeyRef:
+          name: gitea-valkey
+          key: CONN_STR
   metrics:
     enabled: false
   openid:
@@ -131,9 +148,16 @@ valkey-cluster:
 valkey:
   enabled: true
   architecture: standalone
+  # Subchart existingSecret; default key is valkey-password if unset.
+  # OpenBao: kv/apps/gitea/gitea-valkey. Must set global.valkey.password to
+  # empty so the parent chart does not bake its default into gitea-inline-config.
+  # additionalConfigFromEnvs supplies the real CONN_STR.
   global:
     valkey:
-      password: changeme
+      password: ""
+  auth:
+    existingSecret: gitea-valkey
+    existingSecretPasswordKey: valkey-password
   master:
     count: 1
 
