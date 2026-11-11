@@ -139,8 +139,22 @@ rbac:
 redis:
   enabled: false
 
-nodeSelector:
-  clt.milco.casa/node-performance: high
+# Prefer high, then medium nodes; schedule anywhere else if neither fits (data is on CephFS RWX).
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: clt.milco.casa/node-performance
+              operator: In
+              values: ["high"]
+      - weight: 50
+        preference:
+          matchExpressions:
+            - key: clt.milco.casa/node-performance
+              operator: In
+              values: ["medium"]
 
 tolerations:
   - key: "nvidia.com/gpu"
