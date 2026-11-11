@@ -20,14 +20,29 @@ cephClusterSpec:
     allowUnsupported: false
 
   # CephX key rotation for the Ceph CVE fix (needs Rook >= 1.19.9).
-  # keyGeneration must be higher than status.cephx.daemon generation on the CephCluster.
-  # Rotates mon, mgr, osd, mds, rgw, crash and exporter keys to aes256k. Leave csi alone
-  # (aes256k CSI keys need kernel >= 7.0 on every node). Do not set allowedCiphers yet.
+  # Each keyGeneration must be higher than the matching status.cephx generation on the CephCluster.
+  # daemon rotates mon, mgr, osd, mds, rgw, crash and exporter keys to aes256k. Every node now runs
+  # kernel >= 7.0, so csi and rbdMirrorPeer move to aes256k too. Every node has been drained
+  # since the CSI rotation, so the prior aes CSI keys are retired (keepPriorKeyCountMax: 0).
+  # allowedCiphers restricts the mons to aes256k. Apply it only once `ceph auth dump-keys` shows
+  # no aes keys, including rotating service keys. If RADOS permission-denied errors appear, see the
+  # workaround in Rook's cephx-key-rotation doc (Storage-Configuration/Advanced/cephx-key-rotation.md).
   security:
     cephx:
+      allowedCiphers:
+        - aes256k
       daemon:
         keyRotationPolicy: KeyGeneration
         keyGeneration: 2
+      csi:
+        keyRotationPolicy: KeyGeneration
+        keyGeneration: 2
+        keepPriorKeyCountMax: 0  # prior aes keys retired; all nodes drained after rotation
+        keyType: aes256k
+      rbdMirrorPeer:
+        keyRotationPolicy: KeyGeneration
+        keyGeneration: 2
+        keyType: aes256k
 
   # Important: clear this folder on the host if you recreate the cluster
   dataDirHostPath: /var/lib/rook
