@@ -13,10 +13,20 @@ spec:
     metadata:
       name: ai-applications
     spec:
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: apps
+          kind: StatefulSet
+          jsonPointers:
+            - /spec/replicas
       syncPolicy:
         automated: {}
         syncOptions:
           - CreateNamespace=true
+          - RespectIgnoreDifferences=true
       project: ai-applications
       destination:
         namespace: ai
