@@ -37,6 +37,10 @@ persistence:
     filesystem:
       rootdirectory: /storage
 
+# registry and jobservice PVCs are RWO ceph-block; stop the old pod before starting the new one.
+updateStrategy:
+  type: Recreate
+
 existingSecretAdminPassword: "harbor-secrets"
 existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
 
