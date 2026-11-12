@@ -1,0 +1,56 @@
+---
+# Argo CD access to the Gitea org `homelab` for test apps (docs/apps.md, "Test apps").
+# OpenBao kv/apps/argocd/gitea-homelab: `username` (Gitea user that owns the token)
+# and `token` (read-only access token: read:organization, read:repository, read:issue).
+# Repository credential template: covers every https://git.clt.milco.casa/homelab/* clone.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: gitea-homelab-repo-creds
+  namespace: argocd
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: openbao
+  target:
+    name: gitea-homelab-repo-creds
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: repo-creds
+      data:
+        type: git
+        url: https://git.clt.milco.casa/homelab
+        username: '{{ .username }}'
+        password: '{{ .token }}'
+  dataFrom:
+    - extract:
+        key: apps/argocd/gitea-homelab
+---
+# Token for the ApplicationSet Gitea SCM provider (repo listing via the HTTP API).
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: gitea-homelab-scm-token
+  namespace: argocd
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: openbao
+  target:
+    name: gitea-homelab-scm-token
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: scm-creds
+      data:
+        token: '{{ .token }}'
+  dataFrom:
+    - extract:
+        key: apps/argocd/gitea-homelab

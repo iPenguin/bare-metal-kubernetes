@@ -1,0 +1,70 @@
+---
+# Side-project test deploys from the Gitea org `homelab` (docs/apps.md, "Test apps").
+# A repo is deployed when it has the Gitea label `homelab-test` and deploy/homelab.yaml.
+# Argo's Gitea SCM provider matches repo labels, not topics.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: test-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - scmProvider:
+              cloneProtocol: https
+              gitea:
+                owner: homelab
+                api: https://git.clt.milco.casa
+                tokenRef:
+                  secretName: gitea-homelab-scm-token
+                  key: token
+              filters:
+                - labelMatch: '^homelab-test$'
+                  pathsExist:
+                    - deploy/homelab.yaml
+          # Contract file: its keys (namespace, sources) become template params.
+          - git:
+              repoURL: '{{ .url }}'
+              revision: '{{ .branch }}'
+              files:
+                - path: deploy/homelab.yaml
+  template:
+    metadata:
+      name: '{{ .repository | lower | replace "_" "-" | replace "." "-" }}-testing'
+    spec:
+      project: test-apps
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          - CreateNamespace=true
+  templatePatch: |
+    {{- $release := .repository | lower | replace "_" "-" | replace "." "-" }}
+    spec:
+      sources:
+      {{- range .sources }}
+        - repoURL: {{ $.url | quote }}
+          targetRevision: {{ $.branch | quote }}
+          path: {{ .path | quote }}
+        {{- if eq .type "helm" }}
+          helm:
+            releaseName: {{ index . "releaseName" | default $release | quote }}
+            {{- with index . "valueFiles" }}
+            valueFiles:
+            {{- range . }}
+              - {{ . | quote }}
+            {{- end }}
+            {{- end }}
+        {{- else if eq .type "kustomize" }}
+          kustomize:
+            namespace: {{ $.namespace | quote }}
+        {{- else }}
+          {{ fail (printf "deploy/homelab.yaml: source %q has type %q; use helm or kustomize" .path .type) }}
+        {{- end }}
+      {{- end }}

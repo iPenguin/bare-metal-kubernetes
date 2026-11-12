@@ -1,0 +1,22 @@
+---
+# Side-project test deploys from the Gitea org `homelab` (docs/apps.md, "Test apps").
+# Argo clones over HTTPS; the SSH form is allowed so human-style URLs also validate.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: test-apps
+  namespace: argocd
+spec:
+  description: Side-project test deploys from Gitea org homelab
+  sourceRepos:
+    - https://git.clt.milco.casa/homelab/*
+    - git@git.clt.milco.casa:homelab/*
+  destinations:
+    - namespace: '*-testing'
+      server: https://kubernetes.default.svc
+  # Only the app's own Namespace (CreateNamespace=true); nothing else cluster-scoped.
+  # name uses Go filepath.Match; *-testing covers any <id>-testing namespace.
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+      name: '*-testing'

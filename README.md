@@ -49,5 +49,5 @@ Kubeseal is only for the remaining SealedSecrets: `keycloak-passwords`,
 ## Docs
 
 - `docs/openbao-bootstrap.md` — OpenBao stand-up and leftover secret migration
-- `docs/apps.md` — Plex, AI scaling, Nextcloud placement, Harbor, Gitea
+- `docs/apps.md` — Plex, AI scaling, Nextcloud placement, Harbor, Gitea, test apps
 - `docs/rook-csi-drivers.md` — Rook 1.20 CSI chart migration

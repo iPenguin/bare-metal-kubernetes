@@ -13,6 +13,7 @@ resources:
   - minio.yaml
   - nextcloud.yaml
   - plex.yaml
+  - test-apps.yaml
   - traefik.yaml
   - utils.yaml
   - velero.yaml

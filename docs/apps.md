@@ -68,3 +68,60 @@ configs, recipes, and prompts do not belong in this repo.
   `GITEA__QUEUE__CONN_STR`). The valkey subchart uses `auth.existingSecret`.
   Set `valkey.global.valkey.password` to empty so the parent chart does not
   bake its default into `gitea-inline-config`.
+
+## Test apps
+
+Side projects deploy for testing from the Gitea org `homelab`
+(https://git.clt.milco.casa). ApplicationSet `test-apps`
+(`argo-apps/appsets/test-apps.yaml`) uses the Gitea SCM provider and picks a
+repo when both are true:
+
+- It has the Gitea **label** `homelab-test` (Issues > Labels). Argo CD's Gitea
+  provider matches repo labels, not topics; a topic alone is ignored.
+- It has `deploy/homelab.yaml` on the default branch.
+
+Contract file, `deploy/homelab.yaml`:
+
+```yaml
+namespace: myapp-testing        # must match *-testing
+sources:
+  - path: deploy/helm/myapp     # Helm chart dir
+    type: helm
+    valueFiles: [values-testing.yaml]  # optional, relative to path
+    releaseName: myapp                 # optional, default <repo>
+  - path: deploy/postgres       # Kustomize dir
+    type: kustomize             # namespace is forced to `namespace`
+```
+
+Top-level keys must not collide with generator params (`path`, `url`,
+`branch`, `repository`, `labels`, ...). Any other `type` fails the whole
+ApplicationSet, so fix it fast.
+
+- Application name: `<repo>-testing`. Auto-sync with prune,
+  `CreateNamespace=true`, default branch.
+- AppProject `test-apps` (`argo-apps/bootstrap/test-apps.yaml`): destinations
+  `*-testing` only (Go filepath.Match); the only cluster-scoped resource is a
+  Namespace matching that glob. Sources `https://git.clt.milco.casa/homelab/*`
+  and `git@git.clt.milco.casa:homelab/*`.
+- Argo clones over **HTTPS** (`https://git.clt.milco.casa/homelab/<repo>`),
+  though people use SSH. HTTPS uses the Let's Encrypt wildcard and the same
+  token as the API. SSH would need the Gitea host key in Argo's
+  `configs.ssh.extraHosts` plus a deploy key.
+- Credentials: OpenBao `kv/apps/argocd/gitea-homelab`, keys `username` and
+  `token`. Use a dedicated Gitea user or token with read-only scopes
+  `read:organization`, `read:repository`, `read:issue` (labels). ExternalSecrets
+  in `argo-apps/bootstrap/gitea-homelab-creds.yaml` make `gitea-homelab-repo-creds`
+  (repo-creds template for `https://git.clt.milco.casa/homelab`) and
+  `gitea-homelab-scm-token` (`scm-creds`, key `token`).
+- Apps set their own Ingress. TLS is `wildcard.milco.casa`, reflected into
+  namespaces in `cert_namespaces` (`hosts/group_vars/all/main.yaml`). That list
+  includes the Emberstack regex `.*-testing`, so any `*-testing` namespace gets
+  the cert once the cert-manager role is applied with that value.
+- Images go in Harbor. A pull-only robot for the app's Harbor project goes in
+  OpenBao `kv/apps/<namespace>/harbor-<project>`, keys `username` and `password`.
+  The app's `deploy/` creates a namespaced ExternalSecret that writes it as a
+  `kubernetes.io/dockerconfigjson` Secret. Docker Hub pulls should go through a
+  Harbor proxy-cache project, which is set up in Harbor, not here.
+- Live setup is manual: Gitea org, label, token, Harbor project and robot,
+  and the OpenBao entries. Apply `argo-apps/bootstrap` with the `argo-apps`
+  tag. The ApplicationSet syncs from `argo-apps/appsets`.

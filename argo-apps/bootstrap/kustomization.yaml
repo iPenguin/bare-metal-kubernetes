@@ -6,6 +6,7 @@ resources:
   - app-of-apps.yaml
   - external-dns.yaml
   - gitea.yaml
+  - gitea-homelab-creds.yaml
   - harbor.yaml
   - homelab.yaml
   - keycloak.yaml
@@ -16,6 +17,7 @@ resources:
   - nextcloud.yaml
   - plex.yaml
   - repo-secret.yaml
+  - test-apps.yaml
   - traefik.yaml
   - utils.yaml
   - velero.yaml
