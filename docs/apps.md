@@ -80,6 +80,14 @@ repo when both are true:
   provider matches repo labels, not topics; a topic alone is ignored.
 - It has `deploy/homelab.yaml` on the default branch.
 
+The two checks are separate ApplicationSet filters, not one. Combining
+`labelMatch` with `pathsExist` in a single filter makes Argo treat it as
+branch-scoped, so it looks up the default branch of every repo in the org
+before applying the label. If that branch is missing (Gitea default is
+`main` but the repo only has `master`), the whole ApplicationSet fails.
+The Gitea default branch must exist on any labeled repo; fix it in the
+repo's settings if it does not.
+
 Contract file, `deploy/homelab.yaml`:
 
 ```yaml

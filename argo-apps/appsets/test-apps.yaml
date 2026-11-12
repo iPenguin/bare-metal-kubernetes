@@ -21,9 +21,13 @@ spec:
                 tokenRef:
                   secretName: gitea-homelab-scm-token
                   key: token
+              # labelMatch must be a separate filter from pathsExist. Combined,
+              # Argo CD v3.4.4 classifies the whole filter as branch-scoped and
+              # looks up every org repo's default branch; a missing branch
+              # (default `main`, only `master` present) fails the generator.
               filters:
                 - labelMatch: '^homelab-test$'
-                  pathsExist:
+                - pathsExist:
                     - deploy/homelab.yaml
           # Contract file: its keys (namespace, sources) become template params.
           - git:
