@@ -29,7 +29,7 @@ kubernetes_version: 1.36.6
 # production branch; packaged as nvidia-driver-<branch>-open in ubuntu noble-updates
 nvidia_driver_branch: 595
 # renovate: datasource=helm depName=nvidia-device-plugin registryUrl=https://nvidia.github.io/k8s-device-plugin
-nvidia_k8s_plugin_version: 0.17.3
+nvidia_k8s_plugin_version: 0.20.1
 
 # renovate: datasource=helm depName=rook-ceph registryUrl=https://charts.rook.io/release
 rook_version: 1.20.10
