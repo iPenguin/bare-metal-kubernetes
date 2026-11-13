@@ -37,7 +37,7 @@ rook_version: 1.20.10
 ceph_csi_drivers_version: 1.0.4
 
 # renovate: datasource=github-releases depName=bitnami-labs/sealed-secrets extractVersion=^helm-v(?<version>.+)$
-sealed_secrets_version: 2.17.9
+sealed_secrets_version: 2.22.0
 
 # renovate: datasource=github-releases depName=openbao/openbao
 openbao_pi_binary_version: 2.4.4
