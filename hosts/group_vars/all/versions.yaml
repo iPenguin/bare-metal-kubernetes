@@ -42,7 +42,7 @@ sealed_secrets_version: 2.22.0
 # renovate: datasource=github-releases depName=openbao/openbao
 openbao_pi_binary_version: 2.4.4
 # renovate: datasource=helm depName=openbao registryUrl=https://openbao.github.io/openbao-helm
-openbao_chart_version: 0.16.4
+openbao_chart_version: 0.30.7
 # renovate: datasource=docker depName=openbao/openbao
 openbao_image_version: 2.4.4
 # renovate: datasource=helm depName=external-secrets registryUrl=https://charts.external-secrets.io
