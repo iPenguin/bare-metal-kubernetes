@@ -14,7 +14,7 @@ cilium_version: 1.20.4
 # renovate: datasource=github-releases depName=cilium/cilium-cli
 cilium_cli_version: 0.20.2
 # renovate: datasource=github-releases depName=containerd/containerd
-containerd_version: 2.0.1
+containerd_version: 2.4.2
 # renovate: datasource=github-releases depName=cri-o/cri-o
 crio_version: 1.36.8
 
