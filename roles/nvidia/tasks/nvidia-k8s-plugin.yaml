@@ -20,6 +20,13 @@
     repo_url: https://nvidia.github.io/k8s-device-plugin
   delegate_to: "{{ k8s_controller }}"
 
+- name: Apply NFD CRDs (Helm never upgrades subchart crds/)
+  run_once: true
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.url', 'https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v' ~ nvidia_nfd_version ~ '/deployment/base/nfd-crds/nfd-api-crds.yaml', split_lines=false) | from_yaml_all | list }}"
+  delegate_to: "{{ k8s_controller }}"
+
 - name: Add Nvidia plugin
   run_once: true
   kubernetes.core.helm:
