@@ -42,7 +42,7 @@ spec:
           ref: valuesSrc
         - repoURL: 'https://helm.traefik.io/traefik'
           chart: traefik
-          targetRevision: 35.2.0
+          targetRevision: 35.4.0
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/traefik/values.yaml'
