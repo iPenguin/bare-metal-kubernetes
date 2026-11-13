@@ -19,8 +19,8 @@ spec:
           value: "6443"
         - name: vip_interface
           value: "{{ ansible_default_ipv4.interface }}"
-        - name: vip_cidr
-          value: "32"
+        - name: vip_subnet
+          value: "32,128"
         - name: cp_enable
           value: "true"
         - name: cp_namespace
@@ -44,9 +44,7 @@ spec:
         - name: lb_fwdmethod
           value: local
         - name: vip_address
-          value: "{{ network_services.vip.ipv4 }}"
-        - name: vip_address_ipv6
-          value: "{{ network_services.vip.ipv6 }}"
+          value: "{{ network_services.vip.ipv4 }},{{ network_services.vip.ipv6 }}"
         - name: prometheus_server
           value: ":2112"
       image: ghcr.io/kube-vip/kube-vip:v{{ kube_vip_version }}
