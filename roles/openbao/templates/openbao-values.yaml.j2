@@ -13,6 +13,7 @@ server:
     tag: "{{ openbao_image_version }}"
 
   affinity: ""
+  podManagementPolicy: Parallel
 
   ha:
     enabled: true
