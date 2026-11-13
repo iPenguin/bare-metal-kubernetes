@@ -29,7 +29,7 @@ statefulset:
         level: info
       runner:
         file: .runner
-        capacity: 2
+        capacity: 4
         timeout: 3h
         labels:
           - "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest"

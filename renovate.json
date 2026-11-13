@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "argocd": {
+    "managerFilePatterns": [
+      "/^argo-apps/(appsets|bootstrap)/.+\\.yaml$/"
+    ]
+  },
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^argo-apps/apps/.+\\.yaml$/"
+    ]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Version pins annotated with '# renovate:' comments",
+      "managerFilePatterns": [
+        "/^hosts/group_vars/all/versions\\.yaml$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+registryUrl=(?<registryUrl>\\S+))?(\\s+extractVersion=(?<extractVersion>\\S+))?\\s*\\n[a-z0-9_]+:\\s*['\"]?(?<currentValue>[^'\"\\s]+)"
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Minor and major bumps go through upgrade.yaml; approve them on the Dependency Dashboard",
+      "matchDepNames": [
+        "kubernetes/kubernetes",
+        "cri-o/cri-o",
+        "ceph/ceph",
+        "rook-ceph",
+        "cilium"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Same release for the Pi binary and the cluster image",
+      "matchDepNames": [
+        "openbao/openbao"
+      ],
+      "groupName": "openbao"
+    }
+  ]
+}

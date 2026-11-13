@@ -68,6 +68,26 @@ configs, recipes, and prompts do not belong in this repo.
   `GITEA__QUEUE__CONN_STR`). The valkey subchart uses `auth.existingSecret`.
   Set `valkey.global.valkey.password` to empty so the parent chart does not
   bake its default into `gitea-inline-config`.
+- Actions runner (`actions-values.yaml`): one runner pod, 4 job slots, shared
+  dind with a 50Gi `docker-data` emptyDir. Heavy concurrent image builds can
+  fill it.
+
+## Renovate
+
+Renovate runs hourly from the Gitea repo `homelab/renovate` on the Actions
+runner, as `svc_renovate`, against every repo in the `homelab` org. Releases
+younger than 48 hours never get a PR. Repos can't override that.
+
+This repo's `renovate.json` covers Argo CD Helm charts
+(`argo-apps/appsets`, `argo-apps/bootstrap`), images in `argo-apps/apps`, and
+pins in `hosts/group_vars/all/versions.yaml`. Each pin there needs a
+`# renovate: datasource=... depName=...` comment on the line above it; a pin
+without one is ignored. Minor and major bumps of Kubernetes, CRI-O, Ceph,
+Rook and Cilium wait for approval on the Dependency Dashboard issue, because
+they go through `upgrade.yaml`.
+
+Renovate PRs open on the Gitea copy of this repo. Merge there, then pull and
+push to GitHub.
 
 ## Test apps
 
