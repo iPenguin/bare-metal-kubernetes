@@ -77,9 +77,27 @@ persistence:
   annotations:
     helm.sh/resource-policy: keep
 
+# Chart signing is GPG-only; SSH signing is set in gitea.config below.
 signing:
   enabled: false
   existingSecret: ""
+
+# SSH commit-signing key from OpenBao kv/apps/gitea/gitea-signing-key.
+# ssh-keygen loads the private key next to SIGNING_KEY (the .pub path).
+extraVolumes:
+  - name: signing-key
+    secret:
+      secretName: gitea-signing-key
+      defaultMode: 0440
+      items:
+        - key: privateKey
+          path: key
+        - key: publicKey
+          path: key.pub
+extraContainerVolumeMounts:
+  - name: signing-key
+    mountPath: /etc/gitea-signing
+    readOnly: true
 
 gitea:
   admin:
@@ -107,6 +125,11 @@ gitea:
         secretKeyRef:
           name: gitea-valkey
           key: CONN_STR
+    - name: GITEA__REPOSITORY_0X2E_SIGNING__SIGNING_EMAIL
+      valueFrom:
+        secretKeyRef:
+          name: gitea-signing-key
+          key: email
   metrics:
     enabled: false
   openid:
@@ -136,6 +159,14 @@ gitea:
       DISABLE_SSH: false
       OFFLINE_MODE: false
       PROTOCOL: http
+    repository.signing:
+      SIGNING_FORMAT: ssh
+      SIGNING_KEY: /etc/gitea-signing/key.pub
+      SIGNING_NAME: MilcoBot
+      INITIAL_COMMIT: always
+      CRUD_ACTIONS: always
+      WIKI: always
+      MERGES: always
     actions:
       ENABLED: true
       DEFAULT_ACTIONS_URL: github

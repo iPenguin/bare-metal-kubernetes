@@ -71,6 +71,11 @@ configs, recipes, and prompts do not belong in this repo.
 - Actions runner (`actions-values.yaml`): one runner pod, 4 job slots, shared
   dind with a 50Gi `docker-data` emptyDir. Heavy concurrent image builds can
   fill it.
+- Commit signing: Gitea signs web UI commits, merges and API commits as
+  `BotMilco` with an SSH key so GitHub shows them verified. OpenBao
+  `kv/apps/gitea/gitea-signing-key` holds `privateKey` (OpenSSH, no passphrase),
+  `publicKey` and `email`. Add the public key to the GitHub account with
+  `email` verified, as a Signing key.
 
 ## Renovate
 
