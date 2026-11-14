@@ -28,6 +28,63 @@
   ],
   "packageRules": [
     {
+      "description": "One PR per dependency type",
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "groupName": "Python packages"
+    },
+    {
+      "description": "One PR per dependency type",
+      "matchManagers": [
+        "ansible-galaxy",
+        "ansible"
+      ],
+      "groupName": "Ansible collections and roles"
+    },
+    {
+      "description": "One PR per dependency type",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "groupName": "Container images"
+    },
+    {
+      "description": "One PR per dependency type",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "CI actions"
+    },
+    {
+      "description": "One PR per dependency type",
+      "matchManagers": [
+        "argocd"
+      ],
+      "groupName": "Argo CD Helm charts"
+    },
+    {
+      "description": "One PR per dependency type",
+      "matchManagers": [
+        "kubernetes"
+      ],
+      "groupName": "Argo CD app images"
+    },
+    {
+      "description": "Pins in versions.yaml; the upgrade.yaml components keep their own PRs",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "!kubernetes/kubernetes",
+        "!cri-o/cri-o",
+        "!ceph/ceph",
+        "!rook-ceph",
+        "!cilium"
+      ],
+      "groupName": "Version pins"
+    },
+    {
       "description": "Minor and major bumps go through upgrade.yaml; approve them on the Dependency Dashboard",
       "matchDepNames": [
         "kubernetes/kubernetes",
@@ -41,13 +98,6 @@
         "major"
       ],
       "dependencyDashboardApproval": true
-    },
-    {
-      "description": "Same release for the Pi binary and the cluster image",
-      "matchDepNames": [
-        "openbao/openbao"
-      ],
-      "groupName": "openbao"
     }
   ]
 }

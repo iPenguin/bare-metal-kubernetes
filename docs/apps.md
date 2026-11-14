@@ -91,6 +91,11 @@ without one is ignored. Minor and major bumps of Kubernetes, CRI-O, Ceph,
 Rook and Cilium wait for approval on the Dependency Dashboard issue, because
 they go through `upgrade.yaml`.
 
+Updates are grouped into one PR per type: Python packages, Ansible
+collections and roles, container images, CI actions, Argo CD charts, Argo CD
+app images, and `versions.yaml` pins. Those five upgrade.yaml components
+keep their own PRs. Major bumps still get a separate PR per group.
+
 Renovate PRs open on the Gitea copy of this repo. Merge there, then pull and
 push to GitHub.
 
