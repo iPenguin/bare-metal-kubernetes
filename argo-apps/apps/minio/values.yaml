@@ -13,6 +13,9 @@ buckets:
   - name: velero-backups
     policy: none
     purge: false
+  - name: openbao-snapshots
+    policy: none
+    purge: false
 
 tolerations:
   - key: "node-role.kubernetes.io/control-plane"

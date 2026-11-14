@@ -268,7 +268,7 @@ shred -u .openbao-cluster-init.json
    ```bash
    kubectl -n openbao create job --from=cronjob/openbao-raft-snapshot test-snap
    kubectl -n openbao logs -f job/test-snap
-   # should upload to minio-local.clt.milco.casa/velero-backups/openbao-raft-snapshots/
+   # should upload to minio-local.clt.milco.casa/openbao-snapshots/openbao-raft-snapshots/
    ```
 
 5. `kubectl get pods -n external-secrets` — ESO controllers Running.
