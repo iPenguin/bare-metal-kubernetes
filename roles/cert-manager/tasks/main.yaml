@@ -14,6 +14,35 @@
     create_namespace: true
     update_repo_cache: true
     values: "{{ lookup('template', 'cert-manager-values.yaml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 300s
+
+- name: Wait for the cert-manager webhook Deployment
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    namespace: "{{ cert_manager_namespace }}"
+    name: cert-manager-webhook
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+    wait_timeout: 300
+
+- name: Wait for the cert-manager webhook Service to have a ready endpoint
+  kubernetes.core.k8s_info:
+    api_version: discovery.k8s.io/v1
+    kind: EndpointSlice
+    namespace: "{{ cert_manager_namespace }}"
+    label_selectors:
+      - kubernetes.io/service-name=cert-manager-webhook
+  register: cert_manager_webhook_slices
+  until: >-
+    cert_manager_webhook_slices.resources
+    | map(attribute='endpoints', default=[]) | flatten
+    | selectattr('conditions.ready', 'defined') | selectattr('conditions.ready')
+    | list | length > 0
+  retries: 30
+  delay: 5
 
 - name: Deploy solvers
   kubernetes.core.k8s:
