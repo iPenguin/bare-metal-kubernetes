@@ -1,8 +1,8 @@
 ui = false
 disable_mlock = true
 
-storage "file" {
-  path = "{{ openbao_pi_data_dir }}"
+storage "pebbledb" {
+  path = "{{ openbao_pi_data_dir }}-pebbledb"
 }
 
 listener "tcp" {

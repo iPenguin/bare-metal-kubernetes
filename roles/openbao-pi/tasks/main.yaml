@@ -27,6 +27,7 @@
     - "{{ openbao_pi_config_dir }}"
     - "{{ openbao_pi_tls_dir }}"
     - "{{ openbao_pi_data_dir }}"
+    - "{{ openbao_pi_data_dir }}-pebbledb"
 
 - name: Install unzip (required to expand release archive)
   ansible.builtin.apt:
