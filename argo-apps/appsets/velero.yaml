@@ -33,7 +33,7 @@ spec:
           ref: valuesSrc
         - repoURL: 'https://vmware-tanzu.github.io/helm-charts'
           chart: velero
-          targetRevision: 8.7.2
+          targetRevision: 10.1.3
           helm:
             valueFiles:
               - '$valuesSrc/argo-apps/apps/velero/values.yaml'
