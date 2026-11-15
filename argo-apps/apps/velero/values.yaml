@@ -33,7 +33,6 @@ configuration:
   # Explicitly disable VolumeSnapshotLocation if not needed
   volumeSnapshotLocation: []
 
-defaultVolumesToFsBackup: true
 deployNodeAgent: true
 nodeAgent:
   # node-agent must run on every node for fs backups, including the tainted GPU nodes
@@ -41,14 +40,11 @@ nodeAgent:
     - key: nvidia.com/gpu
       operator: Exists
       effect: NoSchedule
-uploaderType: kopia
 
-# CRDs applied manually — see docs. Hook image churn (Bitnami deprecation,
-# distroless shell mismatch, hook SA token 401) made the hook unreliable.
+# Disable the chart's CRD-upgrade hook Job; it was unreliable (Bitnami image
+# deprecation, distroless shell, SA token 401). Argo still applies the chart's
+# crds/ directory on sync.
 upgradeCRDs: false
-
-featureFlags:
-  - EnableUnifiedRepo
 
 initContainers:
   - name: velero-plugin-for-aws
