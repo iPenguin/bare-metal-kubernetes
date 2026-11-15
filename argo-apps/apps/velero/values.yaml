@@ -52,7 +52,7 @@ featureFlags:
 
 initContainers:
   - name: velero-plugin-for-aws
-    image: velero/velero-plugin-for-aws:v1.13.2
+    image: velero/velero-plugin-for-aws:v1.14.4
     volumeMounts:
       - mountPath: /target
         name: plugins
@@ -92,4 +92,4 @@ schedules:
 
 image:
   repository: velero/velero
-  tag: v1.17.2
+  tag: v1.18.4
