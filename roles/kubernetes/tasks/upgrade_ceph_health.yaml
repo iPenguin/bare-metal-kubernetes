@@ -28,19 +28,17 @@
   until:
     - _ceph_health_raw.rc == 0
     - >-
-      {{
-        (
-          (_ceph_health_raw.stdout | from_json).status == 'HEALTH_OK'
-        ) or (
-          (_ceph_health_raw.stdout | from_json).status == 'HEALTH_WARN'
-          and (
-            ((_ceph_health_raw.stdout | from_json).checks | default({}) | dict2items
-             | map(attribute='key')
-             | reject('in', k8s_upgrade_ceph_warn_allowlist)
-             | list | length) == 0
-          )
+      (
+        (_ceph_health_raw.stdout | from_json).status == 'HEALTH_OK'
+      ) or (
+        (_ceph_health_raw.stdout | from_json).status == 'HEALTH_WARN'
+        and (
+          ((_ceph_health_raw.stdout | from_json).checks | default({}) | dict2items
+           | map(attribute='key')
+           | reject('in', k8s_upgrade_ceph_warn_allowlist)
+           | list | length) == 0
         )
-      }}
+      )
 
 - name: Record Ceph gate result for messaging
   ansible.builtin.set_fact:

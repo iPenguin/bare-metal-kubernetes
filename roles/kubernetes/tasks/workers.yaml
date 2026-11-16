@@ -37,4 +37,4 @@
   ansible.builtin.command: kubectl get nodes
   register: nodelist
   delegate_to: "{{ k8s_controller }}"
-  failed_when: not '{{ inventory_hostname }}' in nodelist.stdout
+  failed_when: inventory_hostname not in nodelist.stdout

@@ -710,8 +710,8 @@
       retries: 30
       delay: 5
       until: >-
-        {{ (_local_readyz.rc | default(1)) == 0
-           and ((_local_readyz.stdout | default('') | trim) == 'ok') }}
+        (_local_readyz.rc | default(1)) == 0
+        and ((_local_readyz.stdout | default('') | trim) == 'ok')
 
     - name: Post-upgrade etcd quorum gate on controllers
       when: inventory_hostname in groups['controllers']
