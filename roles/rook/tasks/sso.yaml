@@ -65,7 +65,7 @@
   vars:
     ansible_connection: local
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
-  community.general.keycloak_client:
+  middleware_automation.keycloak.keycloak_client:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ _keycloak_secrets.resources[0].data['adminPassword'] | b64decode }}"

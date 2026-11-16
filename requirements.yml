@@ -12,3 +12,5 @@ collections:
     version: 0.4.1
   - name: community.hashi_vault
     version: 7.1.0
+  - name: middleware_automation.keycloak
+    version: 3.1.2

@@ -17,7 +17,7 @@
     - harbor-oidc
 
 - name: Create a new realm in Keycloak
-  community.general.keycloak_realm:
+  middleware_automation.keycloak.keycloak_realm:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -33,7 +33,7 @@
 
 - name: Create LDAP user federation for LLDAP in Keycloak
   delegate_to: localhost
-  community.general.keycloak_user_federation:
+  middleware_automation.keycloak.keycloak_user_federation:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -123,7 +123,7 @@
           group.object.classes: "groupOfUniqueNames"
           membership.ldap.attribute: "uniqueMember"
           membership.attribute.type: "DN"
-          groups.path: ""
+          groups.path: "/"
           mode: "LDAP_ONLY"
           user.roles.retrieve.strategy: "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
           drop.non.existing.groups.during.sync: "false"
@@ -131,7 +131,7 @@
           alwaysReadValueFromLDAP: "true"
 
 - name: Create openid client scope
-  community.general.keycloak_clientscope:
+  middleware_automation.keycloak.keycloak_client_scope:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -159,7 +159,7 @@
           userinfo.token.claim: true
 
 - name: Create username client scope
-  community.general.keycloak_clientscope:
+  middleware_automation.keycloak.keycloak_client_scope:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -187,7 +187,7 @@
           userinfo.token.claim: true
 
 - name: Create groups client scope
-  community.general.keycloak_clientscope:
+  middleware_automation.keycloak.keycloak_client_scope:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -214,7 +214,7 @@
           userinfo.token.claim: true
 
 - name: Create ArgoCD OIDC client in Keycloak
-  community.general.keycloak_client:
+  middleware_automation.keycloak.keycloak_client:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -238,7 +238,7 @@
       - groups
 
 - name: Create Harbor OIDC client in Keycloak
-  community.general.keycloak_client:
+  middleware_automation.keycloak.keycloak_client:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -267,7 +267,7 @@
     - harbor-oidc
 
 - name: Create MinIO realm roles in Keycloak
-  community.general.keycloak_role:
+  middleware_automation.keycloak.keycloak_role:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -281,7 +281,7 @@
     - app-minio-users
 
 - name: Create MinIO OIDC client in Keycloak
-  community.general.keycloak_client:
+  middleware_automation.keycloak.keycloak_client:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -319,7 +319,7 @@
           usermodel.realmRoleMapping.rolePrefix: ""
 
 - name: Create OpenBao OIDC client in Keycloak
-  community.general.keycloak_client:
+  middleware_automation.keycloak.keycloak_client:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
@@ -356,7 +356,7 @@
   when: filebrowser_client_secret in ['REPLACE_ME_WITH_ansible-vault_encrypt_string', 'REPLACE_ME', '']
 
 - name: Create FileBrowser OIDC client in Keycloak
-  community.general.keycloak_client:
+  middleware_automation.keycloak.keycloak_client:
     auth_keycloak_url: "{{ keycloak.url }}"
     auth_username: "{{ keycloak.admin_username }}"
     auth_password: "{{ keycloak_admin_password }}"
