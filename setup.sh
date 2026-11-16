@@ -5,7 +5,7 @@
 # from scratch.
 
 sudo 2>/dev/null 1>&2 apt install -y python3-pip sshpass
-2>/dev/null 1>&2 pip install ansible pre-commit
+2>/dev/null 1>&2 pip install -r requirements.txt pre-commit
 
 if [[ ! $PATH =~ ".local/bin" ]]
 then

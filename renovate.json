@@ -98,6 +98,11 @@
         "major"
       ],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "ansible-core 2.22 needs Python 3.13; the laptop has 3.12",
+      "matchPackageNames": ["ansible-core"],
+      "allowedVersions": "<2.22"
     }
   ]
 }
