@@ -143,7 +143,7 @@
         command: "/bin/sh -c {{ _script | quote }}"
       register: _status_raw
       # bao status exits 2 when sealed/uninitialized, 0 when unsealed — both OK here
-      failed_when: _status_raw.return_code not in [0, 2]
+      failed_when: _status_raw.rc not in [0, 2]
       changed_when: false
 
     - name: Parse cluster status
@@ -196,7 +196,7 @@
       until: not (_post_init_status.stdout | from_json).sealed
       retries: 12
       delay: 5
-      failed_when: _post_init_status.return_code not in [0, 2]
+      failed_when: _post_init_status.rc not in [0, 2]
       changed_when: false
       when: not _cluster_status.initialized
 
@@ -278,9 +278,9 @@
         command: "/bin/sh -c {{ _script | quote }}"
       register: _kv_result
       failed_when: >-
-        _kv_result.return_code != 0
+        _kv_result.rc != 0
         and 'path is already in use' not in (_kv_result.stderr | default(''))
-      changed_when: _kv_result.return_code == 0
+      changed_when: _kv_result.rc == 0
       no_log: true
 
     # ---- AppRole auth ----
@@ -294,9 +294,9 @@
         command: "/bin/sh -c {{ _script | quote }}"
       register: _approle_result
       failed_when: >-
-        _approle_result.return_code != 0
+        _approle_result.rc != 0
         and 'path is already in use' not in (_approle_result.stderr | default(''))
-      changed_when: _approle_result.return_code == 0
+      changed_when: _approle_result.rc == 0
       no_log: true
 
     # ---- Kubernetes auth ----
@@ -310,9 +310,9 @@
         command: "/bin/sh -c {{ _script | quote }}"
       register: _k8s_auth_result
       failed_when: >-
-        _k8s_auth_result.return_code != 0
+        _k8s_auth_result.rc != 0
         and 'path is already in use' not in (_k8s_auth_result.stderr | default(''))
-      changed_when: _k8s_auth_result.return_code == 0
+      changed_when: _k8s_auth_result.rc == 0
       no_log: true
 
     - name: Configure Kubernetes auth
@@ -338,9 +338,9 @@
         command: "/bin/sh -c {{ _script | quote }}"
       register: _oidc_result
       failed_when: >-
-        _oidc_result.return_code != 0
+        _oidc_result.rc != 0
         and 'path is already in use' not in (_oidc_result.stderr | default(''))
-      changed_when: _oidc_result.return_code == 0
+      changed_when: _oidc_result.rc == 0
       no_log: true
 
     - name: Configure OIDC
