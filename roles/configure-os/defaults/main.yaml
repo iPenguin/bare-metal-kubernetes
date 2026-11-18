@@ -1,0 +1,3 @@
+---
+# sshd AllowUsers. Any account not listed can no longer SSH in.
+sshd_allow_users: "{{ remote_users | map(attribute='user') | list }}"

@@ -1,0 +1,53 @@
+---
+# sshd_config must include sshd_config.d/*.conf before its own settings; sshd
+# keeps the first value it reads, so 10- wins over later drop-ins such as
+# 50-cloud-init and over the main file.
+
+- name: Check sshd_allow_users is not empty
+  ansible.builtin.assert:
+    that: sshd_allow_users | length > 0
+    fail_msg: sshd_allow_users is empty; AllowUsers would lock everyone out.
+
+# Don't rely on the distro default. *.conf, not *, so stray .bak/.dpkg-old
+# files are not loaded. No-op when the line is already present.
+- name: Include sshd_config.d drop-ins
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    line: Include /etc/ssh/sshd_config.d/*.conf
+    insertbefore: BOF
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: Reload sshd
+
+# validate parses the drop-in on its own (default host keys), catching bad
+# directives before it lands. The sshd -T check below covers the full config.
+- name: Install sshd hardening drop-in
+  ansible.builtin.template:
+    src: sshd-hardening.conf.j2
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: Reload sshd
+
+- name: Read effective sshd config
+  ansible.builtin.command: /usr/sbin/sshd -T
+  register: _sshd_effective
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Check the hardening is in effect
+  ansible.builtin.assert:
+    that:
+      - "'passwordauthentication no' in _sshd_effective.stdout_lines"
+      - "'kbdinteractiveauthentication no' in _sshd_effective.stdout_lines"
+      - "'permitrootlogin no' in _sshd_effective.stdout_lines"
+      - "('allowusers ' ~ item) in _sshd_effective.stdout_lines"
+    fail_msg: >-
+      sshd -T does not show the hardening; check sshd_config and the other
+      files in sshd_config.d.
+  loop: "{{ sshd_allow_users }}"
+  when: not ansible_check_mode

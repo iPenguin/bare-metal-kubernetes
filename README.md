@@ -35,6 +35,13 @@ ansible-playbook -i hosts/hosts.yaml setup-workstation-dev.yaml
 ansible-playbook -i hosts/hosts.yaml setup-workstation-apps.yaml
 ```
 
+## Remote access
+
+SSH is not forwarded from the WAN; connect over WireGuard. `configure-os` installs
+`/etc/ssh/sshd_config.d/10-hardening.conf`: keys only, no root login, and
+`AllowUsers` from `sshd_allow_users` (default: the `remote_users` accounts).
+`ansible-playbook run.yaml --tags sshd` applies only that part of `configure-os`.
+
 ## Secrets
 
 New app secrets go in OpenBao at `kv/apps/<namespace>/<secret-name>` and are

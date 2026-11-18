@@ -67,6 +67,12 @@
   include_tasks: users.yaml
   loop: "{{ remote_users }}"
 
+# Static import so the tag reaches every task: --tags sshd runs only these.
+- name: Harden sshd
+  ansible.builtin.import_tasks: sshd.yaml
+  tags:
+    - sshd
+
 - name: Set the timezone
   ansible.builtin.timezone:
     name: "{{ timezone }}"

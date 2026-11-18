@@ -1,0 +1,6 @@
+# {{ ansible_managed }}
+# Key-only SSH for the accounts Ansible manages. Remote access is via WireGuard.
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+AllowUsers {{ sshd_allow_users | join(' ') }}

@@ -62,8 +62,6 @@ workstations:
     localhost:
 
 remote:
-  vars:
-    #ansible_ssh_common_args: '-o ProxyCommand="ssh -p 2221 -W %h:%p -q ansible@{{ vault_remote_host }}"'
   children:
     openwrt:
       children:

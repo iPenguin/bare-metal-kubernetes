@@ -111,26 +111,6 @@ config forwarding
 	option src 'lan'
 	option dest 'wan'
 
-config redirect
-	option dest 'lan'
-	option target 'DNAT'
-	option name 'ssh - c1'
-	option src 'wan'
-	option src_dport '2221'
-	option dest_ip '{{ ipv4_network }}.10'
-	option dest_port '22'
-	option family 'ipv4'
-
-config redirect
-	option dest 'lan'
-	option target 'DNAT'
-	option name 'ssh - c1 ipv6'
-	option family 'ipv6'
-	option src 'wan'
-	option src_dport '2221'
-	option dest_ip '{{ ipv6_network }}::10'
-	option dest_port '22'
-
 config rule
 	option name 'Allow-WireGuard'
 	option src 'wan'
