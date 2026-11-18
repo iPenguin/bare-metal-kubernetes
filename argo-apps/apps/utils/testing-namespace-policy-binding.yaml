@@ -1,0 +1,9 @@
+---
+# Binds testing-namespace-labels (testing-namespace-policy.yaml) cluster-wide.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: testing-namespace-labels
+spec:
+  policyName: testing-namespace-labels
+  validationActions: [Deny]

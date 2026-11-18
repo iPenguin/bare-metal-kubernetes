@@ -1,0 +1,9 @@
+---
+# Binds testing-services (testing-service-policy.yaml) cluster-wide.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: testing-services
+spec:
+  policyName: testing-services
+  validationActions: [Deny]

@@ -46,7 +46,8 @@ SSH is not forwarded from the WAN; connect over WireGuard. `configure-os` instal
 
 New app secrets go in OpenBao at `kv/apps/<namespace>/<secret-name>` and are
 synced by an ExternalSecret against ClusterSecretStore `openbao`
-(`argo-apps/apps/utils/cluster-secret-store.yaml`). Import a live Secret with
+(`argo-apps/apps/utils/cluster-secret-store.yaml`); `*-testing` namespaces use
+`openbao-testing` instead. Import a live Secret with
 `scripts/openbao-import-secret.sh <namespace> <secret-name>`.
 
 Kubeseal is only for the remaining SealedSecrets: `keycloak-passwords`,

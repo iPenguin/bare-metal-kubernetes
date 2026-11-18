@@ -418,6 +418,39 @@
         command: "/bin/sh -c {{ _script | quote }}"
       no_log: true
 
+    - name: Read Kubernetes auth accessor
+      vars:
+        _script: "{{ _bao }} bao auth list -format=json"
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      register: _auth_list
+      changed_when: false
+      no_log: true
+
+    # Templated policy: the namespace comes from the caller's Kubernetes auth
+    # alias, so each *-testing namespace reads only kv/apps/<its namespace>/*.
+    - name: Write eso-testing policy
+      vars:
+        _k8s_accessor: "{{ (_auth_list.stdout | from_json)['kubernetes/'].accessor }}"
+        _sa_ns: "{{ '{{' }}identity.entity.aliases.{{ _k8s_accessor }}.metadata.service_account_namespace{{ '}}' }}"
+        _script: |
+            {{ _bao }} bao policy write eso-testing - <<'POLICY'
+            # Test apps (store openbao-testing) read kv/apps/<own namespace>/*.
+            path "kv/data/apps/{{ _sa_ns }}/*" {
+              capabilities = ["read"]
+            }
+            path "kv/metadata/apps/{{ _sa_ns }}/*" {
+              capabilities = ["read", "list"]
+            }
+            POLICY
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
     - name: Write raft-snapshot policy
       vars:
         _script: |
@@ -442,6 +475,21 @@
             bound_service_account_names=external-secrets
             bound_service_account_namespaces=external-secrets
             policies=eso
+            ttl=1h
+      kubernetes.core.k8s_exec:
+        namespace: "{{ _ns }}"
+        pod: "{{ _pod }}"
+        command: "/bin/sh -c {{ _script | quote }}"
+      no_log: true
+
+    - name: Write ESO testing Kubernetes role
+      vars:
+        _script: >-
+            {{ _bao }}
+            bao write auth/kubernetes/role/eso-testing
+            bound_service_account_names=openbao-eso
+            bound_service_account_namespaces='*-testing'
+            policies=eso-testing
             ttl=1h
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
@@ -619,7 +667,7 @@
           - "Cluster-OpenBao initialized and configured."
           - ""
           - "Auth methods enabled: approle / kubernetes / oidc"
-          - "Policies: admin / eso / raft-snapshot / ansible"
+          - "Policies: admin / eso / eso-testing / raft-snapshot / ansible"
           - "KV v2 secrets engine: kv/"
           - "K8s secrets: openbao-raft-snapshot-token, openbao-raft-snapshot-minio"
           - ""

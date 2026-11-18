@@ -1,0 +1,32 @@
+---
+# Test apps may ship their own *-testing Namespace (the AppProject must allow
+# Namespace for CreateNamespace), which would let them drop the labels set by
+# the test-apps ApplicationSet. Require them on every *-testing namespace.
+# MetalLB (primary-ip-pool) keys off homelab.milco.casa/testing.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: testing-namespace-labels
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: ['v1']
+        operations: ['CREATE', 'UPDATE']
+        resources: ['namespaces']
+  matchConditions:
+    - name: testing-namespace
+      expression: object.metadata.name.endsWith('-testing')
+  validations:
+    - expression: >-
+        has(object.metadata.labels) &&
+        'pod-security.kubernetes.io/enforce' in object.metadata.labels &&
+        object.metadata.labels['pod-security.kubernetes.io/enforce'] ==
+        'restricted' &&
+        'homelab.milco.casa/testing' in object.metadata.labels &&
+        object.metadata.labels['homelab.milco.casa/testing'] == 'true'
+      message: >-
+        *-testing namespaces need labels
+        pod-security.kubernetes.io/enforce=restricted and
+        homelab.milco.casa/testing=true

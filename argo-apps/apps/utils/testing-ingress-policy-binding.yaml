@@ -1,0 +1,9 @@
+---
+# Binds testing-ingresses (testing-ingress-policy.yaml) cluster-wide.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: testing-ingresses
+spec:
+  policyName: testing-ingresses
+  validationActions: [Deny]

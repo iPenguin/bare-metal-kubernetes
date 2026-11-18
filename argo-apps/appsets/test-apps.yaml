@@ -48,6 +48,12 @@ spec:
           prune: true
         syncOptions:
           - CreateNamespace=true
+        # Enforced by ValidatingAdmissionPolicy testing-namespace-labels
+        # (argo-apps/apps/utils/testing-namespace-policy.yaml).
+        managedNamespaceMetadata:
+          labels:
+            pod-security.kubernetes.io/enforce: restricted
+            homelab.milco.casa/testing: 'true'
   templatePatch: |
     {{- $release := .repository | lower | replace "_" "-" | replace "." "-" }}
     spec:

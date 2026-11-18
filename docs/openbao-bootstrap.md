@@ -231,8 +231,9 @@ This playbook:
    `vault_openbao_cluster_root_token` to `openbao_generated.yaml`.
 5. Enables auth methods: **AppRole**, **Kubernetes**, **OIDC** (Keycloak).
 6. Configures OIDC with the `openbao_client_secret` from `apps.yaml`.
-7. Creates policies: `admin`, `eso`, `raft-snapshot`.
-8. Creates the ESO Kubernetes role bound to the `external-secrets` SA.
+7. Creates policies: `admin`, `eso`, `eso-testing`, `raft-snapshot`.
+8. Creates the ESO Kubernetes role bound to the `external-secrets` SA, and
+   `eso-testing` bound to SA `openbao-eso` in `*-testing` namespaces.
 9. Mints the raft-snapshot token and creates both K8s secrets
    (`openbao-raft-snapshot-token`, `openbao-raft-snapshot-minio`).
 10. Enables KV v2 at path `kv/`.
@@ -280,8 +281,10 @@ shred -u .openbao-cluster-init.json
 ## App secrets after bootstrap
 
 ClusterSecretStore `openbao` lives in `argo-apps/apps/utils/cluster-secret-store.yaml`.
-The `eso` policy can read `kv/apps/*`. New secrets go there via ExternalSecret,
-not Sealed Secrets. Import with `scripts/openbao-import-secret.sh <namespace> <secret-name>`.
+The `eso` policy can read `kv/apps/*`; the store is closed to `*-testing`
+namespaces. Test apps use `openbao-testing` (role and templated policy
+`eso-testing`): each `*-testing` namespace reads only `kv/apps/<its namespace>/*`.
+New secrets go in `kv/apps/` via ExternalSecret, not Sealed Secrets. Import with `scripts/openbao-import-secret.sh <namespace> <secret-name>`.
 
 Still SealedSecret (do not remove the sealed-secrets controller yet):
 

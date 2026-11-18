@@ -1,0 +1,66 @@
+---
+# Ingresses in *-testing namespaces: class traefik, and every host must be
+# <namespace>.clt.milco.casa. One label under *.clt.milco.casa, so Traefik's
+# default wildcard cert covers it and external-dns (domainFilter
+# clt.milco.casa) publishes it; no real host ends in -testing. No host-less
+# rules, no defaultBackend, no external-dns annotations (extra hostnames or
+# targets), and only the web/websecure entry points (not ssh). Of the
+# traefik.ingress.kubernetes.io/* annotations only router.entrypoints and
+# router.tls are allowed (no middlewares, serverstransport, ...).
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: testing-ingresses
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['networking.k8s.io']
+        apiVersions: ['v1']
+        operations: ['CREATE', 'UPDATE']
+        resources: ['ingresses']
+  matchConditions:
+    - name: testing-namespace
+      expression: request.namespace.endsWith('-testing')
+  variables:
+    - name: host
+      expression: request.namespace + '.clt.milco.casa'
+    - name: ep
+      expression: "'traefik.ingress.kubernetes.io/router.entrypoints'"
+    - name: annotations
+      expression: >-
+        has(object.metadata.annotations) ? object.metadata.annotations : {}
+  validations:
+    - expression: >-
+        has(object.spec.ingressClassName) &&
+        object.spec.ingressClassName == 'traefik'
+      message: '*-testing Ingress: ingressClassName must be traefik.'
+    - expression: "!has(object.spec.defaultBackend)"
+      message: '*-testing Ingress: no defaultBackend.'
+    - expression: >-
+        has(object.spec.rules) && size(object.spec.rules) > 0 &&
+        object.spec.rules.all(r, has(r.host) && r.host == variables.host)
+      messageExpression: >-
+        '*-testing Ingress: every rule needs host ' + variables.host
+    - expression: >-
+        !has(object.spec.tls) || object.spec.tls.all(t, has(t.hosts) &&
+        t.hosts.all(h, h == variables.host))
+      messageExpression: >-
+        '*-testing Ingress: every tls entry needs hosts: [' + variables.host +
+        ']'
+    - expression: >-
+        !variables.annotations.exists(k,
+        k.startsWith('external-dns.alpha.kubernetes.io/'))
+      message: '*-testing Ingress: no external-dns annotations.'
+    - expression: >-
+        !(variables.ep in variables.annotations) ||
+        variables.annotations[variables.ep]
+        .split(',').all(e, e.trim() in ['web', 'websecure'])
+      message: '*-testing Ingress: entry points web and websecure only.'
+    - expression: >-
+        !variables.annotations.exists(k,
+        k.startsWith('traefik.ingress.kubernetes.io/') &&
+        !(k in [variables.ep, 'traefik.ingress.kubernetes.io/router.tls']))
+      message: >-
+        *-testing Ingress: only traefik.ingress.kubernetes.io/router.entrypoints
+        and router.tls annotations.
