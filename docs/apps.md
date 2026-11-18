@@ -139,8 +139,19 @@ ApplicationSet, so fix it fast.
   `CreateNamespace=true`, default branch.
 - AppProject `test-apps` (`argo-apps/bootstrap/test-apps.yaml`): destinations
   `*-testing` only (Go filepath.Match); the only cluster-scoped resource is a
-  Namespace matching that glob. Sources `https://git.clt.milco.casa/homelab/*`
-  and `git@git.clt.milco.casa:homelab/*`.
+  Namespace matching that glob. No `SecretStore`, `Role`, `RoleBinding`,
+  `Endpoints`, `EndpointSlice`, or `traefik.io`, `gateway.networking.k8s.io`,
+  and `cilium.io` kinds.
+  Sources `https://git.clt.milco.casa/homelab/*` and
+  `git@git.clt.milco.casa:homelab/*`.
+- Namespaces get `pod-security.kubernetes.io/enforce: restricted` and
+  `homelab.milco.casa/testing: "true"` (`managedNamespaceMetadata`).
+  ValidatingAdmissionPolicy `testing-namespace-labels`
+  (`argo-apps/apps/utils/testing-namespace-policy.yaml`) rejects any `*-testing`
+  namespace without them. Pods must meet the restricted profile.
+- Services: `ClusterIP` only, no `externalIPs`, no external-dns annotations
+  (ValidatingAdmissionPolicy `testing-services`). MetalLB `primary-ip-pool`
+  also skips namespaces with the testing label.
 - Argo clones over **HTTPS** (`https://git.clt.milco.casa/homelab/<repo>`),
   though people use SSH. HTTPS uses the Let's Encrypt wildcard and the same
   token as the API. SSH would need the Gitea host key in Argo's
@@ -151,15 +162,24 @@ ApplicationSet, so fix it fast.
   in `argo-apps/bootstrap/gitea-homelab-creds.yaml` make `gitea-homelab-repo-creds`
   (repo-creds template for `https://git.clt.milco.casa/homelab`) and
   `gitea-homelab-scm-token` (`scm-creds`, key `token`).
-- Apps set their own Ingress. TLS is `wildcard.milco.casa`, reflected into
-  namespaces in `cert_namespaces` (`hosts/group_vars/all/main.yaml`). That list
-  includes the Emberstack regex `.*-testing`, so any `*-testing` namespace gets
-  the cert once the cert-manager role is applied with that value.
+- Ingress: `ingressClassName: traefik`, and every `rules[].host` and
+  `tls[].hosts[]` must be `<namespace>.clt.milco.casa` (e.g.
+  `myapp-testing.clt.milco.casa`). No `defaultBackend`, no external-dns
+  annotations, entry points `web`/`websecure` only, and no
+  `traefik.ingress.kubernetes.io/*` annotation besides `router.entrypoints` and
+  `router.tls`
+  (ValidatingAdmissionPolicy `testing-ingresses`). external-dns publishes the
+  host. The wildcard cert is not reflected into `*-testing` namespaces; leave
+  `tls.secretName` unset and Traefik serves its default cert
+  (`wildcard.milco.casa`, covers `*.clt.milco.casa`).
 - Images go in Harbor. A pull-only robot for the app's Harbor project goes in
   OpenBao `kv/apps/<namespace>/harbor-<project>`, keys `username` and `password`.
-  The app's `deploy/` creates a namespaced ExternalSecret that writes it as a
-  `kubernetes.io/dockerconfigjson` Secret. Docker Hub pulls should go through a
-  Harbor proxy-cache project, which is set up in Harbor, not here.
+  The app's `deploy/` creates ServiceAccount `openbao-eso` and an ExternalSecret
+  against ClusterSecretStore `openbao-testing` that writes it as a
+  `kubernetes.io/dockerconfigjson` Secret. That store only reads
+  `kv/apps/<own namespace>/*`; store `openbao` is closed to `*-testing`.
+  Docker Hub pulls should go through a Harbor proxy-cache project, which is set
+  up in Harbor, not here.
 - Live setup is manual: Gitea org, label, token, Harbor project and robot,
   and the OpenBao entries. Apply `argo-apps/bootstrap` with the `argo-apps`
   tag. The ApplicationSet syncs from `argo-apps/appsets`.

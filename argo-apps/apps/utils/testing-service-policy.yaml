@@ -1,0 +1,34 @@
+---
+# Services in *-testing namespaces: ClusterIP only, no externalIPs
+# (CVE-2020-8554: with kube-proxy replacement an externalIP intercepts
+# in-cluster traffic to that IP), no NodePort/LoadBalancer exposure on the LAN,
+# no ExternalName (Traefik would proxy to any host), and no external-dns
+# annotations (they publish any clt.milco.casa name). Matched by namespace
+# name, which a test app cannot change.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: testing-services
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: ['v1']
+        operations: ['CREATE', 'UPDATE']
+        resources: ['services']
+  matchConditions:
+    - name: testing-namespace
+      expression: request.namespace.endsWith('-testing')
+  validations:
+    - expression: >-
+        !has(object.spec.type) || object.spec.type == 'ClusterIP'
+      message: '*-testing Service: type must be ClusterIP.'
+    - expression: >-
+        !has(object.spec.externalIPs) || size(object.spec.externalIPs) == 0
+      message: '*-testing Service: no externalIPs.'
+    - expression: >-
+        !has(object.metadata.annotations) ||
+        !object.metadata.annotations.exists(k,
+        k.startsWith('external-dns.alpha.kubernetes.io/'))
+      message: '*-testing Service: no external-dns annotations.'

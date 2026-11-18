@@ -8,6 +8,13 @@ spec:
   addresses:
     - {{ network.ipv4.server_pool.start }}-{{ network.ipv4.server_pool.end }}
     - {{ network.ipv6.server_pool.start }}-{{ network.ipv6.server_pool.end }}
+  # LAN IPs are not for test apps. *-testing namespaces must carry this label
+  # (ValidatingAdmissionPolicy testing-namespace-labels).
+  serviceAllocation:
+    namespaceSelectors:
+      - matchExpressions:
+          - key: homelab.milco.casa/testing
+            operator: DoesNotExist
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement

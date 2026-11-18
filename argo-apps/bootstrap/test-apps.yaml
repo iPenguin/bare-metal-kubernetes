@@ -20,3 +20,27 @@ spec:
     - group: ''
       kind: Namespace
       name: '*-testing'
+  # Keep test apps out of other stores, RBAC, hand-written endpoints, and
+  # routing other than a plain Ingress (ValidatingAdmissionPolicy
+  # testing-ingresses limits its host). ClusterSecretStore is cluster-scoped,
+  # so the whitelist above already blocks it. Traefik v3 no longer serves
+  # traefik.containo.us; listed in case it comes back.
+  namespaceResourceBlacklist:
+    - group: external-secrets.io
+      kind: SecretStore
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+    - group: ''
+      kind: Endpoints
+    - group: discovery.k8s.io
+      kind: EndpointSlice
+    - group: traefik.io
+      kind: '*'
+    - group: traefik.containo.us
+      kind: '*'
+    - group: gateway.networking.k8s.io
+      kind: '*'
+    - group: cilium.io
+      kind: '*'
