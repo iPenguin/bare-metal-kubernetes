@@ -74,7 +74,7 @@
     - sshd
 
 - name: Set the timezone
-  ansible.builtin.timezone:
+  community.general.timezone:
     name: "{{ timezone }}"
 
 - name: Install additional pip packages
