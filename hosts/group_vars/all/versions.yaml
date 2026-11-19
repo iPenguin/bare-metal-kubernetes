@@ -10,7 +10,7 @@ ceph_version: 19.2.7
 # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
 cert_manager_version: 1.21.3
 # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io
-cilium_version: 1.20.4
+cilium_version: 1.20.5
 # renovate: datasource=github-releases depName=cilium/cilium-cli
 cilium_cli_version: 0.20.3
 # renovate: datasource=github-releases depName=containerd/containerd
