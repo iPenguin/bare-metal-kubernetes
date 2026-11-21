@@ -21,7 +21,7 @@
         "/^hosts/group_vars/all/versions\\.yaml$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+registryUrl=(?<registryUrl>\\S+))?(\\s+extractVersion=(?<extractVersion>\\S+))?\\s*\\n[a-z0-9_]+:\\s*['\"]?(?<currentValue>[^'\"\\s]+)"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+registryUrl=(?<registryUrl>\\S+))?(\\s+extractVersion=(?<extractVersion>\\S+))?\\s*\\n[a-z0-9_]+:\\s*['\"]?(?<currentValue>[^'\"\\s@]+)(@(?<currentDigest>sha256:[a-f0-9]{64}))?"
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
     }
