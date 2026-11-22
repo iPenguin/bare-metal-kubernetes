@@ -35,6 +35,7 @@
       net.ipv6.conf.all.forwarding=1
     state: present
     create: true
+    mode: "0644"
 
 - name: Restart ubuntu sysctl
   ansible.builtin.service:
@@ -46,14 +47,14 @@
     path: /etc/systemd/networkd.conf
     regexp: "#ManageForeignRoutes=yes"
     line: "ManageForeignRoutes=no"
-  notify: restart networking
+  notify: Restart networking
 
 - name: Configure foreign route policy rules
   ansible.builtin.lineinfile:
     path: /etc/systemd/networkd.conf
     regexp: "#ManageForeignRoutingPolicyRules=yes"
     line: "ManageForeignRoutingPolicyRules=no"
-  notify: restart networking
+  notify: Restart networking
 
 - name: Configure hostname in /etc/hosts
   ansible.builtin.lineinfile:

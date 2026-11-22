@@ -20,8 +20,8 @@
     dest: /root/node-join.yaml
     mode: "0644"
   vars:
-    host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') | first }}"
-    host_ipv6: "{{ ipv6_network }}::{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') | first }}"
+    host_ipv4: "{{ network_hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') | first }}"
+    host_ipv6: "{{ ipv6_network }}::{{ network_hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') | first }}"
 
 - name: Join cluster
   ansible.builtin.command:

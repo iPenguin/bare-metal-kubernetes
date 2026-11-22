@@ -131,7 +131,7 @@
     - name: Update os
       ansible.builtin.apt:
         name: "*"
-        state: latest
+        state: latest  # noqa: package-latest intentional full OS upgrade
       become: true
       tags:
         - updates

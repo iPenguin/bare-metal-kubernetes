@@ -11,6 +11,7 @@
   become: false
   connection: local
   ansible.builtin.shell: |
+    set -o pipefail
     kubectl create secret generic argo-oidc-secrets \
     --dry-run=client \
     --from-literal=oidc.clientSecret={{ argocd_client_secret }} \
@@ -18,7 +19,10 @@
     jq '.metadata.labels["app.kubernetes.io/part-of"] = "argocd"' | \
     kubeseal --controller-namespace=sealed-secrets \
     --controller-name=sealed-secrets -o yaml
+  args:
+    executable: /bin/bash
   register: _argo_client_secret
+  no_log: true
 
 - name: Create ArgoCD OIDC Secrets
   kubernetes.core.k8s:

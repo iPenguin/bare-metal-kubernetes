@@ -493,6 +493,7 @@
         block: |
           deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
         create: true
+        mode: "0644"
         state: present
 
     - name: Install kubeadm target version first
@@ -741,7 +742,7 @@
         # nonempty ready containerStatuses). Empty items / empty statuses => 0.
         _cilium_ready_count: >-
           {%- set ns = namespace(n=0) -%}
-          {%- for p in ((_cilium_wait.stdout | default('{}') | from_json)['items'] | default([])) -%}
+          {%- for p in ((_cilium_wait.stdout | default('{}') | from_json).get('items', [])) -%}
             {%- set statuses = p.status.containerStatuses | default([]) -%}
             {%- set phase_ok = (p.status.phase | default('')) == 'Running' -%}
             {%- set statuses_ok = (statuses | length) > 0

@@ -19,7 +19,7 @@
   changed_when: false
 
 - name: Configure rpcd login for luci-dns
-  ansible.builtin.shell: |
+  ansible.builtin.shell: |  # noqa: risky-shell-pipe grep -q/head close pipes early; pipefail would fail on SIGPIPE (busybox ash)
     set -e
     HASH="{{ luci_dns_hash.stdout }}"
     while uci show rpcd | grep -q "\.username='luci-dns'"; do
@@ -34,7 +34,7 @@
   when: >
     "username='luci-dns'" not in rpcd_show.stdout or
     luci_dns_hash.stdout not in rpcd_show.stdout
-  notify: restart rpcd
+  notify: Restart rpcd
 
 - name: Ensure rpcd ACL directory exists
   ansible.builtin.file:
@@ -69,7 +69,7 @@
         }
       }
     mode: "0644"
-  notify: restart rpcd
+  notify: Restart rpcd
 
 - name: Ensure rpcd is running
   ansible.builtin.service:

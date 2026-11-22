@@ -60,7 +60,7 @@
     group: root
     mode: "0755"
   when: openbao_pi_binary_version not in (_bao_installed_version.stdout | default(''))
-  notify: restart openbao
+  notify: Restart openbao
 
 - name: Write internal CA bundle (for clients verifying server cert)
   ansible.builtin.copy:
@@ -72,7 +72,7 @@
   when:
     - vault_openbao_internal_ca_cert is defined
     - vault_openbao_internal_ca_cert != 'REPLACE_ME'
-  notify: restart openbao
+  notify: Restart openbao
 
 - name: Write Pi server cert
   ansible.builtin.copy:
@@ -84,7 +84,7 @@
   when:
     - vault_openbao_pi_server_cert is defined
     - vault_openbao_pi_server_cert != 'REPLACE_ME'
-  notify: restart openbao
+  notify: Restart openbao
 
 - name: Write Pi server key
   ansible.builtin.copy:
@@ -97,7 +97,7 @@
     - vault_openbao_pi_server_key is defined
     - vault_openbao_pi_server_key != 'REPLACE_ME'
   no_log: true
-  notify: restart openbao
+  notify: Restart openbao
 
 - name: Render openbao config
   ansible.builtin.template:
@@ -106,7 +106,7 @@
     owner: "{{ openbao_pi_user }}"
     group: "{{ openbao_pi_group }}"
     mode: "0640"
-  notify: restart openbao
+  notify: Restart openbao
 
 - name: Render unseal helper script
   ansible.builtin.template:
@@ -136,7 +136,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: restart openbao
+  notify: Restart openbao
 
 - name: Enable and start openbao
   ansible.builtin.systemd:

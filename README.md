@@ -42,6 +42,13 @@ SSH is not forwarded from the WAN; connect over WireGuard. `configure-os` instal
 `AllowUsers` from `sshd_allow_users` (default: the `remote_users` accounts).
 `ansible-playbook run.yaml --tags sshd` applies only that part of `configure-os`.
 
+## Lint
+
+`ansible-lint` passes at the `safety` profile (`.ansible-lint`, `.yamllint`). Run it
+with `ANSIBLE_INVENTORY=hosts` and a dummy `ANSIBLE_VAULT_PASSWORD_FILE` when the
+vault password isn't on the machine. `hosts` is a reserved name, so the host list
+in `group_vars/all/network.yaml` is `network_hosts`.
+
 ## Secrets
 
 New app secrets go in OpenBao at `kv/apps/<namespace>/<secret-name>` and are

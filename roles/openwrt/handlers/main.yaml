@@ -1,36 +1,36 @@
 ---
 
-- name: restart acme
+- name: Restart acme
   community.general.openwrt_init:
     name: acme
     state: restarted
 
-- name: restart ddns
+- name: Restart ddns
   community.general.openwrt_init:
     name: ddns
     state: restarted
 
-- name: restart dnsmasq
+- name: Restart dnsmasq
   community.general.openwrt_init:
     name: dnsmasq
     state: restarted
 
-- name: restart firewall
+- name: Restart firewall
   community.general.openwrt_init:
     name: firewall
     state: restarted
 
-- name: reload network
+- name: Reload network
   community.general.openwrt_init:
     name: network
     state: reloaded
 
-- name: restart rpcd
+- name: Restart rpcd
   community.general.openwrt_init:
     name: rpcd
     state: restarted
 
-- name: restart uhttpd
+- name: Restart uhttpd
   community.general.openwrt_init:
     name: uhttpd
     state: restarted

@@ -1,7 +1,7 @@
 ---
 
 - name: Make backups directory
-  ansible.builtin.file:
+  ansible.builtin.file:  # noqa: risky-file-permissions a mode here would chmod the mounted root on later runs
     path: "{{ backup_dest }}"
     state: directory
 

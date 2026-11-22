@@ -17,6 +17,7 @@
   ansible.builtin.get_url:
     url: https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz
     dest: "{{ tempfolder.path }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+    mode: "0644"
     checksum: "sha256:https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"
 
 - name: Unarchive files

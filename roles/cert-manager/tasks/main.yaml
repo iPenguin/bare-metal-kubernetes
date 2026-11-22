@@ -49,7 +49,7 @@
     state: present
     template: solvers.yaml.j2
 
-- name: Deploy {{ lan_tld }} cert
+- name: Deploy cert for {{ lan_tld }}
   kubernetes.core.k8s:
     state: present
     namespace: "{{ cert_manager_namespace }}"

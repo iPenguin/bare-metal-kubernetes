@@ -13,4 +13,5 @@
   copy:
     content: "{{ item.user }} ALL=(ALL) NOPASSWD: ALL"
     dest: /etc/sudoers.d/{{ item.user }}
+    mode: "0440"
     validate: "visudo -cf %s"

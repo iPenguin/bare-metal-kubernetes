@@ -65,7 +65,7 @@
       no_log: true
 
     - name: Confirm openbao.service is active
-      ansible.builtin.command: systemctl is-active openbao.service
+      ansible.builtin.command: systemctl is-active openbao.service  # noqa: command-instead-of-module read-only probe; systemd module needs a state arg
       register: _bao_service_state
       changed_when: false
 
@@ -291,9 +291,12 @@
 
     - name: Encrypt vault_openbao_pi_unseal_keys
       ansible.builtin.shell: |
+        set -o pipefail
         printf '%s' "$PLAINTEXT" |
         ansible-vault encrypt_string \
           --stdin-name vault_openbao_pi_unseal_keys
+      args:
+        executable: /bin/bash
       environment:
         PLAINTEXT: "{{ _bao_init.unseal_keys_b64 | join('\n') }}"
       register: _enc_unseal_keys
@@ -306,9 +309,12 @@
 
     - name: Encrypt vault_openbao_pi_root_token
       ansible.builtin.shell: |
+        set -o pipefail
         printf '%s' "$PLAINTEXT" |
         ansible-vault encrypt_string \
           --stdin-name vault_openbao_pi_root_token
+      args:
+        executable: /bin/bash
       environment:
         PLAINTEXT: "{{ _bao_init.root_token }}"
       register: _enc_pi_root_token
@@ -321,9 +327,12 @@
 
     - name: Encrypt vault_openbao_pi_autounseal_token
       ansible.builtin.shell: |
+        set -o pipefail
         printf '%s' "$PLAINTEXT" |
         ansible-vault encrypt_string \
           --stdin-name vault_openbao_pi_autounseal_token
+      args:
+        executable: /bin/bash
       environment:
         PLAINTEXT: "{{ _bao_token.auth.client_token }}"
       register: _enc_autounseal_token

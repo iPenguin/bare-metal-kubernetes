@@ -26,6 +26,7 @@
     block: |
       deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
     create: true
+    mode: "0644"
     state: present
 
 - name: Install kubectl kubeadm and kubelet

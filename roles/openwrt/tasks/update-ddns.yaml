@@ -13,4 +13,4 @@
     owner: root
     group: root
     mode: "0600"
-  notify: restart ddns
+  notify: Restart ddns

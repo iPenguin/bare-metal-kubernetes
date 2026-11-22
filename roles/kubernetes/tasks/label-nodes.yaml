@@ -1,7 +1,11 @@
 ---
 
 - name: Get BOGOMIPS from lscpu
-  shell: "lscpu -p=BOGOMIPS | grep -v \\# | awk '{ sum += $1 } END { print sum }'"
+  shell: |
+    set -o pipefail
+    lscpu -p=BOGOMIPS | grep -v \# | awk '{ sum += $1 } END { print sum }'
+  args:
+    executable: /bin/bash
   register: bogomips_result
   changed_when: false
 

@@ -20,7 +20,7 @@
   register: all_groups_result
   delegate_to: localhost
 
-- name: "Add {{ lldap_user.name }} to groups"
+- name: "Add groups to user {{ lldap_user.name }}"
   ansible.builtin.uri:
     url: "{{ lldap_http_url }}/api/graphql"
     method: POST

@@ -100,6 +100,7 @@
     - name: Clone kwin window scripts
       ansible.builtin.git:
         repo: https://github.com/nclarius/KWin-window-positioning-scripts.git
+        version: fe9d1641982912075f9debe68cc6b9afde7292d5
         dest: "{{ ansible_env.HOME }}/.gitapps/KWin-window-positioning-scripts"
       tags:
         - focus-follows-mouse

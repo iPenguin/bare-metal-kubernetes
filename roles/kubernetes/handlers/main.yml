@@ -1,17 +1,17 @@
 ---
 # handlers file for kubernetes
 
-- name: restart sysctl
+- name: Restart sysctl
   ansible.builtin.service:
     name: sysctl
     state: restarted
 
-- name: restart ubuntu sysctl
+- name: Restart ubuntu sysctl
   ansible.builtin.service:
     name: systemd-sysctl
     state: restarted
 
-- name: restart networking
+- name: Restart networking
   ansible.builtin.service:
     name: systemd-networkd
     state: restarted

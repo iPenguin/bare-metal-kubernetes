@@ -129,7 +129,7 @@ router:
         - p7
         - sfp
 
-hosts:
+network_hosts:
   - name: r
     mac: 18:FD:74:38:8A:D8
     ipv4: "{{ ipv4_network }}.1"

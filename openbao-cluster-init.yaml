@@ -204,9 +204,12 @@
 
     - name: Encrypt vault_openbao_cluster_recovery_keys
       ansible.builtin.shell: |
+        set -o pipefail
         printf '%s' {{ (_cluster_init.recovery_keys_b64 | join('\n')) | quote }} |
         ansible-vault encrypt_string \
           --stdin-name vault_openbao_cluster_recovery_keys
+      args:
+        executable: /bin/bash
       register: _enc_recovery_keys
       when: _cluster_init is defined
       no_log: true
@@ -214,9 +217,12 @@
 
     - name: Encrypt vault_openbao_cluster_root_token
       ansible.builtin.shell: |
+        set -o pipefail
         printf '%s' {{ _cluster_init.root_token | quote }} |
         ansible-vault encrypt_string \
           --stdin-name vault_openbao_cluster_root_token
+      args:
+        executable: /bin/bash
       register: _enc_cluster_root_token
       when: _cluster_init is defined
       no_log: true
@@ -564,8 +570,11 @@
 
     - name: Encrypt vault_openbao_ansible_role_id
       ansible.builtin.shell: |
+        set -o pipefail
         printf '%s' "$PLAINTEXT" |
         ansible-vault encrypt_string --stdin-name vault_openbao_ansible_role_id
+      args:
+        executable: /bin/bash
       environment:
         PLAINTEXT: "{{ _ansible_role_id_raw.stdout | trim }}"
       register: _enc_ansible_role_id
@@ -574,8 +583,11 @@
 
     - name: Encrypt vault_openbao_ansible_secret_id
       ansible.builtin.shell: |
+        set -o pipefail
         printf '%s' "$PLAINTEXT" |
         ansible-vault encrypt_string --stdin-name vault_openbao_ansible_secret_id
+      args:
+        executable: /bin/bash
       environment:
         PLAINTEXT: "{{ _ansible_secret_id_raw.stdout | trim }}"
       register: _enc_ansible_secret_id

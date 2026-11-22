@@ -44,16 +44,17 @@
     block: |
       deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
     create: true
+    mode: "0644"
     state: present
 
 - name: Install cri-o packages
   ansible.builtin.apt:
     name:
       - cri-o={{ crio_version }}-*
-      - cri-tools
+      - cri-tools={{ kubernetes_version.split('.')[0:2] | join('.') }}.*
       - runc
     allow_change_held_packages: true
-    state: latest
+    state: present
     update_cache: true
   become: true
 

@@ -32,7 +32,7 @@
       - docker.io
     state: absent
 
-- name: Update all packages
+- name: Install base apt packages
   ansible.builtin.apt:
     name:
       - apt-transport-https
@@ -40,7 +40,7 @@
       - curl
       - gnupg
       - lsb-release
-    state: latest
+    state: present
 
 - name: Controller config
   include_tasks: controller.yaml

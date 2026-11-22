@@ -8,7 +8,7 @@
     namespace: kube-system
   register: _coredns_cm
 
-- name: Append {{ lan_domain }} stub zone to CoreDNS Corefile
+- name: Append CoreDNS Corefile stub zone for {{ lan_domain }}
   kubernetes.core.k8s:
     state: patched
     api_version: v1

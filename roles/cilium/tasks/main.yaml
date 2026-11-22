@@ -17,6 +17,7 @@
   ansible.builtin.get_url:
     url: https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz
     dest: "{{ tempfolder.path }}/"
+    mode: "0644"
     checksum: "sha256:https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz.sha256sum"
 
 - name: Extract Cilium files

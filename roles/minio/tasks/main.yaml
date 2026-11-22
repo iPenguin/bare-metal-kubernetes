@@ -11,12 +11,15 @@
   become: false
   connection: local
   ansible.builtin.shell: |
+    set -o pipefail
     kubectl create secret generic minio-oidc-credentials \
     --dry-run=client \
     --from-literal=clientSecret={{ minio_client_secret }} \
     -n minio -o json | \
     kubeseal --controller-namespace=sealed-secrets \
     --controller-name=sealed-secrets -o yaml
+  args:
+    executable: /bin/bash
   register: _minio_oidc_secret
   no_log: true
 

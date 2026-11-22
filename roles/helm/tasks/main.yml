@@ -9,6 +9,7 @@
   ansible.builtin.get_url:
     url: https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz
     dest: "{{ tempfolder.path }}/helm-v{{ helm_version }}-linux-amd64.tar.gz"
+    mode: "0644"
     checksum: "sha256:https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz.sha256sum"
 
 - name: Uncompress helm package

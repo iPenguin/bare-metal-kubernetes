@@ -2,7 +2,7 @@
 
 - name: Combine hosts lists
   ansible.builtin.set_fact:
-    _hosts: "{{ hosts + vault_hosts }}"
+    _hosts: "{{ network_hosts + vault_hosts }}"
 
 - name: Configure dhcp
   ansible.builtin.template:
@@ -11,4 +11,4 @@
     owner: root
     group: root
     mode: "0600"
-  notify: restart dnsmasq
+  notify: Restart dnsmasq

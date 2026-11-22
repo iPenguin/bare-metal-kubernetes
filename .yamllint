@@ -1,6 +1,9 @@
 ---
 # yamllint config, compatible with ansible-lint.
 extends: default
+ignore: |
+  argo-apps/
+  images/
 rules:
   line-length:
     max: 250

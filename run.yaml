@@ -139,7 +139,8 @@
     - never
     - yes-really-wipe-the-ceph-drives
   tasks:
-    - include_tasks: roles/rook/tasks/format-disks.yaml
+    - name: Format Ceph drives
+      include_tasks: roles/rook/tasks/format-disks.yaml
 
 - name: Deploy chrony
   hosts:

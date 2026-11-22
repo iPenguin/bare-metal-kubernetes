@@ -12,7 +12,7 @@
 - name: Update all packages
   ansible.builtin.package:
     name: "*"
-    state: latest
+    state: latest  # noqa: package-latest intentional full OS upgrade
 
 # This command will do nothing if there aren't any needed drivers
 - name: Install any missing drivers as needed
@@ -24,17 +24,17 @@
   ansible.builtin.apt:
     name:
       - python3-pip
-    state: latest
+    state: latest  # noqa: package-latest intentional; no pinned version source
 
 - name: Install additional packages for Debian
   ansible.builtin.apt:
     name: "{{ common_utils | union(debian_utils) }}"
-    state: latest
+    state: latest  # noqa: package-latest intentional; no pinned version source
 
 - name: Install Ubuntu HWE kernel
   ansible.builtin.apt:
     name: "linux-generic-hwe-{{ ansible_distribution_version }}"
-    state: latest
+    state: latest  # noqa: package-latest intentional; HWE kernel tracks current
   when: ansible_distribution == "Ubuntu"
 
 # Controllers uplink on RTL8125 (10ec:8125). On the 7.0 HWE kernel, in-tree r8169 times out on its
