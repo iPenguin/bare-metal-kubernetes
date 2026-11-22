@@ -4,7 +4,7 @@
   ansible.builtin.apk:
     name: luci-app-ddns
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Configure dynamic DNS
   ansible.builtin.template:
@@ -12,5 +12,5 @@
     dest: /etc/config/ddns
     owner: root
     group: root
-    mode: '0600'
+    mode: "0600"
   notify: restart ddns

@@ -1,6 +1,6 @@
 ---
 
-- name: configure a workstation for running playbooks
+- name: Configure a workstation for running playbooks
   hosts: "workstations"
   connection: local
   tasks:
@@ -14,7 +14,7 @@
         repo: deb [signed-by=/etc/apt/trusted.gpg.d/google-k8s.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
         state: present
 
-    - name: install software common
+    - name: Install software common
       ansible.builtin.apt:
         name:
           - apt-transport-https
@@ -27,20 +27,20 @@
           - vim
         state: present
 
-    - name: set default cli editor
+    - name: Set default cli editor
       community.general.alternatives:
         name: editor
         path: /usr/bin/vim.basic
 
-    - name: download kubectl
+    - name: Download kubectl
       ansible.builtin.uri:
         url: https://dl.k8s.io/release/v1.27.3/bin/linux/amd64/kubectl
         dest: "$HOME/.local/bin/kubectl"
-        mode: 0755
-        status_code: [200,304]
-      become: no
+        mode: "0755"
+        status_code: [200, 304]
+      become: false
 
-    - name: install pip packages
+    - name: Install pip packages
       ansible.builtin.pip:
         name:
           - pre-commit

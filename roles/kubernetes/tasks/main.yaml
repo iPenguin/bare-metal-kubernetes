@@ -1,6 +1,6 @@
 ---
 
-- name: populate variables
+- name: Populate variables
   ansible.builtin.setup:
 
 - name: Pre-config tasks
@@ -12,19 +12,19 @@
     dest: /root/cluster-reset.sh
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
 
-- name: common k8s setup tasks
+- name: Common k8s setup tasks
   include_tasks: "{{ ansible_os_family | lower }}.yaml"
 
-- name: enable and use kubelet
+- name: Enable and use kubelet
   ansible.builtin.service:
     name: kubelet
     state: started
-    enabled: yes
+    enabled: true
     masked: false
 
-- name: remove existing docker packages from base distro
+- name: Remove existing docker packages from base distro
   ansible.builtin.apt:
     name:
       - docker
@@ -32,7 +32,7 @@
       - docker.io
     state: absent
 
-- name: update all packages
+- name: Update all packages
   ansible.builtin.apt:
     name:
       - apt-transport-https
@@ -51,14 +51,14 @@
   register: nodelist
   delegate_to: "{{ k8s_controller }}"
 
-- name: join other controllers
+- name: Join other controllers
   include_tasks: secondary-controllers.yaml
   when:
     - inventory_hostname in groups['controllers']
     - inventory_hostname != k8s_controller
     - not inventory_hostname in nodelist.stdout
 
-- name: worker config
+- name: Worker config
   include_tasks: workers.yaml
   when:
     - inventory_hostname in groups['workers']

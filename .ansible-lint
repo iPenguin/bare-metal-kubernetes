@@ -1,0 +1,10 @@
+---
+# ansible-lint config. CI runs: ansible-lint (offline, collections from requirements.yml)
+profile: safety
+offline: true
+exclude_paths:
+  - argo-apps/
+  - images/
+skip_list:
+  - var-naming[no-role-prefix]
+  - role-name

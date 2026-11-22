@@ -10,7 +10,7 @@
     path: /usr/local/bin/
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
     state: directory
 
 - name: Download Cilium files
@@ -26,7 +26,7 @@
     dest: "/usr/local/bin"
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
 
 - name: Add cilium helm repo
   kubernetes.core.helm_repository:
@@ -48,5 +48,3 @@
   kubernetes.core.k8s:
     state: present
     definition: "{{ lookup('template', 'cilium-ingress-ipv6-patch.yaml.j2') | from_yaml }}"
-
-...

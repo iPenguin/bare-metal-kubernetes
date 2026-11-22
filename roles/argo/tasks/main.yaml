@@ -50,5 +50,3 @@
     chart_version: "{{ argocd_chart_version }}"
     update_repo_cache: true
     values: "{{ lookup('template', 'argocd-values.yaml.j2') | from_yaml }}"
-
-...

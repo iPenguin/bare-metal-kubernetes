@@ -1,5 +1,5 @@
 ---
-- name: populate facts
+- name: Populate facts
   ansible.builtin.setup:
 
 - name: Create directories
@@ -10,12 +10,12 @@
     group: root
     mode: "{{ item.mode }}"
   loop:
-    - { path: "/etc/kubernetes", mode: '0755' }
-    - { path: "/etc/kubernetes/manifests", mode: '0700' }
+    - { path: "/etc/kubernetes", mode: "0755" }
+    - { path: "/etc/kubernetes/manifests", mode: "0700" }
   when:
     - inventory_hostname in groups['controllers']
 
-- name: dns lookup
+- name: Dns lookup
   ansible.builtin.command:
     cmd: dig +short {{ item }} @{{ network.ipv4.dns }}
   register: dns_results
@@ -27,8 +27,8 @@
     dest: /etc/kubernetes/manifests/kube-vip.yaml
     owner: root
     group: root
-    mode: 0600
+    mode: "0600"
   vars:
-    dns_entries: '{{ dns_results.results }}'
+    dns_entries: "{{ dns_results.results }}"
   when:
     - inventory_hostname in groups['controllers']

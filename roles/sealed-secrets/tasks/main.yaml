@@ -23,7 +23,7 @@
 - name: Install sealed-secrets
   kubernetes.core.helm:
     name: sealed-secrets
-    chart_version: '{{ sealed_secrets_version }}'
+    chart_version: "{{ sealed_secrets_version }}"
     chart_ref: sealed-secrets/sealed-secrets
     release_namespace: sealed-secrets
     update_repo_cache: true

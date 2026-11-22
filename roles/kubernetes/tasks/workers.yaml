@@ -1,5 +1,5 @@
-
-- name: kubeadm create token
+---
+- name: Kubeadm create token
   ansible.builtin.raw: kubeadm token create --print-join-command
   register: join_cmd
   delegate_to: "{{ k8s_controller }}"
@@ -18,7 +18,7 @@
   ansible.builtin.template:
     src: node-join.yaml.j2
     dest: /root/node-join.yaml
-    mode: '0644'
+    mode: "0644"
   vars:
     host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') | first }}"
     host_ipv6: "{{ ipv6_network }}::{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') | first }}"
@@ -31,7 +31,7 @@
   ansible.builtin.service:
     name: kubelet
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Check for nodes -- worker
   ansible.builtin.command: kubectl get nodes

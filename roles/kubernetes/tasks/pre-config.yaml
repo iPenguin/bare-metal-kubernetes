@@ -2,30 +2,30 @@
 #
 # If you have another OS on the device and it has swap you may need
 # to run the following to permanently disable swap across reboots:
-#sudo systemctl mask "dev-sdXX.swap"
+# sudo systemctl mask "dev-sdXX.swap"
 #
-- name: turn off swap now
+- name: Turn off swap now
   ansible.builtin.command: "swapoff -a"
 
-- name: turn off swap in fstab
+- name: Turn off swap in fstab
   ansible.builtin.mount:
     path: none
-    fstype: 'swap'
+    fstype: "swap"
     state: absent
 
-- name: load overlay
+- name: Load overlay
   community.general.modprobe:
     name: overlay
     state: present
     persistent: present
 
-- name: load netfilter
+- name: Load netfilter
   community.general.modprobe:
     name: br_netfilter
     state: present
     persistent: present
 
-- name: configure networking for kubernetes
+- name: Configure networking for kubernetes
   ansible.builtin.blockinfile:
     path: /etc/sysctl.d/kubernetes.conf
     block: |
@@ -34,29 +34,29 @@
       net.ipv4.ip_forward=1
       net.ipv6.conf.all.forwarding=1
     state: present
-    create: yes
+    create: true
 
-- name: restart ubuntu sysctl
+- name: Restart ubuntu sysctl
   ansible.builtin.service:
     name: systemd-sysctl
     state: restarted
 
-- name: configure foreign routes
+- name: Configure foreign routes
   ansible.builtin.lineinfile:
     path: /etc/systemd/networkd.conf
-    regexp: '#ManageForeignRoutes=yes'
-    line: 'ManageForeignRoutes=no'
+    regexp: "#ManageForeignRoutes=yes"
+    line: "ManageForeignRoutes=no"
   notify: restart networking
 
-- name: configure foreign route policy rules
+- name: Configure foreign route policy rules
   ansible.builtin.lineinfile:
     path: /etc/systemd/networkd.conf
-    regexp: '#ManageForeignRoutingPolicyRules=yes'
-    line: 'ManageForeignRoutingPolicyRules=no'
+    regexp: "#ManageForeignRoutingPolicyRules=yes"
+    line: "ManageForeignRoutingPolicyRules=no"
   notify: restart networking
 
-- name: configure hostname in /etc/hosts
+- name: Configure hostname in /etc/hosts
   ansible.builtin.lineinfile:
     path: /etc/hosts
-    regexp: '^127\.0\.1\.1'
+    regexp: "^127\\.0\\.1\\.1"
     line: 127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname_short }}

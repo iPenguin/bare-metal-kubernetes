@@ -8,4 +8,3 @@
     chdir: "{{ playbook_dir }}"
   register: apply_result
   changed_when: "'created' in apply_result.stdout or 'configured' in apply_result.stdout"
-...

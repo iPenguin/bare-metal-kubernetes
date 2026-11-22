@@ -1,16 +1,16 @@
 ---
 
-- name: create temp folder
+- name: Create temp folder
   ansible.builtin.tempfile:
     state: directory
   register: tempfolder
 
-- name: create dest folder
+- name: Create dest folder
   ansible.builtin.file:
     path: /usr/local/bin/
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
     state: directory
 
 - name: Download binaries
@@ -20,28 +20,28 @@
     checksum: "sha256:https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"
 
 - name: Unarchive files
-  become: yes
+  become: true
   ansible.builtin.unarchive:
     src: "{{ tempfolder.path }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
     remote_src: true
     dest: "/usr/local/"
 
-- name: mkdir /etc/containerd
-  become: yes
+- name: Mkdir /etc/containerd
+  become: true
   ansible.builtin.file:
     path: /etc/containerd
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
     state: directory
 
-- name: create service file
+- name: Create service file
   ansible.builtin.template:
     src: containerd.service.j2
     dest: /etc/systemd/system/containerd.service
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
 
 - name: Enable containerd systemd service
   ansible.builtin.systemd:
@@ -52,9 +52,8 @@
     state: started
 
 - name: Install runc
-  become: yes
+  become: true
   ansible.builtin.apt:
     name:
       - runc
     state: present
-...

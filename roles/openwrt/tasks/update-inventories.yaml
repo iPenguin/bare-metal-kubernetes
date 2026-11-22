@@ -6,6 +6,6 @@
     dest: /etc/dnsmasq.conf
     owner: root
     group: root
-    mode: '0600'
-    validate: 'dnsmasq --test -C %s'
+    mode: "0600"
+    validate: "dnsmasq --test -C %s"
   notify: restart dnsmasq

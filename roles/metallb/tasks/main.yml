@@ -11,7 +11,7 @@
     chart_ref: metallb/metallb
     chart_version: 0.15.3
     namespace: "{{ metallb_namespace }}"
-    create_namespace: yes
+    create_namespace: true
     state: present
     values:
       speaker:
@@ -25,15 +25,13 @@
 - name: Wait for Metallb to be ready
   kubernetes.core.k8s_info:
     kind: Deployment
-    wait: yes
+    wait: true
     name: metallb-controller
     namespace: "{{ metallb_namespace }}"
     wait_sleep: 5
     wait_timeout: 360
 
-- name: apply metallb config
+- name: Apply metallb config
   kubernetes.core.k8s:
     state: present
-    template: 'metallb-config.yaml.j2'
-
-...
+    template: "metallb-config.yaml.j2"

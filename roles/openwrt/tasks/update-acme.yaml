@@ -4,7 +4,7 @@
   ansible.builtin.apk:
     name: acme-acmesh,acme-acmesh-dnsapi,luci-app-acme
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Configure acme
   ansible.builtin.template:
@@ -12,5 +12,5 @@
     dest: /etc/config/acme
     owner: root
     group: root
-    mode: '0600'
+    mode: "0600"
   notify: restart acme

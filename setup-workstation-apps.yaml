@@ -1,47 +1,47 @@
 ---
 
-- name: configure a workstation for personal use
+- name: Configure a workstation for personal use
   hosts: "workstations"
   connection: local
   become: false
   tasks:
-    - name: add kubuntu backports repo
+    - name: Add kubuntu backports repo
       command: apt-add-repository --yes --update ppa:kubuntu-ppa/backports
       when: ansible_distribution == 'Ubuntu'
-      become: yes
+      become: true
       tags:
         - backports
 
-    - name: install ProtonVPN repo
+    - name: Install ProtonVPN repo
       ansible.builtin.apt:
         deb: https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-2_all.deb
-      become: yes
+      become: true
       tags:
         - proton
-    - name: install proton vpn
+    - name: Install proton vpn
       ansible.builtin.apt:
         name:
           - protonvpn
-        update_cache: yes
-      become: yes
+        update_cache: true
+      become: true
       tags:
         - proton
 
-    - name: install tabby console
+    - name: Install tabby console
       ansible.builtin.apt:
         deb: https://github.com/Eugeny/tabby/releases/download/v1.0.197/tabby-1.0.197-linux-x64.deb
-      become: yes
+      become: true
       tags:
         - tabby
 
-    - name: install balena
+    - name: Install balena
       ansible.builtin.apt:
         deb: https://github.com/balena-io/etcher/releases/download/v1.18.4/balena-etcher_1.18.4_amd64.deb
-      become: yes
+      become: true
       tags:
         - balena
 
-    - name: install dev apps
+    - name: Install dev apps
       ansible.builtin.apt:
         name:
           - giggle
@@ -54,11 +54,11 @@
           - tldr
           - yakuake
         state: present
-      become: yes
+      become: true
       tags:
         - dev-tools
 
-    - name: install random apps
+    - name: Install random apps
       ansible.builtin.apt:
         name:
           - autokey-qt
@@ -67,11 +67,11 @@
           - neovim-qt
           - skanlite
           - virt-manager
-      become: yes
+      become: true
       tags:
         - other-apps
 
-    - name: install work flatpak apps
+    - name: Install work flatpak apps
       community.general.flatpak:
         name:
           - app/org.apache.directory.studio
@@ -98,7 +98,7 @@
       tags:
         - work
 
-    - name: install non-work flatpak apps
+    - name: Install non-work flatpak apps
       community.general.flatpak:
         name:
           - bibletime
@@ -128,10 +128,10 @@
       tags:
         - personal
 
-    - name: update os
+    - name: Update os
       ansible.builtin.apt:
         name: "*"
         state: latest
-      become: yes
+      become: true
       tags:
         - updates

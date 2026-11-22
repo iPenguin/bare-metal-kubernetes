@@ -1,6 +1,6 @@
 ---
 
-- name: install lvm2 and other fs tools
+- name: Install lvm2 and other fs tools
   apt:
     name:
       - lvm2
@@ -89,7 +89,7 @@
         dest: /root/ceph-reset.sh
         owner: root
         group: root
-        mode: 0700
+        mode: "0700"
 
     # the dashboard serves a self-signed cert, so Traefik skips verifying it
     - name: Create Traefik ServersTransport for the Ceph dashboard
@@ -129,4 +129,3 @@
                     scheme: https
                     serversTransport: ceph-dashboard
             tls: {}
-...

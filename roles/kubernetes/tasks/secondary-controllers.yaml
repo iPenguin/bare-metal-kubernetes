@@ -1,6 +1,6 @@
 ---
 
-- name: kubeadm create token
+- name: Kubeadm create token
   ansible.builtin.raw: |-
     kubeadm token create --print-join-command --certificate-key \
     $(kubeadm init phase upload-certs --upload-certs \
@@ -19,28 +19,28 @@
   ansible.builtin.template:
     src: node-join.yaml.j2
     dest: /root/node-join.yaml
-    mode: '0644'
+    mode: "0644"
   vars:
     host_ipv4: "{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].ipv4') | first }}"
     host_ipv6: "{{ ipv6_network }}::{{ hosts | json_query('[?name==`' ~ ansible_hostname ~ '`].hostid') | first }}"
 
-- name: join cluster control plane
+- name: Join cluster control plane
   ansible.builtin.command:
     cmd: kubeadm join --config /root/node-join.yaml
 
-- name: enable start kubelet
+- name: Enable start kubelet
   ansible.builtin.service:
     name: kubelet
     state: started
-    enabled: yes
+    enabled: true
 
-- name: check for nodes -- secondary
+- name: Check for nodes -- secondary
   ansible.builtin.command: kubectl get nodes
   register: nodelist
   delegate_to: "{{ k8s_controller }}"
   failed_when: inventory_hostname not in nodelist.stdout
 
-- name: should we clear the taint for master nodes?
+- name: Should we clear the taint for master nodes?
   ansible.builtin.set_fact:
     _k8s_master_node_schedule_taint: absent
   when: k8s_master_can_run_pods | bool
@@ -50,6 +50,5 @@
     state: "{{ _k8s_master_node_schedule_taint }}"
     name: "{{ inventory_hostname }}"
     taints:
-    - effect: NoSchedule
-      key: "node-role.kubernetes.io/control-plane"
-...
+      - effect: NoSchedule
+        key: "node-role.kubernetes.io/control-plane"

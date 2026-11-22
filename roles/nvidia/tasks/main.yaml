@@ -1,17 +1,17 @@
 ---
 # ansible_facts['kernel'] is needed below; other roles gather facts but are skipped with --tags nvidia
-- name: populate facts
+- name: Populate facts
   ansible.builtin.setup:
     gather_subset:
       - min
   when: ansible_facts['kernel'] is not defined
 
-- name: check for nvidia card
+- name: Check for nvidia card
   ansible.builtin.command:
     cmd: "lspci -nn -d 10de:"
   register: nvidia_devices
 
-- name: register has_nvidia_card
+- name: Register has_nvidia_card
   ansible.builtin.set_fact:
     has_nvidia_card: true
   when: '"VGA" in nvidia_devices.stdout'
@@ -29,7 +29,7 @@
       ansible.builtin.get_url:
         url: https://nvidia.github.io/libnvidia-container/gpgkey
         dest: /etc/apt/trusted.gpg.d/nvidia-container-toolkit-keyring.asc
-        mode: '0644'
+        mode: "0644"
         force: true
 
     - name: Configure Nvidia repo
@@ -37,7 +37,7 @@
         path: /etc/apt/sources.list.d/kubernetes.list
         block: |
           deb [signed-by=/etc/apt/trusted.gpg.d/nvidia-container-toolkit-keyring.asc] https://nvidia.github.io/libnvidia-container/stable/deb/amd64 /
-        create: yes
+        create: true
         state: present
 
     # Headers are for DKMS. Ubuntu's nvidia-driver-*-open is often satisfied by
@@ -54,7 +54,7 @@
           - nvidia-container-toolkit
           - "nvidia-driver-{{ nvidia_driver_branch }}-open"
         state: present
-        update_cache: yes
+        update_cache: true
       register: nvidia_driver_install
 
     - name: Check for Secure boot
@@ -65,7 +65,7 @@
     - name: Warning secure boot enabled -- driver signing key must be loaded in bios
       ansible.builtin.debug:
         msg: WARN -- To register signing key reboot after running 'mokutil --import /var/lib/shim-signed/mok/MOK.der'
-      when : "'enabled' in secure_boot.stdout"
+      when: "'enabled' in secure_boot.stdout"
 
     - name: Check nvidia module is built for the running kernel
       ansible.builtin.command:
@@ -112,7 +112,7 @@
       ansible.builtin.file:
         path: /etc/crio/crio.conf.d
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Add NVIDIA runtime to CRI-O configuration
       ansible.builtin.copy:
@@ -129,7 +129,7 @@
           runtime_type = "oci"
 
         dest: /etc/crio/crio.conf.d/99-nvidia.conf
-        mode: '0644'
+        mode: "0644"
       notify: Restart CRI-O
 
     - name: Stat nvidia-container-runtime config
@@ -142,7 +142,7 @@
     - name: Prefer bundled CRI-O crun for nvidia-container-runtime
       ansible.builtin.replace:
         path: /etc/nvidia-container-runtime/config.toml
-        regexp: '(?m)^runtimes\s*=\s*.*$'
+        regexp: "(?m)^runtimes\\s*=\\s*.*$"
         replace: 'runtimes = ["{{ crun_bin_path }}", "/usr/libexec/crio/runc", "runc", "crun"]'
       when: nvidia_runtime_config.stat.exists | default(false)
       notify: Restart CRI-O
@@ -158,9 +158,9 @@
     state: present
     name: "{{ inventory_hostname }}"
     taints:
-    - effect: NoSchedule
-      key: "nvidia.com/gpu"
-      value: "true"
+      - effect: NoSchedule
+        key: "nvidia.com/gpu"
+        value: "true"
   delegate_to: "{{ k8s_controller }}"
   when:
     - has_nvidia_card

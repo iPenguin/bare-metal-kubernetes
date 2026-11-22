@@ -6,7 +6,7 @@
 - name: Disable unattended upgrades
   ansible.builtin.systemd:
     name: unattended-upgrades
-    enabled: no
+    enabled: false
     state: stopped
 
 - name: Update all packages
@@ -15,7 +15,7 @@
     state: latest
 
 # This command will do nothing if there aren't any needed drivers
-- name: install any missing drivers as needed
+- name: Install any missing drivers as needed
   ansible.builtin.command:
     cmd: ubuntu-drivers autoinstall
   become: true
@@ -28,7 +28,7 @@
 
 - name: Install additional packages for Debian
   ansible.builtin.apt:
-    name: "{{ common_utils | union( debian_utils ) }}"
+    name: "{{ common_utils | union(debian_utils) }}"
     state: latest
 
 - name: Install Ubuntu HWE kernel
@@ -59,9 +59,9 @@
 - name: Keep LVM from scanning Ceph RBD and NBD devices
   ansible.builtin.lineinfile:
     path: /etc/lvm/lvm.conf
-    insertafter: '^devices \{'
-    regexp: '^\s*global_filter\s*='
-    line: '	global_filter = [ "r|^/dev/rbd.*|", "r|^/dev/nbd.*|" ]'
+    insertafter: "^devices \\{"
+    regexp: "^\\s*global_filter\\s*="
+    line: "\tglobal_filter = [ \"r|^/dev/rbd.*|\", \"r|^/dev/nbd.*|\" ]"
 
 - name: Add users
   include_tasks: users.yaml
@@ -82,5 +82,3 @@
     name: "{{ item }}"
     state: present
   loop: "{{ pip_packages }}"
-
-...

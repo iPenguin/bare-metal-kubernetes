@@ -17,7 +17,7 @@
 
 - name: Set maching device_list
   ansible.builtin.set_fact:
-    host_matched_devices: "{{ matched_devices_result.results | map(attribute='ansible_facts.matched_devices') | flatten(levels=1)}}"
+    host_matched_devices: "{{ matched_devices_result.results | map(attribute='ansible_facts.matched_devices') | flatten(levels=1) }}"
 
 - name: Display Host devices
   debug:

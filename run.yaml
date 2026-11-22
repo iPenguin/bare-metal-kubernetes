@@ -39,7 +39,7 @@
   roles:
     - role: configure-os
 
-- name: configure node
+- name: Configure node
   hosts:
     - controllers
     - workers
@@ -71,7 +71,6 @@
         - gpu
         - nvidia
 
-
 - name: Install Helm
   hosts:
     - controllers
@@ -100,7 +99,7 @@
         - k8s_cni == 'cilium'
         - inventory_hostname == k8s_controller
 
-- name: configure CNI
+- name: Configure CNI
   hosts:
     - controllers
   tags:
@@ -246,7 +245,7 @@
     - ceph-sso
   become: true
   vars:
-    _ceph_kubectl: ['kubectl', '--kubeconfig', /etc/kubernetes/admin.conf, '-n', "{{ rook_namespace }}"]
+    _ceph_kubectl: ["kubectl", "--kubeconfig", /etc/kubernetes/admin.conf, "-n", "{{ rook_namespace }}"]
     _ceph_exec: "{{ _ceph_kubectl + ['exec', 'deploy/rook-ceph-tools', '--'] }}"
   tasks:
     - name: Set up SAML SSO for the Ceph dashboard
@@ -311,5 +310,3 @@
     - name: Include deployment for ArgoCD Apps
       include_tasks: roles/argo/tasks/deploy-apps.yaml
       run_once: true
-
-...

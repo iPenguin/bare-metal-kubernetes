@@ -1,34 +1,32 @@
 ---
 
-- name: create temp dir
+- name: Create temp dir
   ansible.builtin.tempfile:
     state: directory
   register: tempfolder
 
-- name: download helm
+- name: Download helm
   ansible.builtin.get_url:
     url: https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz
     dest: "{{ tempfolder.path }}/helm-v{{ helm_version }}-linux-amd64.tar.gz"
     checksum: "sha256:https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz.sha256sum"
 
-- name: uncompress helm package
+- name: Uncompress helm package
   ansible.builtin.unarchive:
-    remote_src: yes
+    remote_src: true
     src: "{{ tempfolder.path }}/helm-v{{ helm_version }}-linux-amd64.tar.gz"
     dest: "{{ tempfolder.path }}/"
 
-- name: install helm
+- name: Install helm
   ansible.builtin.copy:
-    remote_src: yes
+    remote_src: true
     src: "{{ tempfolder.path }}/linux-amd64/helm"
     dest: /usr/local/bin/helm
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
 
-- name: install helm diff
+- name: Install helm diff
   kubernetes.core.helm_plugin:
     plugin_path: https://github.com/databus23/helm-diff
     state: present
-
-...

@@ -13,7 +13,7 @@
       ansible.builtin.template:
         src: ceph-csi-drivers.yaml.j2
         dest: "{{ _rook_csi_workspace.path }}/baseline.yaml"
-        mode: '0600'
+        mode: "0600"
       check_mode: false
 
     - name: Export CSI state and validate pinned chart ownership and settings

@@ -55,8 +55,8 @@
       userObjectClasses: "inetOrgPerson, person"
       searchScope: 2
       editMode: "READ_ONLY"
-      fullSyncPeriod: 86400  # 24hr sync
-      changedSyncPeriod: -1  # lldap does not support timestamp filters
+      fullSyncPeriod: 86400 # 24hr sync
+      changedSyncPeriod: -1 # lldap does not support timestamp filters
       syncRegistrations: false
       trustEmail: true
       pagination: true

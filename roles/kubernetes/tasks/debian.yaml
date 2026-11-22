@@ -1,10 +1,10 @@
 ---
 # tasks file for kubernetes master
 
-- name: populate service facts
+- name: Populate service facts
   service_facts:
 
-- name: install apt packages
+- name: Install apt packages
   ansible.builtin.apt:
     name:
       - apt-transport-https
@@ -25,20 +25,20 @@
     path: /etc/apt/sources.list.d/kubernetes.list
     block: |
       deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
-    create: yes
+    create: true
     state: present
 
-- name: install kubectl kubeadm and kubelet
+- name: Install kubectl kubeadm and kubelet
   ansible.builtin.apt:
     name:
       - kubeadm={{ kubernetes_version }}-*
       - kubectl={{ kubernetes_version }}-*
       - kubelet={{ kubernetes_version }}-*
-    allow_change_held_packages: yes
+    allow_change_held_packages: true
     state: present
-    update_cache: yes
+    update_cache: true
 
-- name: mark hold updates on k8s packages
+- name: Mark hold updates on k8s packages
   ansible.builtin.dpkg_selections:
     name: "{{ item }}"
     selection: hold
@@ -52,9 +52,9 @@
 # connect to services backed by pods, or the pods themselves on the
 # node(s) with the firewall running.
 #
-- name: disable firewall
+- name: Disable firewall
   ansible.builtin.service:
     name: ufw
     state: stopped
-    enabled: no
+    enabled: false
   when: "'ufw' in ansible_facts.services"

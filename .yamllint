@@ -1,0 +1,17 @@
+---
+# yamllint config, compatible with ansible-lint.
+extends: default
+rules:
+  line-length:
+    max: 250
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: false
+  braces:
+    max-spaces-inside: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true

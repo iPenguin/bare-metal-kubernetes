@@ -6,7 +6,7 @@
     dest: /root/renew-certs.sh
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
 
 - name: Schedule daily kubeadm cert renewal check
   ansible.builtin.cron:

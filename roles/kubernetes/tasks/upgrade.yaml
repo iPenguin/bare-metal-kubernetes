@@ -134,7 +134,7 @@
         argv:
           - dpkg-query
           - -W
-          - '-f=${Version}'
+          - "-f=${Version}"
           - kubeadm
       register: _pkg_kubeadm_ver
       changed_when: false
@@ -145,7 +145,7 @@
         argv:
           - dpkg-query
           - -W
-          - '-f=${Version}'
+          - "-f=${Version}"
           - kubelet
       register: _pkg_kubelet_ver
       changed_when: false
@@ -157,7 +157,7 @@
         argv:
           - dpkg-query
           - -W
-          - '-f=${Version}'
+          - "-f=${Version}"
           - cri-o
       register: _pkg_crio_ver
       changed_when: false
@@ -288,10 +288,7 @@
     - name: Note skip of already-upgraded node
       when:
         - _k8s_upgrade_host_current | bool
-        - not (
-            (_k8s_upgrade_node_unschedulable | bool)
-            and _k8s_upgrade_cordon_marker == 'true'
-          )
+        - not ( (_k8s_upgrade_node_unschedulable | bool) and _k8s_upgrade_cordon_marker == 'true' )
       ansible.builtin.debug:
         msg: >-
           {{ inventory_hostname }} is already on v{{ kubernetes_version }}
@@ -307,7 +304,7 @@
   block:
     - name: Read cgroup mount type before any mutation
       ansible.builtin.command:
-        argv: [stat, -fc, '%T', /sys/fs/cgroup]
+        argv: [stat, -fc, "%T", /sys/fs/cgroup]
       register: _cgroup_fs
       changed_when: false
 
@@ -548,7 +545,7 @@
         var: _upgrade_diff.stdout_lines
       when: inventory_hostname == k8s_controller
 
-    - name: kubeadm upgrade apply on the first controller (noninteractive --yes, not forceUpgrade)
+    - name: Kubeadm upgrade apply on the first controller (noninteractive --yes, not forceUpgrade)
       ansible.builtin.command:
         argv:
           - kubeadm
@@ -559,7 +556,7 @@
           - --yes
       when: inventory_hostname == k8s_controller
 
-    - name: kubeadm upgrade node on remaining controllers and workers
+    - name: Kubeadm upgrade node on remaining controllers and workers
       ansible.builtin.command:
         argv:
           - kubeadm

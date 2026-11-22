@@ -27,7 +27,6 @@ all:
 backups:
   hosts:
     c1.clt.milco.casa:
-
 #
 # In a production cluster the mons should be different from the osds.
 #
@@ -47,7 +46,6 @@ ceph:
         w2.clt.milco.casa:
         w3.clt.milco.casa:
         w5.clt.milco.casa:
-
 apps:
   children:
     gitea:
@@ -56,11 +54,9 @@ apps:
     ingress:
       hosts:
         c1.clt.milco.casa:
-
 workstations:
   hosts:
     localhost:
-
 remote:
   children:
     openwrt:

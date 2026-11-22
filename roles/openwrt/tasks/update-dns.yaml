@@ -4,7 +4,7 @@
   ansible.builtin.apk:
     name: luci-compat,luci-lib-ipkg,luci-mod-rpc
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Generate luci-dns password hash
   ansible.builtin.command:

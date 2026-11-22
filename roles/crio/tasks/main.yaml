@@ -8,8 +8,8 @@
 - name: Remove files containing 'cri_o' in /etc/apt/sources.list.d
   ansible.builtin.find:
     paths: /etc/apt/sources.list.d
-    patterns: '*cri_o*'
-    recurse: no
+    patterns: "*cri_o*"
+    recurse: false
   register: cri_o_files
 
 - name: Delete found files
@@ -22,7 +22,7 @@
   ansible.builtin.get_url:
     url: https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version[:4] }}/deb/Release.key
     dest: /etc/apt/trusted.gpg.d/crio.asc
-    mode: '0644'
+    mode: "0644"
     force: true
 
 - name: Add cri-o repo
@@ -43,7 +43,7 @@
     path: /etc/apt/sources.list.d/kubernetes.list
     block: |
       deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version.split('.')[0:2] | join('.') }}/deb/ /
-    create: yes
+    create: true
     state: present
 
 - name: Install cri-o packages
@@ -52,14 +52,14 @@
       - cri-o={{ crio_version }}-*
       - cri-tools
       - runc
-    allow_change_held_packages: yes
+    allow_change_held_packages: true
     state: latest
-    update_cache: yes
-  become: yes
+    update_cache: true
+  become: true
 
 - name: Lock cri-o from updates
   ansible.builtin.dpkg_selections:
-    name: '{{ item }}'
+    name: "{{ item }}"
     selection: hold
   loop:
     - cri-o
@@ -70,7 +70,7 @@
     path: /etc/containers
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
     state: directory
 
 - name: Ensure additional container registry configuration is absent
@@ -84,7 +84,7 @@
     dest: /etc/containers/policy.json
     owner: root
     group: root
-    mode: 0640
+    mode: "0640"
 
 - name: Configure docker auth
   ansible.builtin.template:
@@ -92,7 +92,7 @@
     dest: /etc/containers/auth.json
     owner: root
     group: root
-    mode: 0600
+    mode: "0600"
 
 - name: Configure docker registries
   ansible.builtin.template:
@@ -100,8 +100,7 @@
     dest: /etc/containers/registries.conf
     owner: root
     group: root
-    mode: 0640
-
+    mode: "0640"
 
 - name: Configure CRI-O to use auth
   ansible.builtin.template:
@@ -109,7 +108,7 @@
     dest: /etc/crio/crio.conf.d/10-crio.conf
     owner: root
     group: root
-    mode: 0640
+    mode: "0640"
   notify: Restart CRI-O
 
 - name: Link common binary
@@ -120,7 +119,7 @@
 
 - name: Enable cri-o service
   ansible.builtin.systemd:
-    enabled: yes
+    enabled: true
     state: started
     name: crio
 
@@ -149,4 +148,3 @@
     path: /usr/bin/crun
     state: absent
   when: crun_usr_bin_dpkg.rc != 0
-...

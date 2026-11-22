@@ -158,11 +158,11 @@
     - name: Initialize cluster-OpenBao (recovery-shares=5, threshold=3)
       vars:
         _script: >-
-            BAO_ADDR={{ _bao_addr }}
-            bao operator init
-            -recovery-shares=5
-            -recovery-threshold=3
-            -format=json
+          BAO_ADDR={{ _bao_addr }}
+          bao operator init
+          -recovery-shares=5
+          -recovery-threshold=3
+          -format=json
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -318,9 +318,9 @@
     - name: Configure Kubernetes auth
       vars:
         _script: >-
-            {{ _bao }}
-            bao write auth/kubernetes/config
-            kubernetes_host=https://kubernetes.default.svc
+          {{ _bao }}
+          bao write auth/kubernetes/config
+          kubernetes_host=https://kubernetes.default.svc
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -346,12 +346,12 @@
     - name: Configure OIDC
       vars:
         _script: >-
-            {{ _bao }}
-            bao write auth/oidc/config
-            oidc_discovery_url={{ _oidc_discovery_url | quote }}
-            oidc_client_id={{ _oidc_client_id | quote }}
-            oidc_client_secret={{ openbao_client_secret | quote }}
-            default_role=admin
+          {{ _bao }}
+          bao write auth/oidc/config
+          oidc_discovery_url={{ _oidc_discovery_url | quote }}
+          oidc_client_id={{ _oidc_client_id | quote }}
+          oidc_client_secret={{ openbao_client_secret | quote }}
+          default_role=admin
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -361,16 +361,16 @@
     - name: Configure OIDC admin role
       vars:
         _script: >-
-            {{ _bao }}
-            bao write auth/oidc/role/admin
-            bound_audiences={{ _oidc_client_id | quote }}
-            allowed_redirect_uris=https://{{ openbao_ingress_host }}/ui/vault/auth/oidc/oidc/callback
-            allowed_redirect_uris=https://{{ openbao_ingress_host }}/oidc/callback
-            user_claim=preferred_username
-            groups_claim=groups
-            policies=admin
-            oidc_scopes=openid,profile,email,groups
-            2>&1; echo "RC=$?"
+          {{ _bao }}
+          bao write auth/oidc/role/admin
+          bound_audiences={{ _oidc_client_id | quote }}
+          allowed_redirect_uris=https://{{ openbao_ingress_host }}/ui/vault/auth/oidc/oidc/callback
+          allowed_redirect_uris=https://{{ openbao_ingress_host }}/oidc/callback
+          user_claim=preferred_username
+          groups_claim=groups
+          policies=admin
+          oidc_scopes=openid,profile,email,groups
+          2>&1; echo "RC=$?"
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -389,11 +389,11 @@
     - name: Write admin policy
       vars:
         _script: |
-            {{ _bao }} bao policy write admin - <<'POLICY'
-            path "*" {
-              capabilities = ["create", "read", "update", "delete", "list", "sudo"]
-            }
-            POLICY
+          {{ _bao }} bao policy write admin - <<'POLICY'
+          path "*" {
+            capabilities = ["create", "read", "update", "delete", "list", "sudo"]
+          }
+          POLICY
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -403,15 +403,15 @@
     - name: Write eso policy
       vars:
         _script: |
-            {{ _bao }} bao policy write eso - <<'POLICY'
-            # ExternalSecrets read app secrets from kv/apps/<namespace>/<secret-name>.
-            path "kv/data/apps/*" {
-              capabilities = ["read"]
-            }
-            path "kv/metadata/apps/*" {
-              capabilities = ["read", "list"]
-            }
-            POLICY
+          {{ _bao }} bao policy write eso - <<'POLICY'
+          # ExternalSecrets read app secrets from kv/apps/<namespace>/<secret-name>.
+          path "kv/data/apps/*" {
+            capabilities = ["read"]
+          }
+          path "kv/metadata/apps/*" {
+            capabilities = ["read", "list"]
+          }
+          POLICY
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -436,15 +436,15 @@
         _k8s_accessor: "{{ (_auth_list.stdout | from_json)['kubernetes/'].accessor }}"
         _sa_ns: "{{ '{{' }}identity.entity.aliases.{{ _k8s_accessor }}.metadata.service_account_namespace{{ '}}' }}"
         _script: |
-            {{ _bao }} bao policy write eso-testing - <<'POLICY'
-            # Test apps (store openbao-testing) read kv/apps/<own namespace>/*.
-            path "kv/data/apps/{{ _sa_ns }}/*" {
-              capabilities = ["read"]
-            }
-            path "kv/metadata/apps/{{ _sa_ns }}/*" {
-              capabilities = ["read", "list"]
-            }
-            POLICY
+          {{ _bao }} bao policy write eso-testing - <<'POLICY'
+          # Test apps (store openbao-testing) read kv/apps/<own namespace>/*.
+          path "kv/data/apps/{{ _sa_ns }}/*" {
+            capabilities = ["read"]
+          }
+          path "kv/metadata/apps/{{ _sa_ns }}/*" {
+            capabilities = ["read", "list"]
+          }
+          POLICY
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -454,11 +454,11 @@
     - name: Write raft-snapshot policy
       vars:
         _script: |
-            {{ _bao }} bao policy write raft-snapshot - <<'POLICY'
-            path "sys/storage/raft/snapshot" {
-              capabilities = ["read"]
-            }
-            POLICY
+          {{ _bao }} bao policy write raft-snapshot - <<'POLICY'
+          path "sys/storage/raft/snapshot" {
+            capabilities = ["read"]
+          }
+          POLICY
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -470,12 +470,12 @@
     - name: Write ESO Kubernetes role
       vars:
         _script: >-
-            {{ _bao }}
-            bao write auth/kubernetes/role/eso
-            bound_service_account_names=external-secrets
-            bound_service_account_namespaces=external-secrets
-            policies=eso
-            ttl=1h
+          {{ _bao }}
+          bao write auth/kubernetes/role/eso
+          bound_service_account_names=external-secrets
+          bound_service_account_namespaces=external-secrets
+          policies=eso
+          ttl=1h
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -485,12 +485,12 @@
     - name: Write ESO testing Kubernetes role
       vars:
         _script: >-
-            {{ _bao }}
-            bao write auth/kubernetes/role/eso-testing
-            bound_service_account_names=openbao-eso
-            bound_service_account_namespaces='*-testing'
-            policies=eso-testing
-            ttl=1h
+          {{ _bao }}
+          bao write auth/kubernetes/role/eso-testing
+          bound_service_account_names=openbao-eso
+          bound_service_account_namespaces='*-testing'
+          policies=eso-testing
+          ttl=1h
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -502,20 +502,20 @@
     - name: Write ansible policy
       vars:
         _script: |
-            {{ _bao }} bao policy write ansible - <<'POLICY'
-            path "kv/data/ansible/*" {
-              capabilities = ["read"]
-            }
-            path "kv/data/apps/*" {
-              capabilities = ["read"]
-            }
-            path "kv/metadata/ansible/*" {
-              capabilities = ["read", "list"]
-            }
-            path "kv/metadata/apps/*" {
-              capabilities = ["read", "list"]
-            }
-            POLICY
+          {{ _bao }} bao policy write ansible - <<'POLICY'
+          path "kv/data/ansible/*" {
+            capabilities = ["read"]
+          }
+          path "kv/data/apps/*" {
+            capabilities = ["read"]
+          }
+          path "kv/metadata/ansible/*" {
+            capabilities = ["read", "list"]
+          }
+          path "kv/metadata/apps/*" {
+            capabilities = ["read", "list"]
+          }
+          POLICY
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -525,12 +525,12 @@
     - name: Write ansible AppRole
       vars:
         _script: >-
-            {{ _bao }}
-            bao write auth/approle/role/ansible
-            token_policies=ansible
-            token_ttl=15m
-            token_max_ttl=1h
-            secret_id_ttl=0
+          {{ _bao }}
+          bao write auth/approle/role/ansible
+          token_policies=ansible
+          token_ttl=15m
+          token_max_ttl=1h
+          secret_id_ttl=0
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -540,8 +540,8 @@
     - name: Read ansible AppRole role_id
       vars:
         _script: >-
-            {{ _bao }}
-            bao read -field=role_id auth/approle/role/ansible/role-id
+          {{ _bao }}
+          bao read -field=role_id auth/approle/role/ansible/role-id
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -552,8 +552,8 @@
     - name: Mint ansible AppRole secret_id
       vars:
         _script: >-
-            {{ _bao }}
-            bao write -f -field=secret_id auth/approle/role/ansible/secret-id
+          {{ _bao }}
+          bao write -f -field=secret_id auth/approle/role/ansible/secret-id
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"
@@ -615,13 +615,13 @@
     - name: Mint raft-snapshot token
       vars:
         _script: >-
-            {{ _bao }}
-            bao token create
-            -policy=raft-snapshot
-            -orphan
-            -period=720h
-            -display-name=raft-snapshot
-            -format=json
+          {{ _bao }}
+          bao token create
+          -policy=raft-snapshot
+          -orphan
+          -period=720h
+          -display-name=raft-snapshot
+          -format=json
       kubernetes.core.k8s_exec:
         namespace: "{{ _ns }}"
         pod: "{{ _pod }}"

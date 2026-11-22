@@ -229,7 +229,7 @@
       changed_when: false
       check_mode: false
 
-    - name: List chart changes in the appsets  # noqa: command-instead-of-module
+    - name: List chart changes in the appsets # noqa: command-instead-of-module
       ansible.builtin.shell: >-
         set -o pipefail;
         git diff -U0 {{ _from.stdout }} {{ _to.stdout }} -- argo-apps/appsets
@@ -488,4 +488,3 @@
         dest: "{{ upgrade_state_file }}"
         content: "{{ {'commit': _to.stdout, 'pending': (_plan.optin + _plan.manual) | unique | list, 'deployed_at': _stamp} | to_nice_json }}\n"
         mode: "0600"
-...

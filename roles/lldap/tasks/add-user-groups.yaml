@@ -39,4 +39,3 @@
     status_code: [200]
   loop: "{{ lldap_user.groups }}"
   delegate_to: localhost
-

@@ -1,3 +1,4 @@
+---
 rook_namespace: rook-ceph
 
 # Metadata-only adoption requires explicit review of pre-change exports.
