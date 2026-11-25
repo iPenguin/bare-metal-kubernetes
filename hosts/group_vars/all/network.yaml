@@ -178,9 +178,9 @@ network_hosts:
     duid: 00020000ab11eb87b0126a3ba008
     hostid: 15
   - name: w4
-    mac: 84:47:09:1D:2B:11
+    mac: 88:ae:dd:71:99:e9
     ipv4: "{{ ipv4_network }}.16"
-    duid: 00020000ab118daf4a65f715f3dd
+    duid: 00020000ab11d5bbce96643f1033
     hostid: 16
   - name: w5
     mac: 58:47:CA:7D:4D:B5
