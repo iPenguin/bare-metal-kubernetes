@@ -1,4 +1,9 @@
-# Python tools used by .gitea/workflows/pr-checks.yaml
+# Top-level CI pins (ansible-core matches requirements.txt; do not bump here).
+# Install the hashed lock in CI:
+#   pip install --require-hashes -r requirements-ci.lock
+# Regenerate the lock (do not bump the pins below):
+#   pip-compile --generate-hashes -o requirements-ci.lock requirements-ci.txt
+ansible-core==2.21.6
 ansible-lint==26.11.1
 detect-secrets==1.5.0
 pre-commit==4.7.0
