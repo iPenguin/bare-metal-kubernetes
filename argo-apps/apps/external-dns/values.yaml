@@ -87,4 +87,3 @@ securityContext:
     drop:
       - ALL
   readOnlyRootFilesystem: true
-

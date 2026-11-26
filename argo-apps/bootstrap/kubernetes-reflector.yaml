@@ -16,4 +16,4 @@ spec:
       kind: '*'
   sourceRepos:
     - https://github.com/ipenguin/bare-metal-kubernetes.git
-    - https://emberstack.github.io/helm-charts 
+    - https://emberstack.github.io/helm-charts

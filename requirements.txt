@@ -1,7 +1,7 @@
+ansible-core==2.21.6
 dnspython==2.9.2
+hvac==2.4.0
 jmespath==1.1.0
 kubernetes==33.1.0
-python-ldap==3.4.8
 passlib==1.7.4
-hvac==2.4.0
-ansible-core==2.21.6
+python-ldap==3.4.8
