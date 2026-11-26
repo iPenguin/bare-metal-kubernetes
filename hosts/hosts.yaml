@@ -58,34 +58,3 @@ apps:
 workstations:
   hosts:
     localhost:
-remote:
-  children:
-    openwrt:
-      children:
-        router:
-          hosts:
-            r.milco.casa:
-    controllers:
-      hosts:
-        c1.clt.milco.casa:
-          ansible_host: 10.1.1.10
-        c2.clt.milco.casa:
-          ansible_host: 10.1.1.11
-        c3.clt.milco.casa:
-          ansible_host: 10.1.1.12
-    workers:
-      hosts:
-        w1.clt.milco.casa:
-          ansible_host: 10.1.1.13
-        w2.clt.milco.casa:
-          ansible_host: 10.1.1.14
-        w3.clt.milco.casa:
-          ansible_host: 10.1.1.15
-        w4.clt.milco.casa:
-          ansible_host: 10.1.1.16
-        w5.clt.milco.casa:
-          ansible_host: 10.1.1.17
-    openbao:
-      hosts:
-        bao1.clt.milco.casa:
-          ansible_host: 10.1.1.4
