@@ -185,7 +185,7 @@ network_hosts:
   - name: w5
     mac: 58:47:CA:7D:4D:B5
     ipv4: "{{ ipv4_network }}.17"
-    duid: 00020000ab119d4d5e61a21d7e05
+    duid: 00020000ab1198c214c6983c084b
     hostid: 17
 
 # openwrt static domains - records not managed by ExternalDNS
