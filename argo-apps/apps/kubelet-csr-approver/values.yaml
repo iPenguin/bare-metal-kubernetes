@@ -11,12 +11,14 @@ providerRegex: ^[cw][0-9]+\.clt\.milco\.casa$
 # "{{ host_ipv4 }},{{ host_ipv6 }}"; the IPv6 prefix lives in vault
 # (vault_ipv6_network) and this repo is public, so allow global unicast
 # instead of the exact /64. The name regex and DNS check still apply.
-# Node DNS also returns a unique-local AAAA (router.ula_prefix). The
-# approver checks every resolved IP, not just the CSR SANs.
+# Node DNS also returns a unique-local AAAA. That prefix is already
+# public as router.ula_prefix in hosts/group_vars/all/network.yaml, so
+# allow exactly it. The approver checks every resolved IP, not just the
+# CSR SANs.
 providerIpPrefixes:
   - 10.1.1.0/24
   - 2000::/3
-  - fd00::/8
+  - fd5b:996d:3c79::/48
 
 # Leave CSRs that don't match pending for manual review instead of denying them
 skipDenyStep: true
