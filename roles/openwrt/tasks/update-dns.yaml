@@ -6,34 +6,14 @@
     state: present
     update_cache: true
 
-- name: Generate luci-dns password hash
-  ansible.builtin.command:
-    cmd: "uhttpd -m {{ vault_luci_dns_password }}"
-  register: luci_dns_hash
-  changed_when: false
-
-- name: Get current rpcd config
-  ansible.builtin.command:
-    cmd: uci show rpcd
-  register: rpcd_show
-  changed_when: false
-
-- name: Configure rpcd login for luci-dns
-  ansible.builtin.shell: |  # noqa: risky-shell-pipe grep -q/head close pipes early; pipefail would fail on SIGPIPE (busybox ash)
-    set -e
-    HASH="{{ luci_dns_hash.stdout }}"
-    while uci show rpcd | grep -q "\.username='luci-dns'"; do
-      section=$(uci show rpcd | grep "\.username='luci-dns'" | head -1 | sed "s/\(rpcd\.[^.]*\)\..*/\1/")
-      uci delete "$section"
-    done
-    uci add rpcd login
-    uci set rpcd.@login[-1].username='luci-dns'
-    uci set "rpcd.@login[-1].password=$HASH"
-    uci add_list rpcd.@login[-1].read='luci-dns'
-    uci commit rpcd
-  when: >
-    "username='luci-dns'" not in rpcd_show.stdout or
-    luci_dns_hash.stdout not in rpcd_show.stdout
+- name: Configure rpcd logins
+  ansible.builtin.template:
+    src: rpcd.j2
+    dest: /etc/config/rpcd
+    owner: root
+    group: root
+    mode: "0600"
+  diff: false  # keeps the password hash out of --diff output
   notify: Restart rpcd
 
 - name: Ensure rpcd ACL directory exists

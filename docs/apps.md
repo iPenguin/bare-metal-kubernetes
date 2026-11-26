@@ -18,6 +18,27 @@
   appset can generate the Application. `plex.clt.milco.casa` comes from the
   Ingress via ExternalDNS.
 
+## ExternalDNS
+
+- Writes `domain`/`txtrecord` sections to the router's `/etc/config/dhcp`
+  through the LuCI RPC webhook. The openwrt role's `dhcp.j2` overwrites that
+  file, so a rerun drops them until the next sync (1m) recreates and commits
+  them.
+- An apply cut off before `uci commit` leaves records only in the webhook's
+  rpcd session (`/var/run/rpcd/uci-*/dhcp`). The webhook still sees them,
+  dnsmasq does not, and external-dns logs "up to date". Fix: restart the
+  deployment so the webhook logs in to a fresh session.
+- The webhook logs in to the router as rpcd user `luci-dns`
+  (`roles/openwrt/templates/rpcd.j2`, password `vault_luci_dns_password`, same
+  value as OpenBao `kv/apps/external-dns/external-dns-secrets` key
+  `openwrt-password`). Its ACL group allows uci `dhcp` only, but LuCI RPC
+  (`/cgi-bin/luci/rpc/sys`, `/fs`) accepts any logged-in user and ignores
+  rpcd ACLs, so this login is root-equivalent until the webhook moves to `/ubus`.
+- `rpcd.j2` owns all of `/etc/config/rpcd`; it also keeps the stock `root`
+  login (`$p$root`) for LuCI.
+- v0.23 ignores `external-dns.alpha.kubernetes.io/*`. Service hostnames
+  (traefik, traefik-ssh, plex-svc) come from `dnsmasq.conf.j2`.
+
 ## AI
 
 - Application `ai-applications` ignores `/spec/replicas` on Deployments and

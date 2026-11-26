@@ -1,0 +1,18 @@
+config rpcd
+	option socket /var/run/ubus/ubus.sock
+	option timeout 30
+
+# Stock OpenWrt admin login (LuCI web/ubus) using root's system password.
+config login
+	option username 'root'
+	option password '$p$root'
+	list read '*'
+	list write '*'
+
+# external-dns webhook; rights come only from the luci-dns ACL group
+# (/usr/share/rpcd/acl.d/luci-dns.json). Fixed salt keeps the hash stable.
+config login
+	option username 'luci-dns'
+	option password '{{ vault_luci_dns_password | password_hash('sha512', salt=(('luci-dns@' ~ inventory_hostname) | hash('sha256'))[:16], rounds=5000) }}'
+	list read 'luci-dns'
+	list write 'luci-dns'
