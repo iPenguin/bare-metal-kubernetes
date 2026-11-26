@@ -6,7 +6,7 @@ metadata:
   namespace: cert-manager
 type: Opaque
 stringData:
-  api-token: {{ cloudflare_api_token }} 
+  api-token: {{ cloudflare_api_token }}
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -21,7 +21,7 @@ spec:
     solvers:
     - dns01:
         cloudflare:
-          email: {{ acme_account_email }} 
+          email: {{ acme_account_email }}
           apiTokenSecretRef:
             name: cloudflare-api-token-secret
             key: api-token

@@ -1,0 +1,90 @@
+# Required PR and master checks. No secrets.
+# DEFAULT_ACTIONS_URL is github, so these actions come from GitHub.
+---
+name: pr-checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+env:
+  ANSIBLE_VAULT_PASSWORD_FILE: /tmp/ci-vault-pass
+  ANSIBLE_INVENTORY: hosts
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install CI Python tools
+        run: pip install -r requirements-ci.txt
+      - name: Run pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  ansible-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install Ansible and lint
+        run: pip install -r requirements.txt -r requirements-ci.txt
+      - name: Install collections
+        run: ansible-galaxy collection install -r requirements.yml
+      - name: Dummy vault password
+        run: printf 'ci\n' > "${ANSIBLE_VAULT_PASSWORD_FILE}"
+      - name: ansible-lint
+        run: ansible-lint
+
+  ansible-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install Ansible
+        run: pip install -r requirements.txt
+      - name: Install collections
+        run: ansible-galaxy collection install -r requirements.yml
+      - name: Dummy vault password
+        run: printf 'ci\n' > "${ANSIBLE_VAULT_PASSWORD_FILE}"
+      - name: Syntax-check playbooks
+        run: ./scripts/ansible-syntax-check.sh
+
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install yamllint
+        run: pip install -r requirements-ci.txt
+      - name: yamllint
+        run: yamllint .
+
+  renovate-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - name: Check minimumReleaseAge
+        run: python3 scripts/check-renovate-config.py
+      - name: renovate-config-validator
+        run: npx --yes --package renovate@44.227.4 -- renovate-config-validator

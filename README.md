@@ -42,12 +42,20 @@ SSH is not forwarded from the WAN; connect over WireGuard. `configure-os` instal
 `AllowUsers` from `sshd_allow_users` (default: the `remote_users` accounts).
 `ansible-playbook run.yaml --tags sshd` applies only that part of `configure-os`.
 
-## Lint
+## Lint and CI
 
 `ansible-lint` passes at the `safety` profile (`.ansible-lint`, `.yamllint`). Run it
 with `ANSIBLE_INVENTORY=hosts` and a dummy `ANSIBLE_VAULT_PASSWORD_FILE` when the
 vault password isn't on the machine. `hosts` is a reserved name, so the host list
 in `group_vars/all/network.yaml` is `network_hosts`.
+
+Gitea Actions workflow `pr-checks` (`.gitea/workflows/pr-checks.yaml`) runs on
+pull requests and on pushes to `master`: pre-commit (including detect-secrets
+against `.secrets.baseline`, plus a hook that rejects absolute home-directory
+paths), ansible-lint, `ansible-playbook --syntax-check` on top-level playbooks,
+yamllint, and renovate-config-validator. CI Python pins are in
+`requirements-ci.txt`. yamllint uses the repo `.yamllint`, which excludes
+`argo-apps/` and `images/`.
 
 ## Secrets
 

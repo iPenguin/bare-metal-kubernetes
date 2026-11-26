@@ -7,8 +7,22 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
+        exclude: '\.j2$'
       - id: check-yaml
+        args: [--allow-multiple-documents]
+        exclude: (^|/)hosts/group_vars/all/apps\.yaml$
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: requirements-txt-fixer
       - id: trailing-whitespace
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+  - repo: local
+    hooks:
+      - id: no-home-paths
+        name: no absolute home-directory paths
+        language: pygrep
+        entry: /hom[e]/
