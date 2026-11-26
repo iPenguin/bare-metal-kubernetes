@@ -1,0 +1,28 @@
+---
+# Release gitea-actions-build, layered on actions-values.yaml. Registered to
+# homelab/bare-metal-kubernetes only, with the single label docker-build, for
+# ai-base: its jobs get the dind socket and the Harbor push credentials.
+# Never point a pull_request job at docker-build.
+existingSecret: gitea-runner-build-token
+existingSecretKey: token
+
+statefulset:
+  runner:
+    config: |
+      log:
+        level: info
+      runner:
+        file: .runner
+        capacity: 1
+        timeout: 3h
+        labels:
+          - "docker-build:docker://docker.gitea.com/runner-images:ubuntu-latest@sha256:203ba5eff144b485821fc41c47f29ed24333304660e953e8983b9b852e013ca0"
+      cache:
+        enabled: false
+      container:
+        require_docker: true
+        docker_timeout: 300s
+        # docker_host unset: jobs get the dind socket (docker build, push, run skopeo).
+        privileged: false
+        valid_volumes: []
+        force_pull: true

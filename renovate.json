@@ -36,6 +36,17 @@
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s+GITLEAKS_VERSION:\\s+(?<currentValue>\\S+)"
       ],
       "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Gitea Actions runner, dind and job images, written as registry/repo:tag@digest",
+      "managerFilePatterns": [
+        "/^argo-apps/apps/gitea/actions(-build)?-values\\.yaml$/"
+      ],
+      "matchStrings": [
+        "(?<depName>[a-z0-9.-]+\\.[a-z]+/[a-z0-9._/-]+):(?<currentValue>[A-Za-z0-9._-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [
@@ -95,6 +106,14 @@
         "!cilium"
       ],
       "groupName": "Version pins"
+    },
+    {
+      "description": "Gitea runner images go with the other Argo CD app images",
+      "matchFileNames": [
+        "argo-apps/apps/gitea/actions-values.yaml",
+        "argo-apps/apps/gitea/actions-build-values.yaml"
+      ],
+      "groupName": "Argo CD app images"
     },
     {
       "description": "Minor and major bumps go through upgrade.yaml; approve them on the Dependency Dashboard",

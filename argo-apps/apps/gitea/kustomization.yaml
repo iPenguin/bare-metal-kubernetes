@@ -6,3 +6,5 @@ resources:
   - postgresql-secret.yaml
   - valkey-secret.yaml
   - signing-key-secret.yaml
+  - runner-build-token-secret.yaml
+  - runner-network-policy.yaml

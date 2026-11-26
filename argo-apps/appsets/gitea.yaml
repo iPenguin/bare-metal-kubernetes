@@ -44,3 +44,11 @@ spec:
             releaseName: gitea-actions
             valueFiles:
               - '$valuesSrc/argo-apps/apps/gitea/actions-values.yaml'
+        - repoURL: 'https://dl.gitea.io/charts/'
+          chart: actions
+          targetRevision: 0.1.3
+          helm:
+            releaseName: gitea-actions-build
+            valueFiles:
+              - '$valuesSrc/argo-apps/apps/gitea/actions-values.yaml'
+              - '$valuesSrc/argo-apps/apps/gitea/actions-build-values.yaml'
