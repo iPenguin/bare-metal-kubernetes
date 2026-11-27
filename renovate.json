@@ -108,14 +108,20 @@
       "groupName": "Version pins"
     },
     {
-      "description": "Gitea server and runner images go with the other Argo CD app images",
+      "description": "Gitea runner images go with the other Argo CD app images",
       "matchFileNames": [
-        "argo-apps/apps/gitea/values.yaml",
         "argo-apps/apps/gitea/actions-values.yaml",
         "argo-apps/apps/gitea/actions-build-values.yaml",
         "argo-apps/apps/gitea/actions-docker-values.yaml"
       ],
       "groupName": "Argo CD app images"
+    },
+    {
+      "description": "Gitea server bumps run DB migrations; keep them in their own PR",
+      "matchDepNames": [
+        "docker.gitea.com/gitea"
+      ],
+      "groupName": null
     },
     {
       "description": "Minor and major bumps go through upgrade.yaml; approve them on the Dependency Dashboard",
