@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import unittest
+import urllib.error
+from unittest import mock
 
 import renovate_review as rr
 
@@ -12,7 +14,14 @@ GREEN = [
     {"context": "pr-checks / renovate-config (pull_request)", "status": "success"},
     {"context": "renovate/stability-days", "status": "pending"},
 ]
-SIGNED = [{"sha": SHA, "author": {"login": "svc_renovate"}, "commit": {"verification": {"verified": True}}}]
+BASE = "b" * 40
+SIGNED = [{
+    "sha": SHA,
+    "author": {"login": "svc_renovate"},
+    "committer": {"login": "svc_renovate"},
+    "commit": {"verification": {"verified": True, "signer": {"username": "svc_renovate"}}},
+    "files": [{"filename": "argo-apps/apps/a/values.yaml", "status": "modified"}],
+}]
 
 
 def pr(**over):
@@ -23,6 +32,7 @@ def pr(**over):
         "user": {"login": "svc_renovate"},
         "labels": [],
         "head": {"ref": "renovate/foo", "sha": SHA, "repo": {"full_name": REPO}},
+        "merge_base": BASE,
         "base": {"ref": "master", "repo": {"full_name": REPO}},
     }
     base.update(over)
@@ -33,13 +43,13 @@ def table(*rows, cols="| Package | Update | Change |"):
     return "This PR contains the following updates:\n\n" + cols + "\n|---|---|---|\n" + "\n".join(rows) + "\n\n---\n"
 
 
-def level(body, files, labels=(), commits=SIGNED, pins=frozenset()):
-    return rr.LEVELS[rr.rate(rr.parse_deps(body), list(files), list(labels), commits, set(pins)).level]
+def level(body, files, labels=(), pins=frozenset()):
+    return rr.LEVELS[rr.rate(rr.parse_deps(body), list(files), list(labels), set(pins)).level]
 
 
 class Gate(unittest.TestCase):
     def test_pass(self):
-        self.assertEqual(rr.gate(pr(), GREEN, REPO, SHA), [])
+        self.assertEqual(rr.gate(pr(), GREEN, SIGNED, REPO, SHA), [])
 
     def test_blocks(self):
         cases = {
@@ -52,18 +62,36 @@ class Gate(unittest.TestCase):
         }
         for name, p in cases.items():
             with self.subTest(name):
-                self.assertTrue(rr.gate(p, GREEN, REPO, SHA))
+                self.assertTrue(rr.gate(p, GREEN, SIGNED, REPO, SHA))
 
     def test_sha_moved(self):
-        self.assertTrue(rr.gate(pr(), GREEN, REPO, "b" * 40))
+        self.assertTrue(rr.gate(pr(), GREEN, SIGNED, REPO, "c" * 40))
 
     def test_checks(self):
-        self.assertTrue(rr.gate(pr(), [], REPO, SHA))
-        self.assertTrue(rr.gate(pr(), GREEN[2:], REPO, SHA))
+        self.assertTrue(rr.gate(pr(), [], SIGNED, REPO, SHA))
+        self.assertTrue(rr.gate(pr(), GREEN[2:], SIGNED, REPO, SHA))
         red = [dict(GREEN[0], status="failure"), GREEN[1]]
-        self.assertTrue(rr.gate(pr(), red, REPO, SHA))
+        self.assertTrue(rr.gate(pr(), red, SIGNED, REPO, SHA))
         pending = [dict(GREEN[0], status="pending"), GREEN[1]]
-        self.assertTrue(rr.gate(pr(), pending, REPO, SHA))
+        self.assertTrue(rr.gate(pr(), pending, SIGNED, REPO, SHA))
+
+    def test_commits(self):
+        c = SIGNED[0]
+        v = c["commit"]["verification"]
+        cases = {
+            "none": [],
+            "author": [dict(c, author={"login": "svc_grokbot"})],
+            # renovate@ as author email, but committed and signed by someone else
+            "committer": [dict(c, committer={"login": "svc_grokbot"})],
+            "signer": [dict(c, commit={"verification": dict(v, signer={"username": "svc_grokbot"})})],
+            "no signer": [dict(c, commit={"verification": {"verified": True}})],
+            "unverified": [dict(c, commit={"verification": dict(v, verified=False)})],
+            "head missing": [dict(c, sha="d" * 40)],
+            "one bad of two": [dict(c, sha="d" * 40), dict(c, committer=None)],
+        }
+        for name, commits in cases.items():
+            with self.subTest(name):
+                self.assertTrue(rr.gate(pr(), GREEN, commits, REPO, SHA))
 
 
 class Parse(unittest.TestCase):
@@ -150,23 +178,92 @@ class Rubric(unittest.TestCase):
         self.assertEqual(level(body, files, ["risk-floor/high"]), "high")
         self.assertEqual(level(table("| a | major | `1.0.0` → `2.0.0` |"), files, ["risk-floor/low", "risk-allow/low"]), "high")
 
-    def test_commits(self):
-        body = table("| a | patch | `1.0.0` → `1.0.1` |")
-        files = ["argo-apps/apps/a/values.yaml"]
-        other = [dict(SIGNED[0], author={"login": "svc_grokbot"})]
-        unsigned = [dict(SIGNED[0], commit={"verification": {"verified": False}})]
-        self.assertEqual(level(body, files, commits=other), "medium")
-        self.assertEqual(level(body, files, commits=unsigned), "high")
-
 
 class Comment(unittest.TestCase):
     def test_marker_and_idempotence(self):
-        rating = rr.rate(rr.parse_deps(table("| a | patch | `1.0.0` → `1.0.1` |")), ["argo-apps/a.yaml"], [], SIGNED, set())
+        rating = rr.rate(rr.parse_deps(table("| a | patch | `1.0.0` → `1.0.1` |")), ["argo-apps/a.yaml"], [], set())
         one = rr.render(SHA, rating, ["argo-apps/a.yaml"], GREEN, SIGNED, "1")
         two = rr.render(SHA, rating, ["argo-apps/a.yaml"], GREEN, SIGNED, "2")
         self.assertTrue(one.startswith(f"<!-- grokbot-review sha={SHA} run=1 -->"))
         self.assertTrue(rr.same_review(one, two))
         self.assertIn("### Review: LOW", one)
+
+    def test_no_mentions_or_links(self):
+        body = table("| [@admin https://evil.example/x www.evil.example a@b.example](https://x) | patch | `1.0.0` → `1.0.1` |")
+        files = ["argo-apps/a.yaml", "argo-apps/@team/http://x.yaml"]
+        out = rr.render(SHA, rr.rate(rr.parse_deps(body), files, [], set()), files, GREEN, SIGNED, "1")
+        text = out.split("\n", 1)[1]
+        for bad in ("@admin", "@team", "@b.example", "://", "www.", "WWW."):
+            self.assertNotIn(bad, text)
+        self.assertIn("@" + rr.WJ + "admin", text)
+
+
+class Api(unittest.TestCase):
+    def test_https_only(self):
+        for url in ("http://git.example", "file:///etc", "git.example"):
+            with self.subTest(url), self.assertRaises(SystemExit):
+                rr.Gitea(url, REPO, "t")
+
+    def test_token_not_redirected(self):
+        api = rr.Gitea("https://git.example", REPO, "t")
+        seen = []
+
+        class Resp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def read(self):
+                return b"{}"
+
+        def fake_open(req, timeout):
+            seen.append(req)
+            return Resp()
+
+        with mock.patch.object(api.opener, "open", fake_open):
+            api.call("GET", "/pulls/1")
+        (req,) = seen
+        self.assertTrue(req.full_url.startswith("https://"))
+        self.assertEqual(req.unredirected_hdrs.get("Authorization"), "token t")
+        self.assertNotIn("Authorization", req.headers)
+
+    def test_no_redirect_off_https(self):
+        import urllib.request
+
+        h = rr.HttpsOnlyRedirect()
+        req = urllib.request.Request("https://git.example/api/v1/x")
+        with self.assertRaises(urllib.error.HTTPError):
+            h.redirect_request(req, None, 302, "Found", {}, "http://git.example/api/v1/x")
+        self.assertIsNotNone(h.redirect_request(req, None, 302, "Found", {}, "https://git.example/api/v1/y"))
+
+
+class Review(unittest.TestCase):
+    def test_reads_by_checked_sha(self):
+        class Api:
+            calls: list[str] = []
+
+            def call(self, method, path, data=None):
+                self.calls.append(f"{method} {path}")
+                if path.startswith("/commits/"):
+                    return {"statuses": GREEN}
+                if path.startswith("/compare/"):
+                    return {"total_commits": 1, "commits": SIGNED}
+                raise AssertionError(path)
+
+            def pages(self, path):
+                self.calls.append(f"PAGES {path}")
+                return []
+
+        api = Api()
+        body = table("| a | patch | `1.0.0` → `1.0.1` |")
+        with mock.patch("builtins.print"):
+            rr.review(api, pr(body=body), REPO, SHA, "comment", True, set(), "1")
+        self.assertEqual(api.calls, [
+            f"GET /commits/{SHA}/status",
+            f"GET /compare/{BASE}...{SHA}?verification=true&files=true",
+        ])
 
 
 class Modes(unittest.TestCase):

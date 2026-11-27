@@ -1,8 +1,8 @@
 # Rates Renovate PRs after pr-checks and keeps one sticky comment per PR.
 # workflow_run always runs this file from master, so a PR can't change the
-# review logic. The checkout is pinned to master too, and no step runs PR
-# code. scripts/renovate_review.py is the real gate; the `if:` only saves
-# runner time. See docs/apps.md (Renovate review).
+# review logic, and the script is cloned from master too. PR content is only
+# read from the API as data. scripts/renovate_review.py is the real gate; the
+# `if:` only saves runner time. See docs/apps.md (Renovate review).
 #
 # Needs repo Actions secret SVC_GROKBOT_TOKEN (svc_grokbot token) and repo
 # variable REVIEW_MODE: off (default, also when unset) | comment.
@@ -41,18 +41,22 @@ jobs:
        startsWith(github.event.workflow_run.head_branch, 'renovate/'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # The default runner shares a writable /opt/hostedtoolcache across jobs,
+    # so this token-holding job takes python from a digest-pinned image, not
+    # setup-python. The image has git but no node, so actions/checkout can't
+    # run in it; clone master instead (public repo, no credentials).
+    # renovate: datasource=docker depName=docker.io/library/python
+    container: docker.io/library/python:3.12.16-trixie@sha256:9dd21fafb95870b99f9faa703a947d08feeb673048ad556e92ce503d0c086a95
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: master
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
+      - name: Clone master
+        run: >-
+          git clone --quiet --depth 1 --branch master --no-tags
+          "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" src
       # The script reads the PR number or head SHA from the event file
       # itself, so no PR field is interpolated here.
       - name: Review
+        working-directory: src
         env:
           GITEA_TOKEN_BOT: ${{ secrets.SVC_GROKBOT_TOKEN }}
           REVIEW_MODE: ${{ vars.REVIEW_MODE }}
-        run: python3 scripts/renovate_review.py
+        run: /usr/local/bin/python3 scripts/renovate_review.py

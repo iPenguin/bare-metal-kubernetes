@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Rate Renovate PRs and post one sticky comment with the rating.
 
-Runs from master (renovate-review.yaml, workflow_run on pr-checks). It never
-checks out or runs PR code: everything comes from the Gitea API, plus
-hosts/group_vars/all/versions.yaml from the master checkout. PR titles,
-bodies and branch names are data only.
+Runs from master (renovate-review.yaml, workflow_run on pr-checks). It
+doesn't check out or run PR code: PR data comes from the Gitea API, plus
+hosts/group_vars/all/versions.yaml from the master clone. PR titles, bodies
+and branch names are data only.
 
 This script is the real gate, not the workflow's `if:`. A PR is reviewed only
-if it is open, not a draft, authored by svc_renovate from a renovate/* branch
-of this repo, and every `pr-checks / *` status on its head SHA is success.
+if it is open, not a draft, opened by svc_renovate from a renovate/* branch
+of this repo, every commit is authored, committed and signed by svc_renovate,
+and every `pr-checks / *` status on its head SHA is success. Files and commits
+are read for that head SHA, not the PR's current head.
 
 The rating is the deterministic floor from the risk rubric: the highest match
 wins, and anything not known to be low is at least medium.
@@ -29,6 +31,7 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -86,11 +89,20 @@ KNOWN_TARGETS = ("argo-apps/", VERSIONS_FILE, "requirements.txt", "requirements.
 
 UPDATE_LEVEL = {"major": HIGH, "minor": MEDIUM, "patch": LOW, "digest": LOW, "pindigest": LOW}
 UNSAFE = re.compile(r"[^A-Za-z0-9 ()_./:+=@~-]")
+# Word joiner: invisible, but breaks Gitea's @mention, URL and email linking.
+WJ = "\u2060"
+LINKY = re.compile(r"(@|://|(?i:www)\.)")
+SHA_RE = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 
 
 def clean(text: str, limit: int = 80) -> str:
     """PR-supplied text reduced to inert characters for logs and comments."""
     return UNSAFE.sub("", str(text))[:limit]
+
+
+def inert(text: str) -> str:
+    """No pings or links from text quoted into a comment."""
+    return LINKY.sub(lambda m: m.group(1)[0] + WJ + m.group(1)[1:], text)
 
 
 @dataclass
@@ -210,7 +222,7 @@ def rate_dep(dep: Dep, kind: str, pins: set[str]) -> tuple[int, str]:
     return MEDIUM, "not an Argo CD app image/chart or allowlisted pin"
 
 
-def rate(deps: list[Dep], files: list[str], labels: list[str], commits: list[dict], pins: set[str]) -> Rating:
+def rate(deps: list[Dep], files: list[str], labels: list[str], pins: set[str]) -> Rating:
     r = Rating()
     for path in files:
         shown = f"`{clean(path, 120)}`"
@@ -239,18 +251,39 @@ def rate(deps: list[Dep], files: list[str], labels: list[str], commits: list[dic
         floor = name.split("/", 1)[1] if name.startswith("risk-floor/") else ""
         if floor in LEVELS:
             r.raise_to(LEVELS.index(floor), f"label `{clean(name)}`")
-    for c in commits:
-        sha = clean(c.get("sha", ""), 8)
-        if ((c.get("author") or {}).get("login")) != RENOVATE_LOGIN:
-            r.raise_to(MEDIUM, f"commit {sha} is not by {RENOVATE_LOGIN}")
-        if not ((c.get("commit") or {}).get("verification") or {}).get("verified"):
-            r.raise_to(HIGH, f"commit {sha} signature is not verified")
     return r
 
 
 # ---------- gate ----------
 
-def gate(pr: dict, statuses: list[dict], repo: str, sha: str | None) -> list[str]:
+def commit_problems(commits: list[dict], head_sha: str) -> list[str]:
+    """Every commit must be authored, committed and signed by svc_renovate.
+
+    Uses the Gitea user Gitea matched to the author and committer emails, and
+    the user that owns the verified signing key (verification.signer.username).
+    """
+    if not commits:
+        return ["no commits found for the head SHA"]
+    problems = []
+    if head_sha not in [c.get("sha") for c in commits]:
+        problems.append("head SHA is not among the PR commits")
+    for c in commits:
+        sha = clean(c.get("sha", ""), 8)
+        v = (c.get("commit") or {}).get("verification") or {}
+        who = {
+            "author": (c.get("author") or {}).get("login"),
+            "committer": (c.get("committer") or {}).get("login"),
+            "signer": (v.get("signer") or {}).get("username"),
+        }
+        for role, login in who.items():
+            if login != RENOVATE_LOGIN:
+                problems.append(f"commit {sha} {role} is not {RENOVATE_LOGIN}")
+        if v.get("verified") is not True:
+            problems.append(f"commit {sha} signature is not verified")
+    return problems
+
+
+def gate(pr: dict, statuses: list[dict], commits: list[dict], repo: str, sha: str | None) -> list[str]:
     """Reasons this PR must not be reviewed; empty means it passes."""
     problems = []
     head = pr.get("head") or {}
@@ -271,6 +304,7 @@ def gate(pr: dict, statuses: list[dict], repo: str, sha: str | None) -> list[str
         problems.append("head SHA moved since the checks ran")
     if SKIP_LABEL in [lbl.get("name") for lbl in pr.get("labels") or []]:
         problems.append(f"label {SKIP_LABEL}")
+    problems += commit_problems(commits, str(head.get("sha", "")))
     required = [s for s in statuses if fnmatch.fnmatchcase(s.get("context", ""), REQUIRED_CHECKS)]
     if not required:
         problems.append(f"no `{REQUIRED_CHECKS}` status on the head SHA")
@@ -302,8 +336,8 @@ def render(sha: str, rating: Rating, files: list[str], statuses: list[dict], com
     verified = [((c.get("commit") or {}).get("verification") or {}).get("verified") for c in commits]
     signed = "yes" if verified and all(verified) else "no"
     level = LEVELS[rating.level]
+    marker = f"{MARKER} sha={clean(sha, 64)} run={clean(run_id, 20)} -->"
     lines = [
-        f"{MARKER} sha={clean(sha, 64)} run={clean(run_id, 20)} -->",
         f"### Review: {level.upper()}",
         f"Floor: {level} · Judgment: not enabled · Checks: {checks} · Signed: {signed}",
         "",
@@ -321,7 +355,7 @@ def render(sha: str, rating: Rating, files: list[str], statuses: list[dict], com
         "**To merge**: BrianM approves (dry run: the bot does not approve)",
         f"**To complete the update**: {completion(files, [d for d, _, _ in rating.deps])}",
     ]
-    return "\n".join(lines) + "\n"
+    return marker + "\n" + inert("\n".join(lines)) + "\n"
 
 
 def same_review(old: str, new: str) -> bool:
@@ -333,10 +367,20 @@ def same_review(old: str, new: str) -> bool:
 
 # ---------- API ----------
 
+class HttpsOnlyRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urllib.parse.urlsplit(newurl).scheme != "https":
+            raise urllib.error.HTTPError(req.full_url, code, "redirect to non-https refused", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 class Gitea:
     def __init__(self, url: str, repo: str, token: str):
+        if urllib.parse.urlsplit(url).scheme != "https":
+            raise SystemExit("Gitea URL must be https")
         self.base = f"{url.rstrip('/')}/api/v1/repos/{repo}"
         self.token = token
+        self.opener = urllib.request.build_opener(HttpsOnlyRedirect)
 
     def call(self, method: str, path: str, data: dict | None = None) -> object:
         req = urllib.request.Request(
@@ -346,8 +390,9 @@ class Gitea:
             headers={"Accept": "application/json", "Content-Type": "application/json"},
         )
         if self.token:
-            req.add_header("Authorization", f"token {self.token}")
-        with urllib.request.urlopen(req, timeout=30) as resp:
+            # Not resent on redirects.
+            req.add_unredirected_header("Authorization", f"token {self.token}")
+        with self.opener.open(req, timeout=30) as resp:
             raw = resp.read()
         return json.loads(raw) if raw else None
 
@@ -364,13 +409,22 @@ class Gitea:
 
 def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run: bool, pins: set[str], run_id: str) -> None:
     n = int(pr["number"])
-    head_sha = pr["head"]["sha"]
+    head_sha = str(pr["head"]["sha"])
+    base_sha = str(pr.get("merge_base") or "")
+    if not SHA_RE.fullmatch(head_sha) or not SHA_RE.fullmatch(base_sha):
+        print(f"#{n} blocked: head or merge base is not a commit hash")
+        return
     statuses = (api.call("GET", f"/commits/{head_sha}/status") or {}).get("statuses") or []
-    problems = gate(pr, statuses, repo, sha)
-    files = [f["filename"] for f in api.pages(f"/pulls/{n}/files")]
-    commits = api.pages(f"/pulls/{n}/commits?verification=true&files=false")
+    # Pinned to the SHAs read above, so a later push can't change what is rated.
+    compare = api.call("GET", f"/compare/{base_sha}...{head_sha}?verification=true&files=true") or {}
+    commits = compare.get("commits") or []
+    problems = gate(pr, statuses, commits, repo, sha)
+    if compare.get("total_commits") != len(commits):
+        problems.append("compare returned a partial commit list")
+    # Union over the commits; covers files a later commit reverted too.
+    files = sorted({f["filename"] for c in commits for f in c.get("files") or []})
     labels = [lbl.get("name", "") for lbl in pr.get("labels") or []]
-    rating = rate(parse_deps(pr.get("body") or ""), files, labels, commits, pins)
+    rating = rate(parse_deps(pr.get("body") or ""), files, labels, pins)
     body = render(head_sha, rating, files, statuses, commits, run_id)
     print(f"#{n} {LEVELS[rating.level].upper()} gate: {'pass' if not problems else 'blocked: ' + '; '.join(problems)}")
     if dry_run:
@@ -402,7 +456,7 @@ def targets(api: Gitea, pr_arg: str, sha_arg: str, event: dict) -> tuple[list[di
     sha = sha_arg or str((event.get("workflow_run") or {}).get("head_sha") or "")
     open_prs = api.pages("/pulls?state=open")
     if sha:
-        if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", sha):
+        if not SHA_RE.fullmatch(sha):
             raise SystemExit("head SHA is not a commit hash")
         return [p for p in open_prs if p["head"]["sha"] == sha], sha
     return [p for p in open_prs if str(p["head"].get("ref", "")).startswith(BRANCH_PREFIX)], None
