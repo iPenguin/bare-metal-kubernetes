@@ -171,18 +171,28 @@ API.
   this repo, every commit authored, committed and signed by `svc_renovate`,
   and every `pr-checks / *` job has a successful `(pull_request)` status on
   that head SHA. Skipped `(push)` statuses from Renovate branch pushes are
-  ignored; any other status must be success. Files and commits are read for
-  that SHA. Label `bot/skip` skips a PR.
-- Rating: the highest match wins, and anything not known to be low is at
-  least medium. Low is a patch or digest of an Argo CD app image or chart
-  outside the critical set (traefik, argo-cd, openbao, external-secrets,
-  cert-manager, keycloak, lldap). Medium: minor bumps, critical-set patches,
-  `versions.yaml` pins, Python packages and Ansible collections, the Actions
-  runner, secret/RBAC/policy/ingress files.
+  ignored; any other status must be success. Each of those statuses must
+  link to a successful job of the newest `pr-checks.yaml@refs/pull/N/head`
+  run on that SHA, started by `svc_renovate`, and every job of that run needs
+  a status (a status posted through the API doesn't count). Files, commits
+  and diffs are read for that SHA. Label `bot/skip` skips a PR.
+- Rating: decided from each commit's diff. The highest match wins, and
+  anything not known to be low is at least medium. Every changed line must
+  differ only in versions or digests, and the diff's version changes must
+  match the PR body's update table exactly; otherwise medium. The diff's
+  versions set the update type; the body can only raise it. Low is a patch or
+  digest of an Argo CD app image or chart outside the critical set (traefik,
+  argo-cd, openbao, external-secrets, cert-manager, keycloak, lldap,
+  kube-vip, matched in names, images and paths). Medium: minor bumps,
+  critical-set patches, `versions.yaml` pins, Python packages and Ansible
+  collections, the Actions runner, secret/RBAC/policy/ingress files, RBAC,
+  CRD, ServiceAccount or NetworkPolicy content in the diff.
   High: major bumps, minor bumps of Kubernetes, CRI-O, Ceph, Rook and Cilium,
-  and changes to `.gitea/`, `scripts/`, `renovate.json`,
+  any non-version change in `argo-apps/appsets/`, any change in
+  `argo-apps/bootstrap/`, `.gitea/`, `scripts/`, `renovate.json`,
   lint configs, `.secrets.baseline`, `requirements-ci.*`, OpenBao files and
-  the kubernetes, crio, cilium, rook and kube-vip roles. A `risk-floor/<level>`
+  the kubernetes, crio, cilium, rook and kube-vip roles. Renames count both
+  paths. A `risk-floor/<level>`
   label can raise the rating; nothing lowers it.
 - Output: one comment per PR, marked `<!-- grokbot-review sha=... -->`, edited
   in place when the rating changes. Quoted text can't @mention or link.
