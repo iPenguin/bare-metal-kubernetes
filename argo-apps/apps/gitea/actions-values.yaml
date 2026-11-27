@@ -1,4 +1,8 @@
 ---
+# Release gitea-actions: the default runner for every repo (global token, labels
+# ubuntu-*). It runs PR jobs, so jobs get no Docker socket and nothing privileged.
+# actions-build-values.yaml and actions-docker-values.yaml layer the
+# docker-capable runners on top of this file.
 enabled: true
 
 giteaRootURL: https://git.clt.milco.casa
@@ -11,8 +15,15 @@ existingSecretKey: token
 global:
   storageClass: "ceph-block"
 
+# Image refs are tag@digest; renovate.json has a custom manager for this file.
+init:
+  image:
+    fullOverride: docker.io/library/busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
+
 statefulset:
   replicas: 1
+  # runner-serviceaccount.yaml: no API token automount
+  serviceAccountName: gitea-actions-runner
   timezone: America/New_York
   persistence:
     size: 5Gi
@@ -24,6 +35,7 @@ statefulset:
         sizeLimit: 50Gi
 
   runner:
+    fullOverride: docker.gitea.com/runner:3.0.2@sha256:bdd8258370d1cda849eed4eee9271f8d8d6cbb52862927fc7616e9cc0c14b0cb
     config: |
       log:
         level: info
@@ -32,17 +44,23 @@ statefulset:
         capacity: 4
         timeout: 3h
         labels:
-          - "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest"
-          - "ubuntu-24.04:docker://docker.gitea.com/runner-images:ubuntu-24.04"
-          - "ubuntu-22.04:docker://docker.gitea.com/runner-images:ubuntu-22.04"
+          - "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest@sha256:203ba5eff144b485821fc41c47f29ed24333304660e953e8983b9b852e013ca0"
+          - "ubuntu-24.04:docker://docker.gitea.com/runner-images:ubuntu-24.04@sha256:ad6cef290707552be4a2eefb9240b5f470353d906e529f6b28d7626ab8a6bee3"
+          - "ubuntu-22.04:docker://docker.gitea.com/runner-images:ubuntu-22.04@sha256:283bf02a38836f7a0bbd3309b097b5a6273efbb751a8a84ec4a348badd08aea3"
       cache:
         enabled: false
       container:
         require_docker: true
         docker_timeout: 300s
-        force_pull: false
+        # "-": the runner uses dind, but job and service containers don't get its socket.
+        docker_host: "-"
+        privileged: false
+        valid_volumes: []
+        force_pull: true
 
+  # The chart always runs dind privileged; only the runner container talks to it.
   dind:
+    fullOverride: docker.io/library/docker:29.7.1-dind@sha256:e8faad5a8dc5279dff929afc5449f2791736912fff9f99351d742db2fad01b4c
     extraVolumeMounts:
       - name: docker-data
         mountPath: /var/lib/docker

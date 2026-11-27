@@ -1,0 +1,48 @@
+# Both runner releases. Jobs run inside the pod's dind sidecar, so this covers
+# job traffic too. Allowed: DNS, Traefik (git. and harbor.clt.milco.casa), and
+# public addresses. Denied: everything else in the cluster (OpenBao, Postgres,
+# LLDAP, the API server, nodes) and private LAN ranges. No ingress.
+# The LAN's public IPv6 /64 is vaulted, so 2000::/3 still covers it; job
+# containers have no IPv6 (per-job networks are IPv4-only), only runner and dind do.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: gitea-actions-runner
+  namespace: gitea
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: actions-runner
+  ingress:
+    - {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    # git.clt.milco.casa resolves to a Traefik LoadBalancer IP; Cilium
+    # translates it to the Traefik pod before policy applies.
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: traefik
+            app.kubernetes.io/name: traefik
+      toPorts:
+        - ports:
+            - port: "8443"
+              protocol: TCP
+    # CIDR rules never match cluster endpoints, so pods and nodes stay denied.
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 100.64.0.0/10
+            - 169.254.0.0/16
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+        - cidr: 2000::/3

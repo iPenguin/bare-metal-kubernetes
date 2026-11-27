@@ -27,7 +27,8 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # the only runner whose jobs get a Docker socket (argo-apps/apps/gitea/actions-build-values.yaml)
+    runs-on: docker-build
     steps:
       - uses: actions/checkout@v7
 
