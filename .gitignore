@@ -2,3 +2,4 @@
 inventory.*
 vaults/*
 .openbao*
+__pycache__/
