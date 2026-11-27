@@ -29,8 +29,8 @@ concurrency:
   group: renovate-review
   cancel-in-progress: false
 
-permissions:
-  contents: read
+# The clone is anonymous; the job token is not used.
+permissions: {}
 
 jobs:
   review:
@@ -45,7 +45,6 @@ jobs:
     # so this token-holding job takes python from a digest-pinned image, not
     # setup-python. The image has git but no node, so actions/checkout can't
     # run in it; clone master instead (public repo, no credentials).
-    # renovate: datasource=docker depName=docker.io/library/python
     container: docker.io/library/python:3.12.16-trixie@sha256:9dd21fafb95870b99f9faa703a947d08feeb673048ad556e92ce503d0c086a95
     steps:
       - name: Clone master

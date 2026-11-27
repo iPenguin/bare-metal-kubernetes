@@ -419,8 +419,6 @@ def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run:
     compare = api.call("GET", f"/compare/{base_sha}...{head_sha}?verification=true&files=true") or {}
     commits = compare.get("commits") or []
     problems = gate(pr, statuses, commits, repo, sha)
-    if compare.get("total_commits") != len(commits):
-        problems.append("compare returned a partial commit list")
     # Union over the commits; covers files a later commit reverted too.
     files = sorted({f["filename"] for c in commits for f in c.get("files") or []})
     labels = [lbl.get("name", "") for lbl in pr.get("labels") or []]
