@@ -89,13 +89,16 @@ configs, recipes, and prompts do not belong in this repo.
   `GITEA__QUEUE__CONN_STR`). The valkey subchart uses `auth.existingSecret`.
   Set `valkey.global.valkey.password` to empty so the parent chart does not
   bake its default into `gitea-inline-config`.
-- Actions runners: two releases of the `actions` chart, each with its own dind
-  and a 50Gi `docker-data` emptyDir.
+- Actions runners: three releases of the `actions` chart, each with its own
+  dind and a 50Gi `docker-data` emptyDir. Each runs on its own medium worker
+  (required pod anti-affinity) and has CPU and memory limits.
   - `gitea-actions` (`actions-values.yaml`): global token, labels `ubuntu-*`,
     4 slots. It runs PR jobs, so jobs get no Docker socket (`docker_host: "-"`)
     and can't use `docker build` or `docker run`.
   - `gitea-actions-build` (`actions-build-values.yaml` on top of it): label
-    `docker-build`, 1 slot, jobs get the socket. Only `ai-base` uses it. The
+    `docker-build`, 1 slot, jobs get the socket. Only `ai-base` uses it, never
+    on `pull_request`; `scripts/check-runner-labels.py` fails pr-checks
+    otherwise, and on any workflow here using `docker`. The
     token is repo-scoped to `homelab/bare-metal-kubernetes`. Mint it in the
     repo's Settings > Actions > Runners and store it in OpenBao at
     `kv/apps/gitea/gitea-runner-build-token`, key `token`.
@@ -104,11 +107,20 @@ configs, recipes, and prompts do not belong in this repo.
     whose CI needs Docker (`runs-on: docker`). Org-scoped to `homelab`; token
     in OpenBao at `kv/apps/gitea/gitea-runner-docker-token`, key `token`.
     Gitea gives a job to whichever matching runner polls first, so it can't
-    reuse `ubuntu-*`.
+    reuse `ubuntu-*`. Use it only for jobs triggered by `push` to the repo's
+    default branch, never `pull_request`: anyone who controls the job controls
+    a privileged dind. Keep lint and tests on `ubuntu-*`.
+  - Build and docker runners run `post-task.sh`
+    (`runner-post-task-configmap.yaml`) after every job. It removes all of
+    dind's containers, images, volumes and build cache before the next job,
+    so builds start cold. It doesn't help once a job escapes dind to the node.
   - All runners use ServiceAccount `gitea-actions-runner`, with no token
     automount.
   - CiliumNetworkPolicy `gitea-actions-runner` (`runner-network-policy.yaml`)
-    lets both runners reach only DNS, Traefik and public addresses.
+    lets the runners reach only DNS, Traefik and public addresses. It denies
+    CiliumCIDRGroup `gitea-actions-runner-deny`, the LAN's public IPv6 /64,
+    which the `gitea` role creates (`--tags gitea`) because the prefix is
+    vaulted. The router's public WAN addresses stay reachable.
   - Runner, dind and job images are pinned as `tag@digest`, and a custom
     manager in `renovate.json` updates them.
 - Commit signing: Gitea signs web UI commits, merges and API commits as

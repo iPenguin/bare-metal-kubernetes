@@ -57,6 +57,8 @@ jobs:
         run: yamllint .
       - name: Check minimumReleaseAge
         run: python3 scripts/check-renovate-config.py
+      - name: Check runner labels
+        run: python3 scripts/check-runner-labels.py
       - name: gitleaks
         run: |
           archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"

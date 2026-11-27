@@ -31,3 +31,17 @@
         token: "{{ lookup('ansible.builtin.password', '/dev/null', length=48, chars=['ascii_letters', 'digits']) }}"
   when: _gitea_runner_token.resources | length == 0
   no_log: true
+
+# The runner CiliumNetworkPolicy (argo-apps/apps/gitea/runner-network-policy.yaml)
+# denies this group. It lives here because the prefix is vaulted.
+- name: Deny Gitea Actions runners the LAN's public IPv6 prefix
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cilium.io/v2
+      kind: CiliumCIDRGroup
+      metadata:
+        name: gitea-actions-runner-deny
+      spec:
+        externalCIDRs:
+          - "{{ network.ipv6.subnet }}"

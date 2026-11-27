@@ -28,6 +28,23 @@ statefulset:
   persistence:
     size: 5Gi
 
+  # Medium workers only (no control plane, no GPU node), and never two runner
+  # pods on one node, so a dind escape from one runner can't reach another.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: clt.milco.casa/node-performance
+                operator: In
+                values: ["medium"]
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: actions-runner
+          topologyKey: kubernetes.io/hostname
+
   # docker's image/build storage for the dind sidecar; CUDA image builds need several GB
   extraVolumes:
     - name: docker-data
@@ -36,6 +53,13 @@ statefulset:
 
   runner:
     fullOverride: docker.gitea.com/runner:3.0.2@sha256:bdd8258370d1cda849eed4eee9271f8d8d6cbb52862927fc7616e9cc0c14b0cb
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
     config: |
       log:
         level: info
@@ -59,8 +83,16 @@ statefulset:
         force_pull: true
 
   # The chart always runs dind privileged; only the runner container talks to it.
+  # Job containers run inside dind, so its limits cap them too.
   dind:
     fullOverride: docker.io/library/docker:29.7.1-dind@sha256:e8faad5a8dc5279dff929afc5449f2791736912fff9f99351d742db2fad01b4c
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: "4"
+        memory: 8Gi
     extraVolumeMounts:
       - name: docker-data
         mountPath: /var/lib/docker

@@ -1,0 +1,21 @@
+# post_task_script for the build and docker runners. The runner runs it after
+# every job and takes no new job until it exits, so nothing a job leaves in
+# its pod's dind (containers, including --restart=always ones, images,
+# volumes, networks, build cache) reaches the next job. A job that escapes
+# dind can still persist on the node; this only closes the daemon itself.
+# Not for the default runner: it runs 4 jobs at once and has no socket in jobs.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-runner-post-task
+  namespace: gitea
+data:
+  post-task.sh: |
+    #!/bin/sh
+    # Runs with only runner.envs and GITEA_* set, so no PATH or HOME.
+    export HOME=/tmp
+    docker=/tools/docker
+    ids=$("$docker" ps --all --quiet)
+    [ -z "$ids" ] || "$docker" rm --force --volumes $ids
+    "$docker" system prune --all --force --volumes
+    "$docker" volume prune --all --force
