@@ -249,7 +249,7 @@ class Review(unittest.TestCase):
                 if path.startswith("/commits/"):
                     return {"statuses": GREEN}
                 if path.startswith("/compare/"):
-                    return {"total_commits": 1, "commits": SIGNED}
+                    return {"commits": SIGNED}
                 raise AssertionError(path)
 
             def pages(self, path):
