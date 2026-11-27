@@ -17,6 +17,10 @@ on:
   schedule:
     - cron: "30 5 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 env:
   REGISTRY: harbor.clt.milco.casa
   IMAGE: harbor.clt.milco.casa/homelab/ai-base
@@ -27,10 +31,13 @@ env:
 
 jobs:
   build:
-    # the only runner whose jobs get a Docker socket (argo-apps/apps/gitea/actions-build-values.yaml)
+    # Docker socket and Harbor credentials (argo-apps/apps/gitea/actions-build-values.yaml).
+    # Only this workflow may use it, never on pull_request (scripts/check-runner-labels.py).
     runs-on: docker-build
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # The Dockerfile's ARG BASE_IMAGE default is the source of truth for the tag; the build
       # is pinned to the digest resolved here so the label below matches what was built.
