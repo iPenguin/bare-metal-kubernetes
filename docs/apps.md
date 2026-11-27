@@ -155,6 +155,37 @@ keep their own PRs. Major bumps still get a separate PR per group.
 Renovate PRs open on the Gitea copy of this repo. Merge there, then pull and
 push to GitHub.
 
+### Renovate review
+
+`.gitea/workflows/renovate-review.yaml` runs `scripts/renovate_review.py`
+from `master` after each `pr-checks` run (`workflow_run`), daily at 9:00 ET,
+and by hand (optional PR number). It never checks out or runs PR code.
+
+- Gate: open, non-draft PR by `svc_renovate` from a `renovate/*` branch of
+  this repo, and every `pr-checks / *` status on that head SHA is success.
+  Label `bot/skip` skips a PR.
+- Rating: the highest match wins, and anything not known to be low is at
+  least medium. Low is a patch or digest of an Argo CD app image or chart
+  outside the critical set (traefik, argo-cd, openbao, external-secrets,
+  cert-manager, keycloak, lldap). Medium: minor bumps, critical-set patches,
+  `versions.yaml` pins, Python packages and Ansible collections, the Actions
+  runner, secret/RBAC/policy/ingress files, commits not by `svc_renovate`.
+  High: major bumps, minor bumps of Kubernetes, CRI-O, Ceph, Rook and Cilium,
+  unsigned commits, and changes to `.gitea/`, `scripts/`, `renovate.json`,
+  lint configs, `.secrets.baseline`, `requirements-ci.*`, OpenBao files and
+  the kubernetes, crio, cilium, rook and kube-vip roles. A `risk-floor/<level>`
+  label can raise the rating; nothing lowers it.
+- Output: one comment per PR, marked `<!-- grokbot-review sha=... -->`, edited
+  in place when the rating changes.
+- Setup: repo Actions secret `SVC_GROKBOT_TOKEN`, an `svc_grokbot` token with
+  `read:repository` and `write:issue`, and repo Actions variable
+  `REVIEW_MODE=comment`.
+- Kill switch: set `REVIEW_MODE` to `off` or delete it. `approve` and `fix`
+  are not enabled yet and do nothing.
+- Local dry run (prints the comments, posts nothing):
+  `python3 scripts/renovate_review.py --dry-run --token-file <read-only token file>`.
+  Tests: `python3 -m unittest discover -s scripts -p 'test_*.py'`.
+
 ## Test apps
 
 Side projects deploy for testing from the Gitea org `homelab`

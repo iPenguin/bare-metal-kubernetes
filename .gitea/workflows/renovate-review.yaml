@@ -1,0 +1,58 @@
+# Rates Renovate PRs after pr-checks and keeps one sticky comment per PR.
+# workflow_run always runs this file from master, so a PR can't change the
+# review logic. The checkout is pinned to master too, and no step runs PR
+# code. scripts/renovate_review.py is the real gate; the `if:` only saves
+# runner time. See docs/apps.md (Renovate review).
+#
+# Needs repo Actions secret SVC_GROKBOT_TOKEN (svc_grokbot token) and repo
+# variable REVIEW_MODE: off (default, also when unset) | comment.
+# approve and fix are not enabled yet.
+---
+name: renovate-review
+
+on:
+  workflow_run:
+    workflows:
+      - pr-checks
+    types:
+      - completed
+  # daily sweep for missed events, 9:00 ET (EST)
+  schedule:
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number (empty reviews every open renovate/* PR)
+        required: false
+
+concurrency:
+  group: renovate-review
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'renovate/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: master
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # The script reads the PR number or head SHA from the event file
+      # itself, so no PR field is interpolated here.
+      - name: Review
+        env:
+          GITEA_TOKEN_BOT: ${{ secrets.SVC_GROKBOT_TOKEN }}
+          REVIEW_MODE: ${{ vars.REVIEW_MODE }}
+        run: python3 scripts/renovate_review.py
