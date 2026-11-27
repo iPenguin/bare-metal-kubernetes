@@ -3,11 +3,42 @@
 # homelab org, with the single label docker, for app repos whose CI runs
 # docker build/run/create: jobs get this pod's own dind socket. No secrets:
 # the only Secret in the pod is the registration token. Not for ai-base.
+# App repos use it only for jobs on push to their default branch, never
+# pull_request (docs/apps.md).
 existingSecret: gitea-runner-docker-token
 existingSecretKey: token
 
+# Copies the docker CLI into the runner container for post-task.sh.
+postExtraInitContainers:
+  - name: docker-cli
+    image: docker.io/library/docker:29.7.1-dind@sha256:e8faad5a8dc5279dff929afc5449f2791736912fff9f99351d742db2fad01b4c
+    command: ["cp", "/usr/local/bin/docker", "/tools/docker"]
+    volumeMounts:
+      - name: runner-tools
+        mountPath: /tools
+
 statefulset:
+  # Replaces the base list, so docker-data is repeated.
+  extraVolumes:
+    - name: docker-data
+      emptyDir:
+        sizeLimit: 50Gi
+    - name: runner-tools
+      emptyDir:
+        sizeLimit: 256Mi
+    - name: post-task
+      configMap:
+        name: gitea-runner-post-task
+        defaultMode: 365  # 0555
+
   runner:
+    extraVolumeMounts:
+      - name: runner-tools
+        mountPath: /tools
+        readOnly: true
+      - name: post-task
+        mountPath: /post-task
+        readOnly: true
     config: |
       log:
         level: info
@@ -15,6 +46,9 @@ statefulset:
         file: .runner
         capacity: 1
         timeout: 3h
+        # runner-post-task-configmap.yaml: wipe dind after every job.
+        post_task_script: /post-task/post-task.sh
+        post_task_script_timeout: 5m
         labels:
           - "docker:docker://docker.gitea.com/runner-images:ubuntu-24.04@sha256:ad6cef290707552be4a2eefb9240b5f470353d906e529f6b28d7626ab8a6bee3"
       cache:

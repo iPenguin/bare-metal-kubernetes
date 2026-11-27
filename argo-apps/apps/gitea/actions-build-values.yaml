@@ -2,12 +2,42 @@
 # Release gitea-actions-build, layered on actions-values.yaml. Registered to
 # homelab/bare-metal-kubernetes only, with the single label docker-build, for
 # ai-base: its jobs get the dind socket and the Harbor push credentials.
-# Never point a pull_request job at docker-build.
+# Never point a pull_request job at docker-build; scripts/check-runner-labels.py
+# fails pr-checks if any workflow but ai-base.yaml uses it.
 existingSecret: gitea-runner-build-token
 existingSecretKey: token
 
+# Copies the docker CLI into the runner container for post-task.sh.
+postExtraInitContainers:
+  - name: docker-cli
+    image: docker.io/library/docker:29.7.1-dind@sha256:e8faad5a8dc5279dff929afc5449f2791736912fff9f99351d742db2fad01b4c
+    command: ["cp", "/usr/local/bin/docker", "/tools/docker"]
+    volumeMounts:
+      - name: runner-tools
+        mountPath: /tools
+
 statefulset:
+  # Replaces the base list, so docker-data is repeated.
+  extraVolumes:
+    - name: docker-data
+      emptyDir:
+        sizeLimit: 50Gi
+    - name: runner-tools
+      emptyDir:
+        sizeLimit: 256Mi
+    - name: post-task
+      configMap:
+        name: gitea-runner-post-task
+        defaultMode: 365  # 0555
+
   runner:
+    extraVolumeMounts:
+      - name: runner-tools
+        mountPath: /tools
+        readOnly: true
+      - name: post-task
+        mountPath: /post-task
+        readOnly: true
     config: |
       log:
         level: info
@@ -15,6 +45,9 @@ statefulset:
         file: .runner
         capacity: 1
         timeout: 3h
+        # runner-post-task-configmap.yaml: wipe dind after every job.
+        post_task_script: /post-task/post-task.sh
+        post_task_script_timeout: 5m
         labels:
           - "docker-build:docker://docker.gitea.com/runner-images:ubuntu-latest@sha256:203ba5eff144b485821fc41c47f29ed24333304660e953e8983b9b852e013ca0"
       cache:
@@ -26,3 +59,13 @@ statefulset:
         privileged: false
         valid_volumes: []
         force_pull: true
+
+  # CUDA image builds.
+  dind:
+    resources:
+      requests:
+        cpu: "1"
+        memory: 2Gi
+      limits:
+        cpu: "8"
+        memory: 16Gi

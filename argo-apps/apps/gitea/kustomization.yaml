@@ -10,3 +10,4 @@ resources:
   - runner-docker-token-secret.yaml
   - runner-serviceaccount.yaml
   - runner-network-policy.yaml
+  - runner-post-task-configmap.yaml

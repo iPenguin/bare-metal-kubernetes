@@ -1,9 +1,11 @@
-# Both runner releases. Jobs run inside the pod's dind sidecar, so this covers
+# All runner releases. Jobs run inside the pod's dind sidecar, so this covers
 # job traffic too. Allowed: DNS, Traefik (git. and harbor.clt.milco.casa), and
 # public addresses. Denied: everything else in the cluster (OpenBao, Postgres,
-# LLDAP, the API server, nodes) and private LAN ranges. No ingress.
-# The LAN's public IPv6 /64 is vaulted, so 2000::/3 still covers it; job
-# containers have no IPv6 (per-job networks are IPv4-only), only runner and dind do.
+# LLDAP, the API server, nodes), private LAN ranges, and the LAN's public IPv6
+# /64 (kube-vip VIP, router, hosts). No ingress.
+# The /64 is vaulted, so the `gitea` ansible role puts it in CiliumCIDRGroup
+# gitea-actions-runner-deny. Until that exists the deny rule matches nothing.
+# The router's public WAN addresses are dynamic and not covered here.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -13,8 +15,9 @@ spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: actions-runner
-  ingress:
-    - {}
+  enableDefaultDeny:
+    ingress: true
+    egress: true
   egress:
     - toEndpoints:
         - matchLabels:
@@ -46,3 +49,7 @@ spec:
             - 172.16.0.0/12
             - 192.168.0.0/16
         - cidr: 2000::/3
+  # Deny wins over the 2000::/3 allow above.
+  egressDeny:
+    - toCIDRSet:
+        - cidrGroupRef: gitea-actions-runner-deny
