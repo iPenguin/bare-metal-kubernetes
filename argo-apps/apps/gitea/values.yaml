@@ -3,6 +3,7 @@ global:
   storageClass: "ceph-block"
 
 image:
+  # renovate: datasource=docker depName=docker.gitea.com/gitea extractVersion=^(?<version>\d+\.\d+\.\d+)$
   tag: "28.4.0"
   rootless: true
 

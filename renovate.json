@@ -18,10 +18,11 @@
       "customType": "regex",
       "description": "Version pins annotated with '# renovate:' comments",
       "managerFilePatterns": [
-        "/^hosts/group_vars/all/versions\\.yaml$/"
+        "/^hosts/group_vars/all/versions\\.yaml$/",
+        "/^argo-apps/apps/gitea/values\\.yaml$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+registryUrl=(?<registryUrl>\\S+))?(\\s+extractVersion=(?<extractVersion>\\S+))?\\s*\\n[a-z0-9_]+:\\s*['\"]?(?<currentValue>[^'\"\\s@]+)(@(?<currentDigest>sha256:[a-f0-9]{64}))?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+registryUrl=(?<registryUrl>\\S+))?(\\s+extractVersion=(?<extractVersion>\\S+))?\\s*\\n[ \\t]*[a-z0-9_]+:\\s*['\"]?(?<currentValue>[^'\"\\s@]+)(@(?<currentDigest>sha256:[a-f0-9]{64}))?"
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
     },
@@ -114,6 +115,13 @@
         "argo-apps/apps/gitea/actions-docker-values.yaml"
       ],
       "groupName": "Argo CD app images"
+    },
+    {
+      "description": "Gitea server bumps run DB migrations; keep them in their own PR",
+      "matchDepNames": [
+        "docker.gitea.com/gitea"
+      ],
+      "groupName": null
     },
     {
       "description": "Minor and major bumps go through upgrade.yaml; approve them on the Dependency Dashboard",
