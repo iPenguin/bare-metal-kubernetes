@@ -90,8 +90,10 @@ configs, recipes, and prompts do not belong in this repo.
   Set `valkey.global.valkey.password` to empty so the parent chart does not
   bake its default into `gitea-inline-config`.
 - Actions runners: three releases of the `actions` chart, each with its own
-  dind and a 50Gi `docker-data` emptyDir. Each runs on its own medium worker
-  (required pod anti-affinity) and has CPU and memory limits.
+  dind and a 50Gi `docker-data` emptyDir. Each runs on its own medium
+  worker (required pod anti-affinity) and has CPU and memory limits.
+  Placement prefers non-GPU nodes and falls back to a GPU medium worker
+  when one is out.
   - `gitea-actions` (`actions-values.yaml`): global token, labels `ubuntu-*`,
     4 slots. It runs PR jobs, so jobs get no Docker socket (`docker_host: "-"`)
     and can't use `docker build` or `docker run`.

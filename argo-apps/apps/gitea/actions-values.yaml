@@ -28,8 +28,9 @@ statefulset:
   persistence:
     size: 5Gi
 
-  # Medium workers only (no control plane, no GPU node), and never two runner
-  # pods on one node, so a dind escape from one runner can't reach another.
+  # Medium workers only (no control plane). Prefer non-GPU nodes; fall back
+  # to a GPU medium worker if needed. Never two runner pods on one node, so
+  # a dind escape from one runner can't reach another.
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -38,6 +39,13 @@ statefulset:
               - key: clt.milco.casa/node-performance
                 operator: In
                 values: ["medium"]
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: NotIn
+                values: ["true"]
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
