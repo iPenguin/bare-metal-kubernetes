@@ -75,6 +75,25 @@ class Gate(unittest.TestCase):
         pending = [dict(GREEN[0], status="pending"), GREEN[1]]
         self.assertTrue(rr.gate(pr(), pending, SIGNED, REPO, SHA))
 
+    def test_skipped_push_statuses(self):
+        push = [
+            {"context": "pr-checks / pr-checks (push)", "status": "skipped"},
+            {"context": "pr-checks / renovate-config (push)", "status": "skipped"},
+        ]
+        # PR #41 shape: skipped push statuses beside green pull_request ones.
+        self.assertEqual(rr.gate(pr(), push + GREEN, SIGNED, REPO, SHA), [])
+        cases = {
+            "push only": push + GREEN[2:],
+            "push failed": [dict(push[0], status="failure")] + GREEN,
+            "push pending": [dict(push[0], status="pending")] + GREEN,
+            "pull_request skipped": push + [dict(GREEN[0], status="skipped"), GREEN[1]],
+            "job has no pull_request status": push + GREEN[1:],
+            "other event skipped": [{"context": "pr-checks / x (pull_request_target)", "status": "skipped"}] + GREEN,
+        }
+        for name, statuses in cases.items():
+            with self.subTest(name):
+                self.assertTrue(rr.gate(pr(), statuses, SIGNED, REPO, SHA))
+
     def test_commits(self):
         c = SIGNED[0]
         v = c["commit"]["verification"]

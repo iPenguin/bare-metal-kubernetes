@@ -169,8 +169,10 @@ API.
 
 - Gate: open, non-draft PR by `svc_renovate` from a `renovate/*` branch of
   this repo, every commit authored, committed and signed by `svc_renovate`,
-  and every `pr-checks / *` status on that head SHA is success. Files and
-  commits are read for that SHA. Label `bot/skip` skips a PR.
+  and every `pr-checks / *` job has a successful `(pull_request)` status on
+  that head SHA. Skipped `(push)` statuses from Renovate branch pushes are
+  ignored; any other status must be success. Files and commits are read for
+  that SHA. Label `bot/skip` skips a PR.
 - Rating: the highest match wins, and anything not known to be low is at
   least medium. Low is a patch or digest of an Argo CD app image or chart
   outside the critical set (traefik, argo-cd, openbao, external-secrets,

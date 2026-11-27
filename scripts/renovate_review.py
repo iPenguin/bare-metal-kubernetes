@@ -9,8 +9,10 @@ and branch names are data only.
 This script is the real gate, not the workflow's `if:`. A PR is reviewed only
 if it is open, not a draft, opened by svc_renovate from a renovate/* branch
 of this repo, every commit is authored, committed and signed by svc_renovate,
-and every `pr-checks / *` status on its head SHA is success. Files and commits
-are read for that head SHA, not the PR's current head.
+and every `pr-checks / *` job has a successful `(pull_request)` status on its
+head SHA (skipped `(push)` statuses are ignored; anything else must be
+success). Files and commits are read for that head SHA, not the PR's current
+head.
 
 The rating is the deterministic floor from the risk rubric: the highest match
 wins, and anything not known to be low is at least medium.
@@ -40,6 +42,7 @@ RENOVATE_LOGIN = "svc_renovate"
 BOT_LOGIN = "svc_grokbot"
 BRANCH_PREFIX = "renovate/"
 REQUIRED_CHECKS = "pr-checks / *"
+PR_EVENT, PUSH_EVENT = "pull_request)", "push)"
 SKIP_LABEL = "bot/skip"
 MARKER = "<!-- grokbot-review"
 VERSIONS_FILE = "hosts/group_vars/all/versions.yaml"
@@ -305,12 +308,34 @@ def gate(pr: dict, statuses: list[dict], commits: list[dict], repo: str, sha: st
     if SKIP_LABEL in [lbl.get("name") for lbl in pr.get("labels") or []]:
         problems.append(f"label {SKIP_LABEL}")
     problems += commit_problems(commits, str(head.get("sha", "")))
+    problems += check_problems(statuses)
+    return problems
+
+
+def check_problems(statuses: list[dict]) -> list[str]:
+    """Every pr-checks job needs a successful `(pull_request)` status.
+
+    Renovate's branch pushes leave skipped `(push)` statuses (pr-checks runs on
+    push to master only); those are ignored. Any other `(push)` state, or any
+    other event, must be success too, so a real push failure still blocks.
+    """
     required = [s for s in statuses if fnmatch.fnmatchcase(s.get("context", ""), REQUIRED_CHECKS)]
     if not required:
-        problems.append(f"no `{REQUIRED_CHECKS}` status on the head SHA")
+        return [f"no `{REQUIRED_CHECKS}` status on the head SHA"]
+    problems = []
+    jobs, pr_jobs = set(), set()
     for s in required:
-        if s.get("status") != "success":
-            problems.append(f"`{clean(s.get('context', ''), 120)}` is {clean(s.get('status'), 20)}")
+        ctx, state = s.get("context", ""), s.get("status")
+        job, _, event = ctx.rpartition(" (")
+        jobs.add(job or ctx)
+        if event == PR_EVENT:
+            pr_jobs.add(job)
+        elif event == PUSH_EVENT and state == "skipped":
+            continue
+        if state != "success":
+            problems.append(f"`{clean(ctx, 120)}` is {clean(state, 20)}")
+    for job in sorted(jobs - pr_jobs):
+        problems.append(f"no `{clean(job, 100)} ({PR_EVENT}` status")
     return problems
 
 
