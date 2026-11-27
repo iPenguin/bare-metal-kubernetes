@@ -159,10 +159,13 @@ push to GitHub.
 ### Renovate review
 
 `.gitea/workflows/renovate-review.yaml` runs `scripts/renovate_review.py`
-from `master` after each `pr-checks` run (`workflow_run`), daily at 9:00 ET,
-and by hand (optional PR number). It clones `master` into a digest-pinned
-`python` image (no setup-python, so nothing from the runner's shared tool
-cache) and reads PRs only through the API.
+from `master` after each successful `pr-checks` run on a Renovate PR
+(`workflow_run`), daily at 9:00 ET, and by hand (optional PR number). Gitea
+leaves `head_branch` empty for PR runs, so the `if:` matches
+`pull_requests[0].head.ref` and the script finds the PR by `head_sha`. It
+clones `master` into a digest-pinned `python` image (no setup-python, so
+nothing from the runner's shared tool cache) and reads PRs only through the
+API.
 
 - Gate: open, non-draft PR by `svc_renovate` from a `renovate/*` branch of
   this repo, every commit authored, committed and signed by `svc_renovate`,
