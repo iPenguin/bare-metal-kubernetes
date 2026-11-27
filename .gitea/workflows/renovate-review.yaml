@@ -34,11 +34,14 @@ permissions: {}
 
 jobs:
   review:
+    # Gitea leaves workflow_run.head_branch empty for pull_request runs
+    # (refs/pull/N/head), so match the PR head ref instead (run 495 skipped).
     if: >-
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.event == 'pull_request' &&
        github.event.workflow_run.conclusion == 'success' &&
-       startsWith(github.event.workflow_run.head_branch, 'renovate/'))
+       github.event.workflow_run.actor.login == 'svc_renovate' &&
+       startsWith(github.event.workflow_run.pull_requests[0].head.ref, 'renovate/'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # The default runner shares a writable /opt/hostedtoolcache across jobs,

@@ -266,6 +266,38 @@ class Review(unittest.TestCase):
         ])
 
 
+class Targets(unittest.TestCase):
+    class Api:
+        def __init__(self, prs):
+            self.prs = prs
+
+        def pages(self, path):
+            assert path == "/pulls?state=open", path
+            return self.prs
+
+    def test_workflow_run_finds_pr_by_head_sha(self):
+        # Gitea 28.4 pull_request run: no head_branch, PR in pull_requests.
+        event = {"workflow_run": {
+            "event": "pull_request",
+            "head_sha": SHA,
+            "pull_requests": [{"number": 1, "head": {"ref": "renovate/foo", "sha": SHA}}],
+        }}
+        other = pr(number=2, head={"ref": "renovate/bar", "sha": BASE, "repo": {"full_name": REPO}})
+        prs, sha = rr.targets(self.Api([pr(), other]), "", "", event)
+        self.assertEqual([p["number"] for p in prs], [1])
+        self.assertEqual(sha, SHA)
+
+    def test_sweep_takes_renovate_branches_only(self):
+        mine = pr(number=3, head={"ref": "codebot/x", "sha": BASE, "repo": {"full_name": REPO}})
+        prs, sha = rr.targets(self.Api([pr(), mine]), "", "", {})
+        self.assertEqual([p["number"] for p in prs], [1])
+        self.assertIsNone(sha)
+
+    def test_bad_sha_refused(self):
+        with self.assertRaises(SystemExit):
+            rr.targets(self.Api([]), "", "", {"workflow_run": {"head_sha": "master"}})
+
+
 class Modes(unittest.TestCase):
     def run_mode(self, mode):
         import io
