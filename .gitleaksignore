@@ -1,0 +1,3 @@
+# Pending removal of the hard-coded kubeadm bootstrap token (HomelabSecBot M8).
+# Narrow ignore for this exact finding only; do not broaden it.
+roles/kubernetes/templates/kubeadm.yaml.j2:generic-api-key:7

@@ -1,5 +1,10 @@
 # Required PR and master checks. No secrets.
 # DEFAULT_ACTIONS_URL is github, so these actions come from GitHub.
+#
+# Python checks share one job so they cannot race actions/setup-python into
+# the runner's shared /opt/hostedtoolcache (run 406). The validator runs
+# from the digest-pinned Renovate image; npx hung on that run after the
+# package tree started installing.
 ---
 name: pr-checks
 
@@ -9,6 +14,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: pr-checks-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -16,75 +25,56 @@ env:
   ANSIBLE_VAULT_PASSWORD_FILE: /tmp/ci-vault-pass
   ANSIBLE_INVENTORY: hosts
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  # renovate: datasource=github-releases depName=gitleaks/gitleaks
+  GITLEAKS_VERSION: 8.30.1
+  # Must be updated with GITLEAKS_VERSION (linux_x64 checksums.txt).
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  # pragma: allowlist secret
 
 jobs:
-  pre-commit:
+  pr-checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - name: Install CI Python tools
-        run: pip install -r requirements-ci.txt
+        run: pip install --require-hashes -r requirements-ci.lock
+      - name: Install collections
+        run: ansible-galaxy collection install -r requirements.yml
+      - name: Dummy vault password
+        run: printf 'ci\n' > "${ANSIBLE_VAULT_PASSWORD_FILE}"
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure
-
-  ansible-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-      - name: Install Ansible and lint
-        run: pip install -r requirements.txt -r requirements-ci.txt
-      - name: Install collections
-        run: ansible-galaxy collection install -r requirements.yml
-      - name: Dummy vault password
-        run: printf 'ci\n' > "${ANSIBLE_VAULT_PASSWORD_FILE}"
       - name: ansible-lint
         run: ansible-lint
-
-  ansible-syntax:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-      - name: Install Ansible
-        run: pip install -r requirements.txt
-      - name: Install collections
-        run: ansible-galaxy collection install -r requirements.yml
-      - name: Dummy vault password
-        run: printf 'ci\n' > "${ANSIBLE_VAULT_PASSWORD_FILE}"
       - name: Syntax-check playbooks
         run: ./scripts/ansible-syntax-check.sh
-
-  yamllint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-      - name: Install yamllint
-        run: pip install -r requirements-ci.txt
       - name: yamllint
         run: yamllint .
+      - name: Check minimumReleaseAge
+        run: python3 scripts/check-renovate-config.py
+      - name: gitleaks
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSL -o "/tmp/${archive}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  /tmp/${archive}" | sha256sum -c
+          tar -xzf "/tmp/${archive}" -C /tmp gitleaks
+          /tmp/gitleaks version
+          /tmp/gitleaks dir --redact --verbose
 
   renovate-config:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
+    container: ghcr.io/renovatebot/renovate:44.227.4@sha256:fe058db9710840a4821f20190b3769e3ce709a049b8640aa2bf5f044969fe702
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.12"
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "24"
-      - name: Check minimumReleaseAge
-        run: python3 scripts/check-renovate-config.py
+          persist-credentials: false
       - name: renovate-config-validator
-        run: npx --yes --package renovate@44.227.4 -- renovate-config-validator
+        run: renovate-config-validator

@@ -1,0 +1,13 @@
+# Allowlists for known non-secrets. Do not add real secrets here.
+
+[[allowlists]]
+description = "detect-secrets baseline stores hashes, not secret values"
+paths = ['''^\.secrets\.baseline$''']
+
+[[allowlists]]
+description = "SealedSecret encryptedData ciphertext, not plaintext"
+paths = [
+  '''^argo-apps/apps/keycloak/secrets\.yaml$''',
+  '''^argo-apps/apps/lldap/secrets\.yaml$''',
+  '''^argo-apps/apps/minio/secrets\.yaml$''',
+]

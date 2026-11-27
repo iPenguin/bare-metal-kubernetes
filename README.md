@@ -50,12 +50,16 @@ vault password isn't on the machine. `hosts` is a reserved name, so the host lis
 in `group_vars/all/network.yaml` is `network_hosts`.
 
 Gitea Actions workflow `pr-checks` (`.gitea/workflows/pr-checks.yaml`) runs on
-pull requests and on pushes to `master`: pre-commit (including detect-secrets
-against `.secrets.baseline`, plus a hook that rejects absolute home-directory
-paths), ansible-lint, `ansible-playbook --syntax-check` on top-level playbooks,
-yamllint, and renovate-config-validator. CI Python pins are in
-`requirements-ci.txt`. yamllint uses the repo `.yamllint`, which excludes
-`argo-apps/` and `images/`.
+pull requests and on pushes to `master`. The Python checks (pre-commit,
+detect-secrets, ansible-lint, playbook syntax, yamllint, the
+`minimumReleaseAge` script, and gitleaks) share one job so they cannot race
+`setup-python` on the shared runner toolcache. `renovate-config-validator`
+runs in the digest-pinned Renovate image. CI installs
+`pip install --require-hashes -r requirements-ci.lock` (regenerate from
+`requirements-ci.txt` with `pip-compile --generate-hashes`). gitleaks is SHA-pinned; its allowlists cover
+the detect-secrets baseline, SealedSecret ciphertext, and the pending kubeadm
+bootstrap token. yamllint uses the repo `.yamllint`, which excludes `argo-apps/`
+and `images/`.
 
 ## Secrets
 
