@@ -41,7 +41,7 @@
       "customType": "regex",
       "description": "Gitea Actions runner, dind and job images, written as registry/repo:tag@digest",
       "managerFilePatterns": [
-        "/^argo-apps/apps/gitea/actions(-build)?-values\\.yaml$/"
+        "/^argo-apps/apps/gitea/actions(-[a-z-]+)?-values\\.yaml$/"
       ],
       "matchStrings": [
         "(?<depName>[a-z0-9.-]+\\.[a-z]+/[a-z0-9._/-]+):(?<currentValue>[A-Za-z0-9._-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
@@ -111,7 +111,8 @@
       "description": "Gitea runner images go with the other Argo CD app images",
       "matchFileNames": [
         "argo-apps/apps/gitea/actions-values.yaml",
-        "argo-apps/apps/gitea/actions-build-values.yaml"
+        "argo-apps/apps/gitea/actions-build-values.yaml",
+        "argo-apps/apps/gitea/actions-docker-values.yaml"
       ],
       "groupName": "Argo CD app images"
     },

@@ -99,6 +99,14 @@ configs, recipes, and prompts do not belong in this repo.
     token is repo-scoped to `homelab/bare-metal-kubernetes`. Mint it in the
     repo's Settings > Actions > Runners and store it in OpenBao at
     `kv/apps/gitea/gitea-runner-build-token`, key `token`.
+  - `gitea-actions-docker` (`actions-docker-values.yaml`): label `docker`,
+    1 slot, its own dind, jobs get the socket, no secrets. For app repos
+    whose CI needs Docker (`runs-on: docker`). Org-scoped to `homelab`; token
+    in OpenBao at `kv/apps/gitea/gitea-runner-docker-token`, key `token`.
+    Gitea gives a job to whichever matching runner polls first, so it can't
+    reuse `ubuntu-*`.
+  - All runners use ServiceAccount `gitea-actions-runner`, with no token
+    automount.
   - CiliumNetworkPolicy `gitea-actions-runner` (`runner-network-policy.yaml`)
     lets both runners reach only DNS, Traefik and public addresses.
   - Runner, dind and job images are pinned as `tag@digest`, and a custom

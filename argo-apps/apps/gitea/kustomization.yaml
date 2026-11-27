@@ -7,4 +7,6 @@ resources:
   - valkey-secret.yaml
   - signing-key-secret.yaml
   - runner-build-token-secret.yaml
+  - runner-docker-token-secret.yaml
+  - runner-serviceaccount.yaml
   - runner-network-policy.yaml

@@ -1,0 +1,28 @@
+---
+# Release gitea-actions-docker, layered on actions-values.yaml. Registered to the
+# homelab org, with the single label docker, for app repos whose CI runs
+# docker build/run/create: jobs get this pod's own dind socket. No secrets:
+# the only Secret in the pod is the registration token. Not for ai-base.
+existingSecret: gitea-runner-docker-token
+existingSecretKey: token
+
+statefulset:
+  runner:
+    config: |
+      log:
+        level: info
+      runner:
+        file: .runner
+        capacity: 1
+        timeout: 3h
+        labels:
+          - "docker:docker://docker.gitea.com/runner-images:ubuntu-24.04@sha256:ad6cef290707552be4a2eefb9240b5f470353d906e529f6b28d7626ab8a6bee3"
+      cache:
+        enabled: false
+      container:
+        require_docker: true
+        docker_timeout: 300s
+        # docker_host unset: jobs get the dind socket.
+        privileged: false
+        valid_volumes: []
+        force_pull: true

@@ -1,7 +1,8 @@
 ---
 # Release gitea-actions: the default runner for every repo (global token, labels
 # ubuntu-*). It runs PR jobs, so jobs get no Docker socket and nothing privileged.
-# actions-build-values.yaml layers the docker-build runner on top of this file.
+# actions-build-values.yaml and actions-docker-values.yaml layer the
+# docker-capable runners on top of this file.
 enabled: true
 
 giteaRootURL: https://git.clt.milco.casa
@@ -21,6 +22,8 @@ init:
 
 statefulset:
   replicas: 1
+  # runner-serviceaccount.yaml: no API token automount
+  serviceAccountName: gitea-actions-runner
   timezone: America/New_York
   persistence:
     size: 5Gi
