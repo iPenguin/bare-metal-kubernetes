@@ -181,9 +181,12 @@ API.
   differ only in versions or digests, and the diff's version changes must
   match the PR body's update table exactly; otherwise medium. The diff's
   versions set the update type; the body can only raise it. Low is a patch or
-  digest of an Argo CD app image or chart outside the critical set (traefik,
+  digest of an Argo CD app image or chart, or of a Dockerfile `FROM` /
+  `ARG NAME=` image pin under `images/`, outside the critical set (traefik,
   argo-cd, openbao, external-secrets, cert-manager, keycloak, lldap,
-  kube-vip, matched in names, images and paths). Medium: minor bumps,
+  kube-vip, matched in names, images and paths). A key must be on the
+  allowlist (tag, version, targetRevision, image, appVersion, ref, FROM,
+  ARG); `min_tls_version` and other `*_version` keys are not. Medium: minor bumps,
   critical-set patches, `versions.yaml` pins, Python packages and Ansible
   collections, the Actions runner, secret/RBAC/policy/ingress files, RBAC,
   CRD, ServiceAccount or NetworkPolicy content in the diff.
@@ -201,9 +204,19 @@ API.
 - Setup: repo Actions secret `SVC_GROKBOT_TOKEN`, an `svc_grokbot` token with
   `read:repository` and `write:issue`, and repo Actions variable
   `REVIEW_MODE=comment`.
-- Kill switch: set `REVIEW_MODE` to `off` or delete it. `approve` and `fix`
-  are not enabled yet and do nothing.
-- Local dry run (prints the comments, posts nothing):
+- Kill switch: set `REVIEW_MODE` to `off` or delete it. `REVIEW_MODE=approve`
+  or `fix` without a flag still does nothing.
+- Approve: `python3 scripts/renovate_review.py --mode approve` with the
+  `svc_approver` token in `GITEA_TOKEN_BOT` (not `SVC_GROKBOT_TOKEN`, and
+  not from the comment workflow). It posts or updates the sticky comment,
+  then an APPROVED review pinned to the current head SHA, only when the
+  rating is low, the gate passed, and the token user is `svc_approver` and
+  is not the PR author or a commit author or committer. It re-reads the
+  head before and after the review; if the head moved or the review is
+  stale it tries to dismiss the review and exits non-zero. It skips if
+  this token already approved that SHA, and never merges or approves
+  medium or high. `REVIEW_MODE=off` still stops it.
+- Local dry run (prints the comments or would-be approvals, posts nothing):
   `python3 scripts/renovate_review.py --dry-run --token-file <read-only token file>`.
   Tests: `python3 -m unittest discover -s scripts -p 'test_*.py'`.
 
