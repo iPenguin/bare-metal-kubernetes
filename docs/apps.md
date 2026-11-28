@@ -192,7 +192,9 @@ API.
   `argo-apps/bootstrap/`, `.gitea/`, `scripts/`, `renovate.json`,
   lint configs, `.secrets.baseline`, `requirements-ci.*`, OpenBao files and
   the kubernetes, crio, cilium, rook and kube-vip roles. Renames count both
-  paths. A `risk-floor/<level>`
+  paths. Other paths (run.yaml, upgrade.yaml, setup.sh, ansible.cfg,
+  templates/, hosts/, remaining roles/) stay medium until added to the high
+  list, which must happen if medium becomes approvable. A `risk-floor/<level>`
   label can raise the rating; nothing lowers it.
 - Output: one comment per PR, marked `<!-- grokbot-review sha=... -->`, edited
   in place when the rating changes. Quoted text can't @mention or link.

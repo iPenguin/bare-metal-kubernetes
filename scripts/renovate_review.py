@@ -73,6 +73,9 @@ NFD_PINS = {"nvidia-device-plugin"}
 # Gitea Actions runner chart: CI infrastructure.
 RUNNER_DEPS = {"actions"}
 
+# Paths not listed here (run.yaml, upgrade.yaml, setup.sh, ansible.cfg,
+# templates/, hosts/, other roles/) rate medium; move them here if medium
+# becomes approvable.
 HIGH_PATHS = (
     (".gitea/", "CI workflows"),
     ("scripts/", "CI scripts"),
@@ -108,8 +111,20 @@ SENSITIVE_KEY = re.compile(r"\b(?:rbac|apiGroups|verbs|networkPolicy|crds?)\b", 
 # A version, image tag or digest inside a line. A changed line is
 # version-only if it is identical with these masked.
 VERSION_TOKEN = re.compile(r"sha256:[0-9a-f]{64}|\b[0-9a-f]{40}\b|v?\d+(?:\.\d+)+(?:[-+][A-Za-z0-9._+-]*)?")
+# 10.0.40.5 and 10.0.0.5.nip.io look like versions to VERSION_TOKEN.
+OCTETS = re.compile(r"^v?\d{1,3}(?:\.\d{1,3}){3}(?:$|[-+.][A-Za-z])")
+# Version-only lines must use one of these keys (or sit under a # renovate: line).
+VERSION_KEY = re.compile(
+    r"(?i)^\s*(?:tag|version|targetRevision|image|appVersion|FROM|ref|[A-Za-z0-9._-]*_version)\s*[:=]"
+)
+CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f\x85\u2028\u2029]")
+MAX_LINE = 1000
 HEX_RE = re.compile(r"(?:sha256:)?[0-9a-f]{7,64}")
 NAME_NEAR = re.compile(r"\b(?:chart|name|repository|image|depName)\s*[:=]\s*['\"]?([A-Za-z0-9._/@-]+)")
+HUNKLESS = (
+    "old mode ", "new mode ", "new file mode ", "deleted file mode ",
+    "rename from ", "copy from ", "similarity index ",
+)
 KNOWN_TARGETS = ("argo-apps/", VERSIONS_FILE, "requirements.txt", "requirements.yml", "images/")
 
 UPDATE_LEVEL = {"major": HIGH, "minor": MEDIUM, "patch": LOW, "digest": LOW, "pindigest": LOW}
@@ -233,7 +248,9 @@ def parse_diff(text: str) -> tuple[list[Change], set[str]]:
         minus.clear()
         plus.clear()
 
-    for line in (text or "").splitlines():
+    # split("\n"), not splitlines(): the latter also splits on CR, VT, FF,
+    # NEL and Unicode line separators, which can hide keys after a CR.
+    for line in (text or "").split("\n"):
         if line.startswith("diff --git "):
             flush()
             in_hunk = False
@@ -241,7 +258,11 @@ def parse_diff(text: str) -> tuple[list[Change], set[str]]:
             if m:
                 paths.update(m.groups())
                 path = m.group(2)
-        elif not in_hunk and line.startswith(("rename from ", "rename to ", "--- a/", "+++ b/")):
+        elif not in_hunk and line.startswith(HUNKLESS):
+            changes.append(Change(path, "<header>", None))
+            if line.startswith(("rename from ", "copy from ")):
+                paths.add(line.split(" ", 2)[-1])
+        elif not in_hunk and line.startswith(("rename to ", "copy to ", "--- a/", "+++ b/")):
             paths.add(line.split(" ", 2)[-1][2 if line.startswith(("---", "+++")) else 0:])
         elif not in_hunk and line.startswith("Binary files "):
             changes.append(Change(path, "binary file", None))
@@ -266,10 +287,28 @@ def version_pairs(c: Change) -> list[tuple[str, str]] | None:
     """(old, new) versions if the line pair differs only in versions, else None."""
     if c.old is None or c.new is None:
         return None
+    if len(c.old) > MAX_LINE or len(c.new) > MAX_LINE:
+        return None
+    if CONTROL.search(c.old) or CONTROL.search(c.new):
+        return None
+    if not version_key_allowed(c):
+        return None
     if VERSION_TOKEN.sub("\0", c.old) != VERSION_TOKEN.sub("\0", c.new):
         return None
     pairs = [(a, b) for a, b in zip(VERSION_TOKEN.findall(c.old), VERSION_TOKEN.findall(c.new)) if a != b]
-    return pairs or None
+    if not pairs or any(OCTETS.search(a) or OCTETS.search(b) for a, b in pairs):
+        return None
+    return pairs
+
+
+def version_key_allowed(c: Change) -> bool:
+    """Version-only if the key is allowlisted; in appsets/, only targetRevision."""
+    line = c.new or ""
+    if c.path.startswith("argo-apps/appsets/"):
+        return bool(re.search(r"(?i)^\s*targetRevision\s*:", line))
+    if VERSION_KEY.search(line):
+        return True
+    return bool(c.above and re.search(r"^\s*#\s*renovate:", c.above[-1]))
 
 
 def _norm(v: str) -> str:
@@ -293,11 +332,24 @@ def diff_names(c: Change) -> list[str]:
     """What a version line belongs to: the image or package on the line, and
     any chart/name/repository/depName just above it in the hunk."""
     names = [m.group(1) for line in c.above + [c.new or ""] for m in NAME_NEAR.finditer(line)]
-    head = VERSION_TOKEN.split(c.new or "", maxsplit=1)[0]
+    raw = c.new or ""
+    head = VERSION_TOKEN.split(raw[-200:] if len(raw) > 200 else raw, maxsplit=1)[0]
     m = re.search(r"([A-Za-z0-9._/-]+)[:=@]+\s*$", head)
     if m:
         names.append(m.group(1))
     return names
+
+
+def name_in(dep_name: str, names: list[str]) -> bool:
+    """True if the body dependency is the one named on the changed line."""
+    if not names or not dep_name:
+        return False
+    last = dep_name.rsplit("/", 1)[-1]
+    for n in names:
+        nlast = n.rsplit("/", 1)[-1]
+        if dep_name == n or last == n or last == nlast or dep_name == nlast:
+            return True
+    return False
 
 
 def pin_names(versions_text: str) -> set[str]:
@@ -387,6 +439,9 @@ def rate_diff(r: Rating, deps: list[Dep], changes: list[Change]) -> None:
     for c in changes:
         where = f"`{clean(c.path, 120)}`"
         lines = [x for x in (c.old, c.new) if x is not None]
+        if any(len(x) > MAX_LINE for x in lines):
+            r.raise_to(MEDIUM, f"oversized line in the diff ({where})")
+            continue
         if any(SENSITIVE_KIND.search(x) or SENSITIVE_KEY.search(x) for x in lines) or any(
             SENSITIVE_KIND.search(x) for x in c.above
         ):
@@ -406,7 +461,10 @@ def rate_diff(r: Rating, deps: list[Dep], changes: list[Change]) -> None:
             kind = update
             if update in ("minor", "major") and UPGRADE_COMPONENTS & set(names):
                 level, kind = HIGH, f"{update} of an upgrade.yaml component"
-            hits = [i for i, d in enumerate(deps) if same_version(d.old, a) and same_version(d.new, b)]
+            hits = [
+                i for i, d in enumerate(deps)
+                if names and name_in(d.name, names) and same_version(d.old, a) and same_version(d.new, b)
+            ]
             matched.update(hits)
             shown = f"`{clean(a, 60)}` → `{clean(b, 60)}`"
             if not hits and not (update == "digest" and len(pairs) > 1):
@@ -433,6 +491,9 @@ def commit_problems(commits: list[dict], head_sha: str) -> list[str]:
         problems.append("head SHA is not among the PR commits")
     for c in commits:
         sha = clean(c.get("sha", ""), 8)
+        parents = c.get("parents") if c.get("parents") is not None else (c.get("commit") or {}).get("parents")
+        if not isinstance(parents, list) or len(parents) != 1:
+            problems.append(f"commit {sha} is not a single-parent commit")
         v = (c.get("commit") or {}).get("verification") or {}
         who = {
             "author": (c.get("author") or {}).get("login"),
@@ -448,11 +509,15 @@ def commit_problems(commits: list[dict], head_sha: str) -> list[str]:
 
 
 def gate(pr: dict, statuses: list[dict], commits: list[dict], repo: str, sha: str | None,
-         run: dict | None, jobs: list[dict]) -> list[str]:
+         run: dict | None, jobs: list[dict], total_commits: int | None = None) -> list[str]:
     """Reasons this PR must not be reviewed; empty means it passes."""
     problems = []
     head = pr.get("head") or {}
     base = pr.get("base") or {}
+    if str(base.get("ref", "")) != "master":
+        problems.append("base branch is not master")
+    if total_commits is not None and total_commits != len(commits):
+        problems.append("compare is missing commits")
     if pr.get("state") != "open":
         problems.append("PR is not open")
     if pr.get("draft"):
@@ -667,12 +732,13 @@ def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run:
     # Pinned to the SHAs read above, so a later push can't change what is rated.
     compare = api.call("GET", f"/compare/{base_sha}...{head_sha}?verification=true&files=true") or {}
     commits = compare.get("commits") or []
+    total = compare.get("total_commits") if isinstance(compare.get("total_commits"), int) else -1
     runs = (api.call("GET", f"/actions/runs?head_sha={head_sha}&event=pull_request&limit=50") or {}).get("workflow_runs") or []
     run = latest_checks_run(runs, n, head_sha)
     jobs = []
     if run:
         jobs = (api.call("GET", f"/actions/runs/{int(run['id'])}/jobs") or {}).get("jobs") or []
-    problems = gate(pr, statuses, commits, repo, sha, run, jobs)
+    problems = gate(pr, statuses, commits, repo, sha, run, jobs, total)
     files = changed_files(commits)
     # Each commit's own diff, by its SHA from the pinned compare.
     diff = "\n".join(
