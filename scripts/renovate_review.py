@@ -25,7 +25,11 @@ only names dependencies and can only raise the rating.
 REVIEW_MODE (repo Actions variable) is the kill switch:
   off (default)  do nothing
   comment        post or update the sticky comment
-  approve, fix   not enabled yet; log and exit 0
+  approve, fix   as the env var alone, not enabled; log and exit 0
+
+Approve is only on with `--mode approve`. It posts an APPROVED review on a
+low PR whose gate passed, pinned to the current head SHA. It never merges,
+and never approves medium or high. REVIEW_MODE=off still stops it.
 
 Stdlib only.
 """
@@ -114,8 +118,11 @@ VERSION_TOKEN = re.compile(r"sha256:[0-9a-f]{64}|\b[0-9a-f]{40}\b|v?\d+(?:\.\d+)
 # 10.0.40.5 and 10.0.0.5.nip.io look like versions to VERSION_TOKEN.
 OCTETS = re.compile(r"^v?\d{1,3}(?:\.\d{1,3}){3}(?:$|[-+.][A-Za-z])")
 # Version-only lines must use one of these keys (or sit under a # renovate: line).
+# Explicit keys only: a `*_version` wildcard would also match min_tls_version.
+# `ARG NAME=` / `FROM ` cover Dockerfile image pins; versions.yaml already
+# floors at medium and uses `# renovate:` above each pin.
 VERSION_KEY = re.compile(
-    r"(?i)^\s*(?:tag|version|targetRevision|image|appVersion|FROM|ref|[A-Za-z0-9._-]*_version)\s*[:=]"
+    r"(?i)^\s*(?:tag|version|targetRevision|image|appVersion|ref|ARG\s+\S+|FROM)\s*[:= ]"
 )
 CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f\x85\u2028\u2029]")
 MAX_LINE = 1000
@@ -358,11 +365,18 @@ def pin_names(versions_text: str) -> set[str]:
 
 # ---------- rating ----------
 
+def _is_dockerfile(path: str) -> bool:
+    name = Path(path).name
+    return path.startswith("images/") and (name == "Dockerfile" or name.startswith("Dockerfile."))
+
+
 def file_kind(files: list[str]) -> str:
     if files and all(f.startswith("argo-apps/") for f in files):
         return "argo"
     if files and all(f == VERSIONS_FILE for f in files):
         return "pins"
+    if files and all(_is_dockerfile(f) for f in files):
+        return "images"
     return "other"
 
 
@@ -391,6 +405,8 @@ def rate_dep(dep: Dep, kind: str, pins: set[str]) -> tuple[int, str]:
         return MEDIUM, "versions.yaml pin not on the low allowlist"
     if kind == "argo":
         return LOW, "patch or digest of an Argo CD app image or chart"
+    if kind == "images":
+        return LOW, "patch or digest of a Dockerfile image"
     return MEDIUM, "not an Argo CD app image/chart or allowlisted pin"
 
 
@@ -676,9 +692,11 @@ class Gitea:
     def __init__(self, url: str, repo: str, token: str):
         if urllib.parse.urlsplit(url).scheme != "https":
             raise SystemExit("Gitea URL must be https")
-        self.base = f"{url.rstrip('/')}/api/v1/repos/{repo}"
+        self.origin = url.rstrip("/")
+        self.base = f"{self.origin}/api/v1/repos/{repo}"
         self.token = token
         self.opener = urllib.request.build_opener(HttpsOnlyRedirect)
+        self._login: str | None = None
 
     def call(self, method: str, path: str, data: dict | None = None) -> object:
         req = urllib.request.Request(
@@ -693,6 +711,24 @@ class Gitea:
         with self.opener.open(req, timeout=30) as resp:
             raw = resp.read()
         return json.loads(raw) if raw else None
+
+    def whoami(self) -> str:
+        """Login of the token's user. Fail closed if the API doesn't name one."""
+        if self._login:
+            return self._login
+        req = urllib.request.Request(
+            f"{self.origin}/api/v1/user",
+            headers={"Accept": "application/json"},
+        )
+        if self.token:
+            req.add_unredirected_header("Authorization", f"token {self.token}")
+        with self.opener.open(req, timeout=30) as resp:
+            raw = resp.read()
+        login = ((json.loads(raw) if raw else {}) or {}).get("login") or ""
+        if not login:
+            raise RuntimeError("token user is missing")
+        self._login = login
+        return login
 
     def text(self, path: str) -> str:
         req = urllib.request.Request(self.base + path, headers={"Accept": "text/plain"})
@@ -750,6 +786,11 @@ def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run:
     print(f"#{n} {LEVELS[rating.level].upper()} gate: {'pass' if not problems else 'blocked: ' + '; '.join(problems)}")
     if dry_run:
         print(body)
+        if mode == "approve":
+            maybe_approve(api, n, head_sha, rating, problems, True)
+        return
+    if mode == "approve":
+        maybe_approve(api, n, head_sha, rating, problems, False)
         return
     if problems or mode != "comment":
         return
@@ -765,6 +806,38 @@ def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run:
     else:
         api.call("PATCH", f"/issues/comments/{int(mine[0]['id'])}", {"body": body})
         print(f"#{n} comment updated")
+
+
+def maybe_approve(api: Gitea, number: int, head_sha: str, rating: Rating,
+                  problems: list[str], dry_run: bool) -> None:
+    """APPROVED review on a low PR whose gate passed. Never merges."""
+    if problems or rating.level != LOW:
+        why = "blocked: " + "; ".join(problems) if problems else LEVELS[rating.level]
+        print(f"#{number} not approved ({why})")
+        return
+    if dry_run:
+        print(f"#{number} would approve {head_sha}")
+        return
+    fresh = api.call("GET", f"/pulls/{number}")
+    got = str(((fresh or {}).get("head") or {}).get("sha") or "")
+    if not SHA_RE.fullmatch(got):
+        raise RuntimeError(f"#{number} refresh did not return a commit hash")
+    if got != head_sha:
+        print(f"#{number} head moved; not approving")
+        return
+    login = api.whoami()
+    for r in api.pages(f"/pulls/{number}/reviews"):
+        if ((r.get("user") or {}).get("login") == login
+                and r.get("state") == "APPROVED"
+                and r.get("commit_id") == head_sha):
+            print(f"#{number} already approved {head_sha}")
+            return
+    api.call("POST", f"/pulls/{number}/reviews", {
+        "commit_id": head_sha,
+        "event": "APPROVED",
+        "body": "Low risk; approved by the review script.",
+    })
+    print(f"#{number} approved {head_sha}")
 
 
 def targets(api: Gitea, pr_arg: str, sha_arg: str, event: dict) -> tuple[list[dict], str | None]:
@@ -784,23 +857,34 @@ def targets(api: Gitea, pr_arg: str, sha_arg: str, event: dict) -> tuple[list[di
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Rate Renovate PRs and comment the rating.")
-    ap.add_argument("--dry-run", action="store_true", help="print the would-be comments; post nothing")
+    ap = argparse.ArgumentParser(description="Rate Renovate PRs and comment or approve.")
+    ap.add_argument("--dry-run", action="store_true", help="print the would-be comments or approvals; post nothing")
     ap.add_argument("--pr", default="", help="review one PR number")
     ap.add_argument("--sha", default="", help="review the open PR with this head SHA")
+    ap.add_argument("--mode", default="", choices=["", "comment", "approve"],
+                    help="approve posts an APPROVED review; default is comment")
     ap.add_argument("--token-file", help="read the API token from this file instead of GITEA_TOKEN_BOT")
     args = ap.parse_args(argv)
 
-    mode = (os.environ.get("REVIEW_MODE") or "off").strip().lower()
-    if mode in ("approve", "fix"):
-        print(f"REVIEW_MODE={mode} is not enabled yet; doing nothing")
-        return 0
-    if mode not in ("off", "comment"):
-        print(f"unknown REVIEW_MODE {clean(mode, 20)!r}; doing nothing")
-        return 0
-    if mode == "off" and not args.dry_run:
-        print("REVIEW_MODE is off; doing nothing")
-        return 0
+    env_mode = (os.environ.get("REVIEW_MODE") or "off").strip().lower()
+    flag = (args.mode or "").strip().lower()
+    if flag == "approve":
+        # Explicit --mode is required. REVIEW_MODE=off remains the kill switch.
+        if env_mode == "off" and not args.dry_run:
+            print("REVIEW_MODE is off; doing nothing")
+            return 0
+        mode = "approve"
+    else:
+        if env_mode in ("approve", "fix"):
+            print(f"REVIEW_MODE={env_mode} is not enabled yet; doing nothing")
+            return 0
+        if env_mode not in ("off", "comment"):
+            print(f"unknown REVIEW_MODE {clean(env_mode, 20)!r}; doing nothing")
+            return 0
+        if env_mode == "off" and not args.dry_run:
+            print("REVIEW_MODE is off; doing nothing")
+            return 0
+        mode = "comment"
 
     token = Path(args.token_file).read_text().strip() if args.token_file else os.environ.get("GITEA_TOKEN_BOT", "")
     if not token and not args.dry_run:

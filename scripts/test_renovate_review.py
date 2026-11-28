@@ -526,6 +526,37 @@ class Diff(unittest.TestCase):
         self.assertEqual(level(self.BODY, [self.VELERO], diff=diff_of(self.VELERO, pair)), "medium")
         self.assertLess(time.perf_counter() - t0, 0.5)
 
+    def test_dockerfile_from_and_arg_version_bumps(self):
+        path = "images/ai-base/Dockerfile"
+        body = table("| docker.io/nvidia/cuda | patch | `12.8.1-base-ubuntu24.04` → `12.8.2-base-ubuntu24.04` |")
+        arg = diff_of(path, (
+            "ARG BASE_IMAGE=docker.io/nvidia/cuda:12.8.1-base-ubuntu24.04",
+            "ARG BASE_IMAGE=docker.io/nvidia/cuda:12.8.2-base-ubuntu24.04",
+        ))
+        self.assertEqual(level(body, [path], diff=arg), "low")
+        frm = diff_of(path, (
+            "FROM docker.io/nvidia/cuda:12.8.1-base-ubuntu24.04",
+            "FROM docker.io/nvidia/cuda:12.8.2-base-ubuntu24.04",
+        ))
+        self.assertEqual(level(body, [path], diff=frm), "low")
+        # Image name or registry swapped, tag unchanged: medium.
+        swap = diff_of(path, (
+            "ARG BASE_IMAGE=docker.io/nvidia/cuda:12.8.1-base-ubuntu24.04",
+            "ARG BASE_IMAGE=docker.io/nvidia/pytorch:12.8.1-base-ubuntu24.04",
+        ))
+        self.assertEqual(level(body, [path], diff=swap), "medium")
+        registry = diff_of(path, (
+            "FROM docker.io/nvidia/cuda:12.8.1-base-ubuntu24.04",
+            "FROM public.ecr.aws/nvidia/cuda:12.8.1-base-ubuntu24.04",
+        ))
+        self.assertEqual(level(body, [path], diff=registry), "medium")
+
+    def test_min_tls_version_stays_medium(self):
+        path = "argo-apps/apps/a/values.yaml"
+        body = table("| a | patch | `1.2` → `1.3` |")
+        diff = diff_of(path, ("    min_tls_version: 1.2", "    min_tls_version: 1.3"))
+        self.assertEqual(level(body, [path], diff=diff), "medium")
+
     def test_real_shapes(self):
         # PR #42 (versions.yaml, depName comments) and #47 (requirements.yml)
         diff = (
@@ -688,6 +719,146 @@ class Modes(unittest.TestCase):
                 self.assertEqual(rc, 0)
                 self.assertIn("doing nothing", out)
         self.assertIn("not enabled", self.run_mode("approve")[1])
+
+    def test_mode_approve_kill_switch(self):
+        import io
+        import os
+        from contextlib import redirect_stdout
+        from unittest import mock
+
+        out = io.StringIO()
+        with mock.patch.dict(os.environ, {"REVIEW_MODE": "off"}, clear=True), redirect_stdout(out):
+            rc = rr.main(["--mode", "approve"])
+        self.assertEqual(rc, 0)
+        self.assertIn("doing nothing", out.getvalue())
+
+
+class Approve(unittest.TestCase):
+    BODY = table("| velero/velero | patch | `v1.18.4` → `v1.18.5` |")
+    DIFF = diff_of("argo-apps/apps/a/values.yaml",
+                   ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.5"))
+
+    def api(self, head=SHA, reviews=(), post_error=None):
+        class Api:
+            def __init__(self, head, reviews, post_error):
+                self.calls = []
+                self.head = head
+                self.reviews = list(reviews)
+                self.post_error = post_error
+
+            def call(self, method, path, data=None):
+                self.calls.append((method, path, data))
+                if method == "POST" and path.endswith("/reviews"):
+                    if self.post_error:
+                        raise self.post_error
+                    return {"id": 9, "state": "APPROVED"}
+                if path.startswith("/commits/"):
+                    return {"statuses": GREEN}
+                if path.startswith("/compare/"):
+                    return {"commits": SIGNED, "total_commits": 1}
+                if path.startswith("/actions/runs?"):
+                    return {"workflow_runs": [RUN]}
+                if path == "/actions/runs/7/jobs":
+                    return {"jobs": JOBS}
+                if path == "/pulls/1" and method == "GET":
+                    return pr(head={"ref": "renovate/foo", "sha": self.head, "repo": {"full_name": REPO}})
+                raise AssertionError(f"{method} {path}")
+
+            def text(self, path):
+                self.calls.append(("TEXT", path, None))
+                return Approve.DIFF
+
+            def pages(self, path):
+                self.calls.append(("PAGES", path, None))
+                return list(self.reviews)
+
+            def whoami(self):
+                self.calls.append(("WHOAMI", "", None))
+                return "svc_approver"
+
+        return Api(head, reviews, post_error)
+
+    def run_review(self, api, mode="approve", dry_run=False, body=None, statuses=None, **pr_over):
+        p = pr(body=body or self.BODY, **pr_over)
+        if statuses is not None:
+            orig = api.call
+            def call(method, path, data=None, orig=orig, statuses=statuses):
+                if path.startswith("/commits/"):
+                    api.calls.append((method, path, data))
+                    return {"statuses": statuses}
+                return orig(method, path, data)
+            api.call = call
+        with mock.patch("builtins.print") as printed:
+            rr.review(api, p, REPO, SHA, mode, dry_run, set(), "1")
+        return printed
+
+    def posted(self, api):
+        return [c for c in api.calls if c[0] == "POST" and str(c[1]).endswith("/reviews")]
+
+    def test_approves_low_when_gate_passes(self):
+        api = self.api()
+        self.run_review(api)
+        posts = self.posted(api)
+        self.assertEqual(len(posts), 1)
+        self.assertEqual(posts[0][2]["commit_id"], SHA)
+        self.assertEqual(posts[0][2]["event"], "APPROVED")
+        # Re-fetched head before posting.
+        self.assertIn(("GET", "/pulls/1", None), api.calls)
+        self.assertTrue(any(c[0] == "WHOAMI" for c in api.calls))
+
+    def test_dry_run_does_not_post(self):
+        api = self.api()
+        printed = self.run_review(api, dry_run=True)
+        self.assertFalse(self.posted(api))
+        self.assertTrue(any("would approve" in str(c) for c in printed.call_args_list))
+
+    def test_no_approve_on_medium_or_high(self):
+        for update, old, new in (("minor", "v1.18.4", "v1.19.0"), ("major", "v1.18.4", "v2.0.0")):
+            with self.subTest(update):
+                body = table(f"| velero/velero | {update} | `{old}` → `{new}` |")
+                api = self.api()
+                def text(path, old=old, new=new):
+                    api.calls.append(("TEXT", path, None))
+                    return diff_of("argo-apps/apps/a/values.yaml",
+                                   (f"    image: velero/velero:{old}", f"    image: velero/velero:{new}"))
+                api.text = text
+                self.run_review(api, body=body)
+                self.assertFalse(self.posted(api))
+
+    def test_no_approve_when_gate_fails(self):
+        api = self.api()
+        red = [dict(GREEN[0], status="failure"), GREEN[1]]
+        self.run_review(api, statuses=red)
+        self.assertFalse(self.posted(api))
+
+    def test_no_approve_when_head_changed(self):
+        api = self.api(head="c" * 40)
+        printed = self.run_review(api)
+        self.assertFalse(self.posted(api))
+        self.assertTrue(any("head moved" in str(c) for c in printed.call_args_list))
+
+    def test_skips_if_already_approved_on_head(self):
+        api = self.api(reviews=[{
+            "user": {"login": "svc_approver"}, "state": "APPROVED", "commit_id": SHA,
+        }])
+        printed = self.run_review(api)
+        self.assertFalse(self.posted(api))
+        self.assertTrue(any("already approved" in str(c) for c in printed.call_args_list))
+
+    def test_approves_again_if_prior_review_is_on_old_sha(self):
+        api = self.api(reviews=[{
+            "user": {"login": "svc_approver"}, "state": "APPROVED", "commit_id": BASE,
+        }])
+        self.run_review(api)
+        self.assertEqual(len(self.posted(api)), 1)
+
+    def test_api_error_is_not_swallowed(self):
+        err = urllib.error.HTTPError("https://git.example/api", 500, "boom", {}, None)
+        api = self.api(post_error=err)
+        with self.assertRaises(urllib.error.HTTPError):
+            self.run_review(api)
+        # The POST was attempted; main() turns this into a non-zero exit.
+        self.assertTrue(any(c[0] == "POST" for c in api.calls))
 
 
 if __name__ == "__main__":
