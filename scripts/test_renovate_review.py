@@ -738,20 +738,36 @@ class Approve(unittest.TestCase):
     DIFF = diff_of("argo-apps/apps/a/values.yaml",
                    ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.5"))
 
-    def api(self, head=SHA, reviews=(), post_error=None):
+    def api(self, head=SHA, reviews=(), post_error=None, after_head=None,
+             after_review=None, login="svc_approver", dismiss_error=None,
+             comments=()):
         class Api:
-            def __init__(self, head, reviews, post_error):
+            def __init__(self):
                 self.calls = []
                 self.head = head
+                self.after_head = after_head
+                self.after_review = after_review
                 self.reviews = list(reviews)
+                self.comments = list(comments)
                 self.post_error = post_error
+                self.dismiss_error = dismiss_error
+                self.login = login
+                self.pulls_gets = 0
 
             def call(self, method, path, data=None):
                 self.calls.append((method, path, data))
-                if method == "POST" and path.endswith("/reviews"):
+                if method == "POST" and path == "/pulls/1/reviews":
                     if self.post_error:
                         raise self.post_error
-                    return {"id": 9, "state": "APPROVED"}
+                    return {"id": 9, "state": "APPROVED", "commit_id": SHA, "stale": False}
+                if method == "POST" and path == "/pulls/1/reviews/9/dismissals":
+                    if self.dismiss_error:
+                        raise self.dismiss_error
+                    return {"ok": True}
+                if method == "GET" and path == "/pulls/1/reviews/9":
+                    return self.after_review or {
+                        "id": 9, "state": "APPROVED", "commit_id": SHA, "stale": False,
+                    }
                 if path.startswith("/commits/"):
                     return {"statuses": GREEN}
                 if path.startswith("/compare/"):
@@ -761,7 +777,13 @@ class Approve(unittest.TestCase):
                 if path == "/actions/runs/7/jobs":
                     return {"jobs": JOBS}
                 if path == "/pulls/1" and method == "GET":
-                    return pr(head={"ref": "renovate/foo", "sha": self.head, "repo": {"full_name": REPO}})
+                    self.pulls_gets += 1
+                    sha = self.head if self.pulls_gets == 1 else (self.after_head or self.head)
+                    return pr(head={"ref": "renovate/foo", "sha": sha, "repo": {"full_name": REPO}})
+                if method == "POST" and path == "/issues/1/comments":
+                    return {"id": 3, "body": (data or {}).get("body", "")}
+                if method == "PATCH" and path.startswith("/issues/comments/"):
+                    return {"id": 3, "body": (data or {}).get("body", "")}
                 raise AssertionError(f"{method} {path}")
 
             def text(self, path):
@@ -770,13 +792,15 @@ class Approve(unittest.TestCase):
 
             def pages(self, path):
                 self.calls.append(("PAGES", path, None))
+                if path.startswith("/issues/"):
+                    return list(self.comments)
                 return list(self.reviews)
 
             def whoami(self):
                 self.calls.append(("WHOAMI", "", None))
-                return "svc_approver"
+                return self.login
 
-        return Api(head, reviews, post_error)
+        return Api()
 
     def run_review(self, api, mode="approve", dry_run=False, body=None, statuses=None, **pr_over):
         p = pr(body=body or self.BODY, **pr_over)
@@ -793,7 +817,11 @@ class Approve(unittest.TestCase):
         return printed
 
     def posted(self, api):
-        return [c for c in api.calls if c[0] == "POST" and str(c[1]).endswith("/reviews")]
+        return [c for c in api.calls if c[0] == "POST" and c[1] == "/pulls/1/reviews"]
+
+    def comments(self, api):
+        return [c for c in api.calls if c[0] == "POST" and c[1] == "/issues/1/comments"
+                or c[0] == "PATCH" and str(c[1]).startswith("/issues/comments/")]
 
     def test_approves_low_when_gate_passes(self):
         api = self.api()
@@ -802,14 +830,15 @@ class Approve(unittest.TestCase):
         self.assertEqual(len(posts), 1)
         self.assertEqual(posts[0][2]["commit_id"], SHA)
         self.assertEqual(posts[0][2]["event"], "APPROVED")
-        # Re-fetched head before posting.
-        self.assertIn(("GET", "/pulls/1", None), api.calls)
+        # Re-fetched head before posting, and again after.
+        self.assertGreaterEqual(sum(1 for c in api.calls if c[:2] == ("GET", "/pulls/1")), 2)
         self.assertTrue(any(c[0] == "WHOAMI" for c in api.calls))
 
     def test_dry_run_does_not_post(self):
         api = self.api()
         printed = self.run_review(api, dry_run=True)
         self.assertFalse(self.posted(api))
+        self.assertFalse(self.comments(api))
         self.assertTrue(any("would approve" in str(c) for c in printed.call_args_list))
 
     def test_no_approve_on_medium_or_high(self):
@@ -830,6 +859,7 @@ class Approve(unittest.TestCase):
         red = [dict(GREEN[0], status="failure"), GREEN[1]]
         self.run_review(api, statuses=red)
         self.assertFalse(self.posted(api))
+        self.assertFalse(self.comments(api))
 
     def test_no_approve_when_head_changed(self):
         api = self.api(head="c" * 40)
@@ -858,7 +888,74 @@ class Approve(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError):
             self.run_review(api)
         # The POST was attempted; main() turns this into a non-zero exit.
-        self.assertTrue(any(c[0] == "POST" for c in api.calls))
+        self.assertTrue(self.posted(api) or any(c[0] == "POST" and c[1] == "/pulls/1/reviews" for c in api.calls))
+
+    def test_refuses_wrong_login(self):
+        api = self.api(login="svc_grokbot")
+        with self.assertRaises(rr.ApproveError) as caught:
+            self.run_review(api)
+        self.assertIn("svc_grokbot", str(caught.exception))
+        self.assertFalse(self.posted(api))
+        self.assertFalse(self.comments(api))
+
+    def test_refuses_if_approver_authored_the_pr(self):
+        api = self.api()
+        with self.assertRaises(rr.ApproveError) as caught:
+            self.run_review(api, user={"login": "svc_approver"})
+        self.assertIn("PR author", str(caught.exception))
+        self.assertFalse(self.posted(api))
+        self.assertFalse(self.comments(api))
+
+    def test_refuses_if_approver_authored_or_committed(self):
+        for role in ("author", "committer"):
+            with self.subTest(role):
+                api = self.api()
+                orig = api.call
+                def call(method, path, data=None, orig=orig, role=role):
+                    if path.startswith("/compare/"):
+                        api.calls.append((method, path, data))
+                        c = dict(SIGNED[0], **{role: {"login": "svc_approver"}})
+                        if role == "author":
+                            c["committer"] = {"login": "svc_renovate"}
+                        return {"commits": [c], "total_commits": 1}
+                    return orig(method, path, data)
+                api.call = call
+                with self.assertRaises(rr.ApproveError) as caught:
+                    self.run_review(api)
+                self.assertIn(role, str(caught.exception))
+                self.assertFalse(self.posted(api))
+                self.assertFalse(self.comments(api))
+
+    def test_head_moved_after_post_dismisses_and_fails(self):
+        api = self.api(after_head="c" * 40)
+        with self.assertRaises(rr.ApproveError) as caught:
+            self.run_review(api)
+        self.assertIn("head moved after approve", str(caught.exception))
+        self.assertEqual(len(self.posted(api)), 1)
+        self.assertTrue(any(c[0] == "POST" and c[1] == "/pulls/1/reviews/9/dismissals" for c in api.calls))
+
+    def test_stale_review_after_post_dismisses_and_fails(self):
+        api = self.api(after_review={"id": 9, "state": "APPROVED", "commit_id": SHA, "stale": True})
+        with self.assertRaises(rr.ApproveError) as caught:
+            self.run_review(api)
+        self.assertIn("stale", str(caught.exception))
+        self.assertEqual(len(self.posted(api)), 1)
+        self.assertTrue(any(c[0] == "POST" and c[1] == "/pulls/1/reviews/9/dismissals" for c in api.calls))
+
+    def test_dismiss_failure_still_exits_nonzero(self):
+        err = urllib.error.HTTPError("https://git.example/api", 403, "forbidden", {}, None)
+        api = self.api(after_head="c" * 40, dismiss_error=err)
+        with self.assertRaises(rr.ApproveError):
+            self.run_review(api)
+        self.assertEqual(len(self.posted(api)), 1)
+
+    def test_comment_before_approve(self):
+        api = self.api()
+        self.run_review(api)
+        kinds = [(c[0], c[1]) for c in api.calls]
+        comment_at = kinds.index(("POST", "/issues/1/comments"))
+        review_at = kinds.index(("POST", "/pulls/1/reviews"))
+        self.assertLess(comment_at, review_at)
 
 
 if __name__ == "__main__":

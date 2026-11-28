@@ -27,9 +27,13 @@ REVIEW_MODE (repo Actions variable) is the kill switch:
   comment        post or update the sticky comment
   approve, fix   as the env var alone, not enabled; log and exit 0
 
-Approve is only on with `--mode approve`. It posts an APPROVED review on a
-low PR whose gate passed, pinned to the current head SHA. It never merges,
-and never approves medium or high. REVIEW_MODE=off still stops it.
+Approve is only on with `--mode approve`, and only when the token user is
+`svc_approver` and is not the PR author or a commit author or committer.
+It posts or updates the sticky comment, then an APPROVED review on a low
+PR whose gate passed, pinned to the current head SHA. If the head moves
+or the review is stale after the post, it tries to dismiss and exits
+non-zero. It never merges, and never approves medium or high.
+REVIEW_MODE=off still stops it.
 
 Stdlib only.
 """
@@ -49,6 +53,7 @@ from pathlib import Path
 
 RENOVATE_LOGIN = "svc_renovate"
 BOT_LOGIN = "svc_grokbot"
+APPROVER_LOGIN = "svc_approver"
 BRANCH_PREFIX = "renovate/"
 REQUIRED_CHECKS = "pr-checks / *"
 PR_EVENT, PUSH_EVENT = "pull_request)", "push)"
@@ -679,6 +684,10 @@ def same_review(old: str, new: str) -> bool:
     return strip(old) == strip(new)
 
 
+class ApproveError(Exception):
+    """Approve refused, or a posted review is no longer valid."""
+
+
 # ---------- API ----------
 
 class HttpsOnlyRedirect(urllib.request.HTTPRedirectHandler):
@@ -784,33 +793,64 @@ def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run:
     rating = rate(parse_deps(pr.get("body") or ""), files, labels, pins, diff)
     body = render(head_sha, rating, files, statuses, commits, run_id)
     print(f"#{n} {LEVELS[rating.level].upper()} gate: {'pass' if not problems else 'blocked: ' + '; '.join(problems)}")
+    if mode == "approve":
+        check_approver(api, pr, commits)
     if dry_run:
         print(body)
         if mode == "approve":
-            maybe_approve(api, n, head_sha, rating, problems, True)
+            maybe_approve(api, n, head_sha, rating, problems, True, pr, commits)
         return
     if mode == "approve":
-        maybe_approve(api, n, head_sha, rating, problems, False)
+        # Comment first, then approve. The commenter is svc_approver, not
+        # the Actions comment job (svc_grokbot / SVC_GROKBOT_TOKEN).
+        if not problems:
+            post_sticky(api, n, body, APPROVER_LOGIN)
+        maybe_approve(api, n, head_sha, rating, problems, False, pr, commits)
         return
     if problems or mode != "comment":
         return
+    post_sticky(api, n, body, BOT_LOGIN)
+
+
+def post_sticky(api: Gitea, number: int, body: str, login: str) -> None:
     mine = [
-        c for c in api.pages(f"/issues/{n}/comments")
-        if (c.get("user") or {}).get("login") == BOT_LOGIN and (c.get("body") or "").startswith(MARKER)
+        c for c in api.pages(f"/issues/{number}/comments")
+        if (c.get("user") or {}).get("login") == login and (c.get("body") or "").startswith(MARKER)
     ]
     if not mine:
-        api.call("POST", f"/issues/{n}/comments", {"body": body})
-        print(f"#{n} comment posted")
+        api.call("POST", f"/issues/{number}/comments", {"body": body})
+        print(f"#{number} comment posted")
     elif same_review(mine[0]["body"], body):
-        print(f"#{n} comment already current")
+        print(f"#{number} comment already current")
     else:
         api.call("PATCH", f"/issues/comments/{int(mine[0]['id'])}", {"body": body})
-        print(f"#{n} comment updated")
+        print(f"#{number} comment updated")
+
+
+def check_approver(api: Gitea, pr: dict, commits: list[dict]) -> str:
+    """The token must be svc_approver, and must not have authored the PR."""
+    login = api.whoami()
+    n = pr.get("number")
+    if login != APPROVER_LOGIN:
+        raise ApproveError(f"#{n} refusing: token user is {clean(login, 40)}, not {APPROVER_LOGIN}")
+    if (pr.get("user") or {}).get("login") == APPROVER_LOGIN:
+        raise ApproveError(f"#{n} refusing: {APPROVER_LOGIN} is the PR author")
+    for c in commits:
+        sha = clean(c.get("sha", ""), 8)
+        who = {
+            "author": (c.get("author") or {}).get("login"),
+            "committer": (c.get("committer") or {}).get("login"),
+        }
+        for role, name in who.items():
+            if name == APPROVER_LOGIN:
+                raise ApproveError(f"#{n} refusing: {APPROVER_LOGIN} is the {role} of commit {sha}")
+    return login
 
 
 def maybe_approve(api: Gitea, number: int, head_sha: str, rating: Rating,
-                  problems: list[str], dry_run: bool) -> None:
+                  problems: list[str], dry_run: bool, pr: dict, commits: list[dict]) -> None:
     """APPROVED review on a low PR whose gate passed. Never merges."""
+    check_approver(api, pr, commits)
     if problems or rating.level != LOW:
         why = "blocked: " + "; ".join(problems) if problems else LEVELS[rating.level]
         print(f"#{number} not approved ({why})")
@@ -832,12 +872,35 @@ def maybe_approve(api: Gitea, number: int, head_sha: str, rating: Rating,
                 and r.get("commit_id") == head_sha):
             print(f"#{number} already approved {head_sha}")
             return
-    api.call("POST", f"/pulls/{number}/reviews", {
+    posted = api.call("POST", f"/pulls/{number}/reviews", {
         "commit_id": head_sha,
         "event": "APPROVED",
         "body": "Low risk; approved by the review script.",
-    })
+    }) or {}
+    rid = posted.get("id")
+    if not isinstance(rid, int):
+        raise ApproveError(f"#{number} approve POST did not return a review id")
     print(f"#{number} approved {head_sha}")
+    confirm_approval(api, number, head_sha, int(rid))
+
+
+def confirm_approval(api: Gitea, number: int, head_sha: str, review_id: int) -> None:
+    """If the head moved or the review is stale, dismiss it and fail closed."""
+    fresh = api.call("GET", f"/pulls/{number}")
+    got = str(((fresh or {}).get("head") or {}).get("sha") or "")
+    rev = api.call("GET", f"/pulls/{number}/reviews/{review_id}") or {}
+    stale = bool(rev.get("stale")) or str(rev.get("commit_id") or "") != got or got != head_sha
+    if not stale:
+        return
+    why = "head moved" if got != head_sha else "review is stale"
+    try:
+        api.call("POST", f"/pulls/{number}/reviews/{review_id}/dismissals",
+                 {"message": f"{why} after approve"})
+        print(f"#{number} dismissed review {review_id} ({why})")
+    except urllib.error.HTTPError as e:
+        print(f"#{number} could not dismiss review {review_id}: {e.code} {clean(e.reason, 40)}",
+              file=sys.stderr)
+    raise ApproveError(f"#{number} {why} after approve")
 
 
 def targets(api: Gitea, pr_arg: str, sha_arg: str, event: dict) -> tuple[list[dict], str | None]:
@@ -909,6 +972,9 @@ def main(argv: list[str] | None = None) -> int:
             review(api, pr, repo, sha, mode, args.dry_run, pins, run_id)
         except urllib.error.HTTPError as e:
             print(f"#{pr.get('number')} API error {e.code} {clean(e.reason, 40)}", file=sys.stderr)
+            rc = 1
+        except ApproveError as e:
+            print(str(e), file=sys.stderr)
             rc = 1
     return rc
 

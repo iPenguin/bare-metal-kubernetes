@@ -206,11 +206,16 @@ API.
   `REVIEW_MODE=comment`.
 - Kill switch: set `REVIEW_MODE` to `off` or delete it. `REVIEW_MODE=approve`
   or `fix` without a flag still does nothing.
-- Approve: `python3 scripts/renovate_review.py --mode approve` posts an
-  APPROVED review, pinned to the current head SHA, only when the rating is
-  low and the gate passed. It re-reads the head first, skips if this token
-  already approved that SHA, and never merges or approves medium or high.
-  The token is `GITEA_TOKEN_BOT`. `REVIEW_MODE=off` still stops it.
+- Approve: `python3 scripts/renovate_review.py --mode approve` with the
+  `svc_approver` token in `GITEA_TOKEN_BOT` (not `SVC_GROKBOT_TOKEN`, and
+  not from the comment workflow). It posts or updates the sticky comment,
+  then an APPROVED review pinned to the current head SHA, only when the
+  rating is low, the gate passed, and the token user is `svc_approver` and
+  is not the PR author or a commit author or committer. It re-reads the
+  head before and after the review; if the head moved or the review is
+  stale it tries to dismiss the review and exits non-zero. It skips if
+  this token already approved that SHA, and never merges or approves
+  medium or high. `REVIEW_MODE=off` still stops it.
 - Local dry run (prints the comments or would-be approvals, posts nothing):
   `python3 scripts/renovate_review.py --dry-run --token-file <read-only token file>`.
   Tests: `python3 -m unittest discover -s scripts -p 'test_*.py'`.
