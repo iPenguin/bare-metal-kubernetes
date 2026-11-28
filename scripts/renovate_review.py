@@ -9,13 +9,18 @@ and branch names are data only.
 This script is the real gate, not the workflow's `if:`. A PR is reviewed only
 if it is open, not a draft, opened by svc_renovate from a renovate/* branch
 of this repo, every commit is authored, committed and signed by svc_renovate,
-and every `pr-checks / *` job has a successful `(pull_request)` status on its
+every `pr-checks / *` job has a successful `(pull_request)` status on its
 head SHA (skipped `(push)` statuses are ignored; anything else must be
-success). Files and commits are read for that head SHA, not the PR's current
-head.
+success), and each of those statuses points at a successful job of the
+newest `pr-checks.yaml@refs/pull/N/head` Actions run on that SHA, which must
+have succeeded and been started by svc_renovate (L2). Files, commits and diffs are read for that head SHA, not
+the PR's current head.
 
 The rating is the deterministic floor from the risk rubric: the highest match
-wins, and anything not known to be low is at least medium.
+wins, and anything not known to be low is at least medium. It is decided from
+the commit diffs (M3): every changed line must differ only in versions or
+digests, and the PR body's update table must match the diff exactly. The body
+only names dependencies and can only raise the rating.
 
 REVIEW_MODE (repo Actions variable) is the kill switch:
   off (default)  do nothing
@@ -43,6 +48,7 @@ BOT_LOGIN = "svc_grokbot"
 BRANCH_PREFIX = "renovate/"
 REQUIRED_CHECKS = "pr-checks / *"
 PR_EVENT, PUSH_EVENT = "pull_request)", "push)"
+CHECKS_WORKFLOW = "pr-checks.yaml"
 SKIP_LABEL = "bot/skip"
 MARKER = "<!-- grokbot-review"
 VERSIONS_FILE = "hosts/group_vars/all/versions.yaml"
@@ -52,11 +58,13 @@ LEVELS = ("low", "medium", "high")
 
 # Minor and major bumps go through upgrade.yaml (dependencyDashboardApproval).
 UPGRADE_COMPONENTS = {"kubernetes/kubernetes", "cri-o/cri-o", "ceph/ceph", "rook-ceph", "cilium"}
-# Patches of these are medium.
-CRITICAL_APPS = {
-    "traefik", "argo-cd", "argocd", "openbao", "openbao/openbao", "external-secrets",
-    "cert-manager", "keycloak", "lldap", "ghcr.io/kube-vip/kube-vip",
-}
+# Patches of these are medium. Matched anywhere in a dependency name, image
+# or path, between separators: `ghcr.io/kube-vip/kube-vip`, `argo-cd`,
+# `argo-apps/apps/keycloak/values.yaml`.
+CRITICAL_RE = re.compile(
+    r"(?:^|[/_.:-])(traefik|argo-?cd|openbao|external-secrets|cert-manager|keycloak|lldap|kube-vip)(?:[/_.:-]|$)",
+    re.I,
+)
 # versions.yaml pins whose patch bumps may be low. nvidia-device-plugin is
 # low only once its NFD subchart is checked against nvidia_nfd_version, which
 # this script does not do yet, so it stays medium for now.
@@ -65,6 +73,9 @@ NFD_PINS = {"nvidia-device-plugin"}
 # Gitea Actions runner chart: CI infrastructure.
 RUNNER_DEPS = {"actions"}
 
+# Paths not listed here (run.yaml, upgrade.yaml, setup.sh, ansible.cfg,
+# templates/, hosts/, other roles/) rate medium; move them here if medium
+# becomes approvable.
 HIGH_PATHS = (
     (".gitea/", "CI workflows"),
     ("scripts/", "CI scripts"),
@@ -81,13 +92,39 @@ HIGH_PATHS = (
     ("roles/cilium/", "Cilium (CNI) role"),
     ("roles/rook/", "Rook/Ceph role"),
     ("roles/kube-vip/", "kube-vip role"),
+    ("argo-apps/bootstrap/", "Argo CD bootstrap"),
 )
+# Any change here other than a version is high (chart bumps in appsets stay
+# rated per dependency).
+STRUCTURE_PATHS = ("argo-apps/bootstrap/", "argo-apps/appsets/")
 MEDIUM_PATHS = (
     ("requirements.txt", "Python packages"),
     ("requirements.yml", "Ansible collections"),
     ("argo-apps/apps/gitea/actions", "Gitea Actions runner"),
 )
 SENSITIVE_NAME = re.compile(r"secret|rbac|role|policy|ingress|serviceaccount|crd|certificate", re.I)
+SENSITIVE_KIND = re.compile(
+    r"\bkind:\s*['\"]?(?:(?:Cluster)?Role(?:Binding)?|CustomResourceDefinition|"
+    r"(?:Cilium(?:Clusterwide)?)?NetworkPolicy|ServiceAccount)\b"
+)
+SENSITIVE_KEY = re.compile(r"\b(?:rbac|apiGroups|verbs|networkPolicy|crds?)\b", re.I)
+# A version, image tag or digest inside a line. A changed line is
+# version-only if it is identical with these masked.
+VERSION_TOKEN = re.compile(r"sha256:[0-9a-f]{64}|\b[0-9a-f]{40}\b|v?\d+(?:\.\d+)+(?:[-+][A-Za-z0-9._+-]*)?")
+# 10.0.40.5 and 10.0.0.5.nip.io look like versions to VERSION_TOKEN.
+OCTETS = re.compile(r"^v?\d{1,3}(?:\.\d{1,3}){3}(?:$|[-+.][A-Za-z])")
+# Version-only lines must use one of these keys (or sit under a # renovate: line).
+VERSION_KEY = re.compile(
+    r"(?i)^\s*(?:tag|version|targetRevision|image|appVersion|FROM|ref|[A-Za-z0-9._-]*_version)\s*[:=]"
+)
+CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f\x85\u2028\u2029]")
+MAX_LINE = 1000
+HEX_RE = re.compile(r"(?:sha256:)?[0-9a-f]{7,64}")
+NAME_NEAR = re.compile(r"\b(?:chart|name|repository|image|depName)\s*[:=]\s*['\"]?([A-Za-z0-9._/@-]+)")
+HUNKLESS = (
+    "old mode ", "new mode ", "new file mode ", "deleted file mode ",
+    "rename from ", "copy from ", "similarity index ",
+)
 KNOWN_TARGETS = ("argo-apps/", VERSIONS_FILE, "requirements.txt", "requirements.yml", "images/")
 
 UPDATE_LEVEL = {"major": HIGH, "minor": MEDIUM, "patch": LOW, "digest": LOW, "pindigest": LOW}
@@ -124,7 +161,8 @@ class Rating:
 
     def raise_to(self, level: int, reason: str) -> None:
         self.level = max(self.level, level)
-        self.reasons.append(f"{LEVELS[level]}: {reason}")
+        if f"{LEVELS[level]}: {reason}" not in self.reasons:
+            self.reasons.append(f"{LEVELS[level]}: {reason}")
 
 
 # ---------- parsing ----------
@@ -174,13 +212,144 @@ def parse_deps(body: str) -> list[Dep]:
         row = dict(zip(header, cells))
         old, new = (re.findall(r"`([^`]*)`", row.get("change", "")) + ["", ""])[:2]
         declared = row.get("update", "").strip().lower()
-        computed = compare_versions(old, new) if old and new else "unknown"
+        digests = is_digest(old) and is_digest(new)
+        computed = compare_versions(old, new) if old and new and not digests else "unknown"
         update = declared or computed
         # Take the riskier of what Renovate says and what the versions say.
         if computed != "unknown" and UPDATE_LEVEL[computed] > UPDATE_LEVEL.get(update, MEDIUM):
             update = computed
         deps.append(Dep(clean(_link_text(row.get("package", ""))), clean(update or "unknown", 20), clean(old, 60), clean(new, 60)))
     return deps
+
+
+@dataclass
+class Change:
+    """One removed/added line pair from a diff hunk (None: no counterpart)."""
+    path: str
+    old: str | None
+    new: str | None
+    above: list[str] = field(default_factory=list)  # hunk lines just above
+
+
+def parse_diff(text: str) -> tuple[list[Change], set[str]]:
+    """Changed line pairs and every path the diff touches (both sides of a rename)."""
+    changes: list[Change] = []
+    paths: set[str] = set()
+    path, in_hunk = "", False
+    above: list[str] = []
+    minus: list[str] = []
+    plus: list[str] = []
+
+    def flush() -> None:
+        for i in range(max(len(minus), len(plus))):
+            changes.append(Change(path, minus[i] if i < len(minus) else None,
+                                  plus[i] if i < len(plus) else None, above[-4:]))
+        above.extend(minus + plus)
+        minus.clear()
+        plus.clear()
+
+    # split("\n"), not splitlines(): the latter also splits on CR, VT, FF,
+    # NEL and Unicode line separators, which can hide keys after a CR.
+    for line in (text or "").split("\n"):
+        if line.startswith("diff --git "):
+            flush()
+            in_hunk = False
+            m = re.match(r"diff --git a/(\S+) b/(\S+)$", line)
+            if m:
+                paths.update(m.groups())
+                path = m.group(2)
+        elif not in_hunk and line.startswith(HUNKLESS):
+            changes.append(Change(path, "<header>", None))
+            if line.startswith(("rename from ", "copy from ")):
+                paths.add(line.split(" ", 2)[-1])
+        elif not in_hunk and line.startswith(("rename to ", "copy to ", "--- a/", "+++ b/")):
+            paths.add(line.split(" ", 2)[-1][2 if line.startswith(("---", "+++")) else 0:])
+        elif not in_hunk and line.startswith("Binary files "):
+            changes.append(Change(path, "binary file", None))
+        elif line.startswith("@@"):
+            flush()
+            in_hunk, above = True, []
+        elif in_hunk and line.startswith("-"):
+            if plus:
+                flush()
+            minus.append(line[1:])
+        elif in_hunk and line.startswith("+"):
+            plus.append(line[1:])
+        elif in_hunk and line.startswith(" "):
+            flush()
+            above.append(line[1:])
+    flush()
+    paths.discard("")
+    return changes, paths
+
+
+def version_pairs(c: Change) -> list[tuple[str, str]] | None:
+    """(old, new) versions if the line pair differs only in versions, else None."""
+    if c.old is None or c.new is None:
+        return None
+    if len(c.old) > MAX_LINE or len(c.new) > MAX_LINE:
+        return None
+    if CONTROL.search(c.old) or CONTROL.search(c.new):
+        return None
+    if not version_key_allowed(c):
+        return None
+    if VERSION_TOKEN.sub("\0", c.old) != VERSION_TOKEN.sub("\0", c.new):
+        return None
+    pairs = [(a, b) for a, b in zip(VERSION_TOKEN.findall(c.old), VERSION_TOKEN.findall(c.new)) if a != b]
+    if not pairs or any(OCTETS.search(a) or OCTETS.search(b) for a, b in pairs):
+        return None
+    return pairs
+
+
+def version_key_allowed(c: Change) -> bool:
+    """Version-only if the key is allowlisted; in appsets/, only targetRevision."""
+    line = c.new or ""
+    if c.path.startswith("argo-apps/appsets/"):
+        return bool(re.search(r"(?i)^\s*targetRevision\s*:", line))
+    if VERSION_KEY.search(line):
+        return True
+    return bool(c.above and re.search(r"^\s*#\s*renovate:", c.above[-1]))
+
+
+def _norm(v: str) -> str:
+    v = v.strip("`").lstrip("=")
+    return v.removeprefix("sha256:") if v.startswith("sha256:") else v.lstrip("v")
+
+
+def is_digest(v: str) -> bool:
+    return bool(HEX_RE.fullmatch(_norm(v))) and not v.lstrip("v").replace(".", "").isdigit()
+
+
+def same_version(body: str, diff: str) -> bool:
+    """Body table value vs diff value; Renovate shortens digests in the body."""
+    a, b = _norm(body), _norm(diff)
+    if not a or not b:
+        return False
+    return a == b or (is_digest(a) and is_digest(b) and len(a) >= 7 and b.startswith(a))
+
+
+def diff_names(c: Change) -> list[str]:
+    """What a version line belongs to: the image or package on the line, and
+    any chart/name/repository/depName just above it in the hunk."""
+    names = [m.group(1) for line in c.above + [c.new or ""] for m in NAME_NEAR.finditer(line)]
+    raw = c.new or ""
+    head = VERSION_TOKEN.split(raw[-200:] if len(raw) > 200 else raw, maxsplit=1)[0]
+    m = re.search(r"([A-Za-z0-9._/-]+)[:=@]+\s*$", head)
+    if m:
+        names.append(m.group(1))
+    return names
+
+
+def name_in(dep_name: str, names: list[str]) -> bool:
+    """True if the body dependency is the one named on the changed line."""
+    if not names or not dep_name:
+        return False
+    last = dep_name.rsplit("/", 1)[-1]
+    for n in names:
+        nlast = n.rsplit("/", 1)[-1]
+        if dep_name == n or last == n or last == nlast or dep_name == nlast:
+            return True
+    return False
 
 
 def pin_names(versions_text: str) -> set[str]:
@@ -210,7 +379,7 @@ def rate_dep(dep: Dep, kind: str, pins: set[str]) -> tuple[int, str]:
         return MEDIUM, "patch of an upgrade.yaml component"
     if level == MEDIUM:
         return MEDIUM, "minor update"
-    if dep.name in CRITICAL_APPS:
+    if CRITICAL_RE.search(dep.name):
         return MEDIUM, "patch of a critical-set component"
     if dep.name in RUNNER_DEPS:
         return MEDIUM, "Gitea Actions runner"
@@ -225,8 +394,10 @@ def rate_dep(dep: Dep, kind: str, pins: set[str]) -> tuple[int, str]:
     return MEDIUM, "not an Argo CD app image/chart or allowlisted pin"
 
 
-def rate(deps: list[Dep], files: list[str], labels: list[str], pins: set[str]) -> Rating:
+def rate(deps: list[Dep], files: list[str], labels: list[str], pins: set[str], diff: str) -> Rating:
     r = Rating()
+    changes, diff_paths = parse_diff(diff)
+    files = sorted(set(files) | diff_paths)
     for path in files:
         shown = f"`{clean(path, 120)}`"
         for prefix, why in HIGH_PATHS:
@@ -237,6 +408,8 @@ def rate(deps: list[Dep], files: list[str], labels: list[str], pins: set[str]) -
         for prefix, why in MEDIUM_PATHS:
             if path.startswith(prefix):
                 r.raise_to(MEDIUM, f"changes {why} ({shown})")
+        if CRITICAL_RE.search(path):
+            r.raise_to(MEDIUM, f"critical-set path ({shown})")
         if path.startswith("argo-apps/") and SENSITIVE_NAME.search(Path(path).name):
             r.raise_to(MEDIUM, f"secret, RBAC, policy or ingress file ({shown})")
         if not path.startswith(KNOWN_TARGETS):
@@ -250,11 +423,57 @@ def rate(deps: list[Dep], files: list[str], labels: list[str], pins: set[str]) -
         level, why = rate_dep(dep, kind, pins)
         r.deps.append((dep, level, why))
         r.level = max(r.level, level)
+    rate_diff(r, deps, changes)
     for name in labels:
         floor = name.split("/", 1)[1] if name.startswith("risk-floor/") else ""
         if floor in LEVELS:
             r.raise_to(LEVELS.index(floor), f"label `{clean(name)}`")
     return r
+
+
+def rate_diff(r: Rating, deps: list[Dep], changes: list[Change]) -> None:
+    """M3: the diff decides. It can only raise what the body table gave."""
+    if not changes:
+        r.raise_to(MEDIUM, "no diff to rate")
+    matched: set[int] = set()
+    for c in changes:
+        where = f"`{clean(c.path, 120)}`"
+        lines = [x for x in (c.old, c.new) if x is not None]
+        if any(len(x) > MAX_LINE for x in lines):
+            r.raise_to(MEDIUM, f"oversized line in the diff ({where})")
+            continue
+        if any(SENSITIVE_KIND.search(x) or SENSITIVE_KEY.search(x) for x in lines) or any(
+            SENSITIVE_KIND.search(x) for x in c.above
+        ):
+            r.raise_to(MEDIUM, f"RBAC, CRD, ServiceAccount or NetworkPolicy in the diff ({where})")
+        pairs = version_pairs(c)
+        if pairs is None:
+            floor = HIGH if c.path.startswith(STRUCTURE_PATHS) else MEDIUM
+            r.raise_to(floor, f"changes more than a version ({where})")
+            continue
+        names = [clean(n, 120) for n in diff_names(c)]
+        for name in names:
+            if CRITICAL_RE.search(name):
+                r.raise_to(MEDIUM, f"critical-set component `{name}` in the diff")
+        for a, b in pairs:
+            update = "digest" if is_digest(a) and is_digest(b) else compare_versions(a, b)
+            level = UPDATE_LEVEL.get(update, MEDIUM)
+            kind = update
+            if update in ("minor", "major") and UPGRADE_COMPONENTS & set(names):
+                level, kind = HIGH, f"{update} of an upgrade.yaml component"
+            hits = [
+                i for i, d in enumerate(deps)
+                if names and name_in(d.name, names) and same_version(d.old, a) and same_version(d.new, b)
+            ]
+            matched.update(hits)
+            shown = f"`{clean(a, 60)}` → `{clean(b, 60)}`"
+            if not hits and not (update == "digest" and len(pairs) > 1):
+                r.raise_to(max(level, MEDIUM), f"diff changes {shown} in {where}, which the PR body doesn't list")
+            elif hits and level > min(UPDATE_LEVEL.get(deps[i].update.lower(), MEDIUM) for i in hits):
+                r.raise_to(level, f"diff {shown} is {kind}")
+    for i, d in enumerate(deps):
+        if i not in matched:
+            r.raise_to(MEDIUM, f"PR body lists `{d.name}` `{d.old}` → `{d.new}`, not found in the diff")
 
 
 # ---------- gate ----------
@@ -272,6 +491,9 @@ def commit_problems(commits: list[dict], head_sha: str) -> list[str]:
         problems.append("head SHA is not among the PR commits")
     for c in commits:
         sha = clean(c.get("sha", ""), 8)
+        parents = c.get("parents") if c.get("parents") is not None else (c.get("commit") or {}).get("parents")
+        if not isinstance(parents, list) or len(parents) != 1:
+            problems.append(f"commit {sha} is not a single-parent commit")
         v = (c.get("commit") or {}).get("verification") or {}
         who = {
             "author": (c.get("author") or {}).get("login"),
@@ -286,11 +508,16 @@ def commit_problems(commits: list[dict], head_sha: str) -> list[str]:
     return problems
 
 
-def gate(pr: dict, statuses: list[dict], commits: list[dict], repo: str, sha: str | None) -> list[str]:
+def gate(pr: dict, statuses: list[dict], commits: list[dict], repo: str, sha: str | None,
+         run: dict | None, jobs: list[dict], total_commits: int | None = None) -> list[str]:
     """Reasons this PR must not be reviewed; empty means it passes."""
     problems = []
     head = pr.get("head") or {}
     base = pr.get("base") or {}
+    if str(base.get("ref", "")) != "master":
+        problems.append("base branch is not master")
+    if total_commits is not None and total_commits != len(commits):
+        problems.append("compare is missing commits")
     if pr.get("state") != "open":
         problems.append("PR is not open")
     if pr.get("draft"):
@@ -309,6 +536,52 @@ def gate(pr: dict, statuses: list[dict], commits: list[dict], repo: str, sha: st
         problems.append(f"label {SKIP_LABEL}")
     problems += commit_problems(commits, str(head.get("sha", "")))
     problems += check_problems(statuses)
+    problems += run_problems(pr, statuses, repo, run, jobs)
+    return problems
+
+
+def latest_checks_run(runs: list[dict], number: int, head_sha: str) -> dict | None:
+    """Newest pr-checks run for this PR's head ref on this SHA, whatever its result."""
+    path = f"{CHECKS_WORKFLOW}@refs/pull/{number}/head"
+    mine = [x for x in runs if x.get("path") == path and x.get("head_sha") == head_sha
+            and x.get("event") == "pull_request"]
+    return max(mine, key=lambda x: int(x.get("id") or 0), default=None)
+
+
+def run_problems(pr: dict, statuses: list[dict], repo: str, run: dict | None, jobs: list[dict]) -> list[str]:
+    """L2: statuses must come from a real Actions run, not the status API.
+
+    Anyone with write access can post a `pr-checks / ...` status. Actions'
+    own statuses have no creator and link to /{repo}/actions/runs/{run}/jobs/{job},
+    so each `(pull_request)` status must link to a successful job of the same
+    name in the newest pr-checks run on the head SHA, started by svc_renovate.
+    """
+    if not run:
+        return [f"no `{CHECKS_WORKFLOW}` pull_request run on the head SHA"]
+    problems = []
+    rid = int(run.get("id") or 0)
+    if run.get("status") != "completed" or run.get("conclusion") != "success":
+        problems.append(f"run {rid} is {clean(run.get('status'), 20)}/{clean(run.get('conclusion'), 20)}")
+    for who in ("actor", "trigger_actor"):
+        if (run.get(who) or {}).get("login") != RENOVATE_LOGIN:
+            problems.append(f"run {rid} {who} is not {RENOVATE_LOGIN}")
+    by_name = {j.get("name"): j for j in jobs if int(j.get("run_id") or 0) == rid}
+    seen = set()
+    for s in statuses:
+        ctx = s.get("context", "")
+        job, _, event = ctx.rpartition(" (")
+        if not fnmatch.fnmatchcase(ctx, REQUIRED_CHECKS) or event != PR_EVENT:
+            continue
+        name = job.removeprefix("pr-checks / ")
+        j = by_name.get(name)
+        url = f"/{repo}/actions/runs/{rid}/jobs/{int(j.get('id') or 0)}" if j else None
+        if not j or j.get("conclusion") != "success":
+            problems.append(f"`{clean(ctx, 120)}` has no successful job in run {rid}")
+        elif s.get("creator") or s.get("target_url") != url:
+            problems.append(f"`{clean(ctx, 120)}` was not posted by run {rid}")
+        seen.add(name)
+    for name in sorted(set(by_name) - seen):
+        problems.append(f"run {rid} job `{clean(name, 100)}` has no status")
     return problems
 
 
@@ -421,6 +694,13 @@ class Gitea:
             raw = resp.read()
         return json.loads(raw) if raw else None
 
+    def text(self, path: str) -> str:
+        req = urllib.request.Request(self.base + path, headers={"Accept": "text/plain"})
+        if self.token:
+            req.add_unredirected_header("Authorization", f"token {self.token}")
+        with self.opener.open(req, timeout=30) as resp:
+            return resp.read().decode("utf-8", "replace")
+
     def pages(self, path: str) -> list:
         out: list = []
         sep = "&" if "?" in path else "?"
@@ -430,6 +710,15 @@ class Gitea:
             if len(chunk) < 50:
                 break
         return out
+
+
+def changed_files(commits: list[dict]) -> list[str]:
+    """Union over the commits (covers files a later commit reverted too), with
+    both paths of a rename."""
+    return sorted({
+        name for c in commits for f in c.get("files") or []
+        for name in (f.get("filename"), f.get("previous_filename")) if name
+    })
 
 
 def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run: bool, pins: set[str], run_id: str) -> None:
@@ -443,11 +732,20 @@ def review(api: Gitea, pr: dict, repo: str, sha: str | None, mode: str, dry_run:
     # Pinned to the SHAs read above, so a later push can't change what is rated.
     compare = api.call("GET", f"/compare/{base_sha}...{head_sha}?verification=true&files=true") or {}
     commits = compare.get("commits") or []
-    problems = gate(pr, statuses, commits, repo, sha)
-    # Union over the commits; covers files a later commit reverted too.
-    files = sorted({f["filename"] for c in commits for f in c.get("files") or []})
+    total = compare.get("total_commits") if isinstance(compare.get("total_commits"), int) else -1
+    runs = (api.call("GET", f"/actions/runs?head_sha={head_sha}&event=pull_request&limit=50") or {}).get("workflow_runs") or []
+    run = latest_checks_run(runs, n, head_sha)
+    jobs = []
+    if run:
+        jobs = (api.call("GET", f"/actions/runs/{int(run['id'])}/jobs") or {}).get("jobs") or []
+    problems = gate(pr, statuses, commits, repo, sha, run, jobs, total)
+    files = changed_files(commits)
+    # Each commit's own diff, by its SHA from the pinned compare.
+    diff = "\n".join(
+        api.text(f"/git/commits/{c['sha']}.diff") for c in commits if SHA_RE.fullmatch(str(c.get("sha", "")))
+    )
     labels = [lbl.get("name", "") for lbl in pr.get("labels") or []]
-    rating = rate(parse_deps(pr.get("body") or ""), files, labels, pins)
+    rating = rate(parse_deps(pr.get("body") or ""), files, labels, pins, diff)
     body = render(head_sha, rating, files, statuses, commits, run_id)
     print(f"#{n} {LEVELS[rating.level].upper()} gate: {'pass' if not problems else 'blocked: ' + '; '.join(problems)}")
     if dry_run:

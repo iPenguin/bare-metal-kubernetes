@@ -10,13 +10,26 @@ import renovate_review as rr
 REPO = "homelab/bare-metal-kubernetes"
 SHA = "a" * 40
 GREEN = [
-    {"context": "pr-checks / pr-checks (pull_request)", "status": "success"},
-    {"context": "pr-checks / renovate-config (pull_request)", "status": "success"},
-    {"context": "renovate/stability-days", "status": "pending"},
+    {"context": "pr-checks / pr-checks (pull_request)", "status": "success",
+     "target_url": f"/{REPO}/actions/runs/7/jobs/70"},
+    {"context": "pr-checks / renovate-config (pull_request)", "status": "success",
+     "target_url": f"/{REPO}/actions/runs/7/jobs/71"},
+    {"context": "renovate/stability-days", "status": "pending", "creator": {"login": "svc_renovate"}},
+]
+# PR #41 run 494 shape.
+RUN = {
+    "id": 7, "path": "pr-checks.yaml@refs/pull/1/head", "event": "pull_request", "head_sha": SHA,
+    "status": "completed", "conclusion": "success",
+    "actor": {"login": "svc_renovate"}, "trigger_actor": {"login": "svc_renovate"},
+}
+JOBS = [
+    {"id": 70, "run_id": 7, "name": "pr-checks", "status": "completed", "conclusion": "success"},
+    {"id": 71, "run_id": 7, "name": "renovate-config", "status": "completed", "conclusion": "success"},
 ]
 BASE = "b" * 40
 SIGNED = [{
     "sha": SHA,
+    "parents": [{"sha": BASE}],
     "author": {"login": "svc_renovate"},
     "committer": {"login": "svc_renovate"},
     "commit": {"verification": {"verified": True, "signer": {"username": "svc_renovate"}}},
@@ -43,13 +56,41 @@ def table(*rows, cols="| Package | Update | Change |"):
     return "This PR contains the following updates:\n\n" + cols + "\n|---|---|---|\n" + "\n".join(rows) + "\n\n---\n"
 
 
-def level(body, files, labels=(), pins=frozenset()):
-    return rr.LEVELS[rr.rate(rr.parse_deps(body), list(files), list(labels), set(pins)).level]
+def diff_of(path, *pairs):
+    """A commit diff changing one line per (old line, new line) pair in path."""
+    out = f"diff --git a/{path} b/{path}\nindex 1..2 100644\n--- a/{path}\n+++ b/{path}\n@@ -1,3 +1,3 @@\n"
+    for old, new in pairs:
+        out += f" spec:\n-{old}\n+{new}\n"
+    return out
+
+
+def matching_diff(body, files):
+    """A version-only diff that matches the body table, in the first file."""
+    path = files[0] if files else "x"
+    deps = rr.parse_deps(body)
+    if path.startswith("argo-apps/appsets/"):
+        out = f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n"
+        for i, d in enumerate(deps, 1):
+            out += (
+                f"@@ -{i},3 +{i},3 @@\n           chart: {d.name}\n"
+                f"-          targetRevision: {d.old}\n+          targetRevision: {d.new}\n"
+            )
+        return out
+    return diff_of(path, *[(f"    image: {d.name}:{d.old}", f"    image: {d.name}:{d.new}") for d in deps])
+
+
+def rating(body, files, labels=(), pins=frozenset(), diff=None):
+    diff = matching_diff(body, list(files)) if diff is None else diff
+    return rr.rate(rr.parse_deps(body), list(files), list(labels), set(pins), diff)
+
+
+def level(body, files, labels=(), pins=frozenset(), diff=None):
+    return rr.LEVELS[rating(body, files, labels, pins, diff).level]
 
 
 class Gate(unittest.TestCase):
     def test_pass(self):
-        self.assertEqual(rr.gate(pr(), GREEN, SIGNED, REPO, SHA), [])
+        self.assertEqual(rr.gate(pr(), GREEN, SIGNED, REPO, SHA, RUN, JOBS), [])
 
     def test_blocks(self):
         cases = {
@@ -62,18 +103,18 @@ class Gate(unittest.TestCase):
         }
         for name, p in cases.items():
             with self.subTest(name):
-                self.assertTrue(rr.gate(p, GREEN, SIGNED, REPO, SHA))
+                self.assertTrue(rr.gate(p, GREEN, SIGNED, REPO, SHA, RUN, JOBS))
 
     def test_sha_moved(self):
-        self.assertTrue(rr.gate(pr(), GREEN, SIGNED, REPO, "c" * 40))
+        self.assertTrue(rr.gate(pr(), GREEN, SIGNED, REPO, "c" * 40, RUN, JOBS))
 
     def test_checks(self):
-        self.assertTrue(rr.gate(pr(), [], SIGNED, REPO, SHA))
-        self.assertTrue(rr.gate(pr(), GREEN[2:], SIGNED, REPO, SHA))
+        self.assertTrue(rr.gate(pr(), [], SIGNED, REPO, SHA, RUN, JOBS))
+        self.assertTrue(rr.gate(pr(), GREEN[2:], SIGNED, REPO, SHA, RUN, JOBS))
         red = [dict(GREEN[0], status="failure"), GREEN[1]]
-        self.assertTrue(rr.gate(pr(), red, SIGNED, REPO, SHA))
+        self.assertTrue(rr.gate(pr(), red, SIGNED, REPO, SHA, RUN, JOBS))
         pending = [dict(GREEN[0], status="pending"), GREEN[1]]
-        self.assertTrue(rr.gate(pr(), pending, SIGNED, REPO, SHA))
+        self.assertTrue(rr.gate(pr(), pending, SIGNED, REPO, SHA, RUN, JOBS))
 
     def test_skipped_push_statuses(self):
         push = [
@@ -81,7 +122,7 @@ class Gate(unittest.TestCase):
             {"context": "pr-checks / renovate-config (push)", "status": "skipped"},
         ]
         # PR #41 shape: skipped push statuses beside green pull_request ones.
-        self.assertEqual(rr.gate(pr(), push + GREEN, SIGNED, REPO, SHA), [])
+        self.assertEqual(rr.gate(pr(), push + GREEN, SIGNED, REPO, SHA, RUN, JOBS), [])
         cases = {
             "push only": push + GREEN[2:],
             "push failed": [dict(push[0], status="failure")] + GREEN,
@@ -92,7 +133,7 @@ class Gate(unittest.TestCase):
         }
         for name, statuses in cases.items():
             with self.subTest(name):
-                self.assertTrue(rr.gate(pr(), statuses, SIGNED, REPO, SHA))
+                self.assertTrue(rr.gate(pr(), statuses, SIGNED, REPO, SHA, RUN, JOBS))
 
     def test_commits(self):
         c = SIGNED[0]
@@ -110,7 +151,53 @@ class Gate(unittest.TestCase):
         }
         for name, commits in cases.items():
             with self.subTest(name):
-                self.assertTrue(rr.gate(pr(), GREEN, commits, REPO, SHA))
+                self.assertTrue(rr.gate(pr(), GREEN, commits, REPO, SHA, RUN, JOBS))
+
+
+    def test_l2_run_verification(self):
+        ok = rr.gate(pr(), GREEN, SIGNED, REPO, SHA, RUN, JOBS)
+        self.assertEqual(ok, [])
+        forged = dict(GREEN[0], target_url=None, creator={"login": "svc_renovate"})
+        cases = {
+            "no run": (GREEN, None, []),
+            "run failed": (GREEN, dict(RUN, conclusion="failure"), JOBS),
+            "run in progress": (GREEN, dict(RUN, status="running", conclusion=""), JOBS),
+            "run by another actor": (GREEN, dict(RUN, actor={"login": "svc_grokbot"}), JOBS),
+            "triggered by another actor": (GREEN, dict(RUN, trigger_actor={"login": "bmilco"}), JOBS),
+            "status from the API": ([forged, GREEN[1]], RUN, JOBS),
+            "status links another run": ([dict(GREEN[0], target_url=f"/{REPO}/actions/runs/6/jobs/70"), GREEN[1]], RUN, JOBS),
+            "status names no job": ([dict(GREEN[0], context="pr-checks / lint (pull_request)"), GREEN[1]], RUN, JOBS),
+            "job failed": (GREEN, RUN, [dict(JOBS[0], conclusion="failure"), JOBS[1]]),
+            "job without status": (GREEN, RUN, JOBS + [{"id": 72, "run_id": 7, "name": "extra", "conclusion": "success"}]),
+            "jobs of another run": (GREEN, RUN, [dict(j, run_id=6) for j in JOBS]),
+        }
+        for name, (statuses, run, jobs) in cases.items():
+            with self.subTest(name):
+                self.assertTrue(rr.gate(pr(), statuses, SIGNED, REPO, SHA, run, jobs))
+
+    def test_latest_checks_run(self):
+        old = dict(RUN, id=5, conclusion="failure")
+        new = dict(RUN, id=9, conclusion="failure")
+        other_pr = dict(RUN, id=12, path="pr-checks.yaml@refs/pull/2/head")
+        other_sha = dict(RUN, id=13, head_sha="c" * 40)
+        review = dict(RUN, id=14, path="renovate-review.yaml@refs/heads/master", event="workflow_run")
+        runs = [old, RUN, new, other_pr, other_sha, review]
+        # A newer failed run on the same SHA wins over an older success.
+        self.assertEqual(rr.latest_checks_run(runs, 1, SHA)["id"], 9)
+        self.assertEqual(rr.latest_checks_run(runs[:2], 1, SHA)["id"], 7)
+        self.assertIsNone(rr.latest_checks_run([other_pr, other_sha, review], 1, SHA))
+
+    def test_single_parent_and_total_commits_and_base(self):
+        self.assertEqual(rr.gate(pr(), GREEN, SIGNED, REPO, SHA, RUN, JOBS, 1), [])
+        merge = [dict(SIGNED[0], parents=[{"sha": BASE}, {"sha": "c" * 40}])]
+        root = [dict(SIGNED[0], parents=[])]
+        missing = [dict(SIGNED[0], parents=None, commit=dict(SIGNED[0]["commit"]))]
+        for name, commits in {"merge": merge, "root": root, "missing": missing}.items():
+            with self.subTest(name):
+                self.assertTrue(rr.gate(pr(), GREEN, commits, REPO, SHA, RUN, JOBS, len(commits)))
+        self.assertTrue(rr.gate(pr(), GREEN, SIGNED, REPO, SHA, RUN, JOBS, 2))
+        self.assertTrue(rr.gate(pr(base={"ref": "main", "repo": {"full_name": REPO}}),
+                                GREEN, SIGNED, REPO, SHA, RUN, JOBS, 1))
 
 
 class Parse(unittest.TestCase):
@@ -198,11 +285,265 @@ class Rubric(unittest.TestCase):
         self.assertEqual(level(table("| a | major | `1.0.0` → `2.0.0` |"), files, ["risk-floor/low", "risk-allow/low"]), "high")
 
 
+class Diff(unittest.TestCase):
+    VELERO = "argo-apps/apps/velero/values.yaml"
+    BODY = table("| [velero/velero](https://x) | patch | `v1.18.4` → `v1.18.5` |")
+
+    def test_version_only_lines_are_low(self):
+        diff = diff_of(self.VELERO, ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.5"))
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=diff), "low")
+        # tag plus digest on one line; the body shows only the tag
+        d1, d2 = "sha256:abc1234" + "1" * 57, "sha256:def5678" + "2" * 57
+        diff = diff_of(self.VELERO, (f"  image: velero/velero:v1.18.4@{d1}", f"  image: velero/velero:v1.18.5@{d2}"))
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=diff), "low")
+        # digest-only bump; Renovate shortens digests in the body
+        body = table("| velero/velero | digest | `abc1234` → `def5678` |")
+        diff = diff_of(self.VELERO, (f"  image: velero/velero:v1.18.4@{d1}", f"  image: velero/velero:v1.18.4@{d2}"))
+        self.assertEqual(level(body, [self.VELERO], diff=diff), "low")
+
+    def test_any_other_changed_line_is_medium(self):
+        version = ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.5")
+        cases = {
+            "extra changed line": diff_of(self.VELERO, version, ("  replicas: one", "  replicas: two")),
+            "added line": diff_of(self.VELERO, version) + "+  hostNetwork: true\n",
+            "removed line": diff_of(self.VELERO, version) + "-  readOnlyRootFilesystem: true\n",
+            "version and key changed": diff_of(self.VELERO, ("    image: velero/velero:v1.18.4", "    img: velero/velero:v1.18.5")),
+            "binary": diff_of(self.VELERO, version) + "diff --git a/x.bin b/x.bin\nBinary files a/x.bin and b/x.bin differ\n",
+            "no diff": "",
+        }
+        for name, diff in cases.items():
+            with self.subTest(name):
+                self.assertEqual(level(self.BODY, [self.VELERO], diff=diff), "medium")
+
+    def test_body_and_diff_must_match(self):
+        cases = {
+            "diff bumps something else": ("    image: evil/thing:v1.0.0", "    image: evil/thing:v1.0.1"),
+            "diff goes elsewhere": ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.6"),
+        }
+        for name, pair in cases.items():
+            with self.subTest(name):
+                self.assertEqual(level(self.BODY, [self.VELERO], diff=diff_of(self.VELERO, pair)), "medium")
+        # body dep matches, plus an extra version change the body doesn't list
+        listed = ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.5")
+        extra = ("    image: evil/thing:v1.0.0", "    image: evil/thing:v1.0.1")
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=diff_of(self.VELERO, listed, extra)), "medium")
+        # body lists two deps, diff changes one
+        body = table("| velero/velero | patch | `v1.18.4` → `v1.18.5` |", "| b | patch | `2.0.0` → `2.0.1` |")
+        diff = diff_of(self.VELERO, ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.5"))
+        self.assertEqual(level(body, [self.VELERO], diff=diff), "medium")
+
+    def test_diff_update_type_overrides_body(self):
+        # the body's update table claims patch for a minor version change
+        r = rr.Rating()
+        dep = rr.Dep("velero/velero", "patch", "v1.18.4", "v1.19.0")
+        changes, _ = rr.parse_diff(diff_of(self.VELERO, ("  image: velero/velero:v1.18.4", "  image: velero/velero:v1.19.0")))
+        rr.rate_diff(r, [dep], changes)
+        self.assertEqual(rr.LEVELS[r.level], "medium")
+
+    def test_critical_set_by_prefix_or_regex(self):
+        for name in ("traefik", "argo-cd", "quay.io/argoproj/argocd", "ghcr.io/kube-vip/kube-vip",
+                     "openbao/openbao", "docker.io/bitnami/keycloak", "lldap/lldap", "external-secrets"):
+            with self.subTest(name):
+                self.assertTrue(rr.CRITICAL_RE.search(name))
+        for name in ("velero/velero", "nextcloud", "external-dns", "argo-apps/apps/plex/values.yaml", "traefikee-ish"):
+            with self.subTest(name):
+                self.assertFalse(rr.CRITICAL_RE.search(name))
+        # body names it innocently; the diff shows a critical image
+        path = "argo-apps/apps/x/values.yaml"
+        body = table("| x | patch | `1.2.3` → `1.2.4` |")
+        diff = diff_of(path, ("    image: ghcr.io/kube-vip/kube-vip:1.2.3", "    image: ghcr.io/kube-vip/kube-vip:1.2.4"))
+        self.assertEqual(level(body, [path], diff=diff), "medium")
+        # chart name on a context line above targetRevision
+        path = "argo-apps/appsets/x.yaml"
+        diff = (f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -1,3 +1,3 @@\n"
+                "           chart: argo-cd\n-          targetRevision: 1.2.3\n+          targetRevision: 1.2.4\n")
+        self.assertEqual(level(body, [path], diff=diff), "medium")
+        # path of a critical app
+        self.assertEqual(level(body, ["argo-apps/apps/keycloak/values.yaml"]), "medium")
+
+    def test_rename_checks_old_and_new_paths(self):
+        changes, paths = rr.parse_diff(
+            "diff --git a/scripts/x.py b/argo-apps/apps/a/x.yaml\nsimilarity index 100%\n"
+            "rename from scripts/x.py\nrename to argo-apps/apps/a/x.yaml\n"
+        )
+        self.assertEqual(paths, {"scripts/x.py", "argo-apps/apps/a/x.yaml"})
+        commits = [{"files": [{"filename": "argo-apps/apps/a/x.yaml", "status": "renamed",
+                               "previous_filename": "scripts/x.py"}]}]
+        self.assertEqual(rr.changed_files(commits), ["argo-apps/apps/a/x.yaml", "scripts/x.py"])
+        body = table("| a | patch | `1.0.0` → `1.0.1` |")
+        # old path only in the compare file list
+        self.assertEqual(level(body, ["argo-apps/apps/a/values.yaml", "scripts/x.py"]), "high")
+        # old path only in the diff
+        diff = matching_diff(body, ["argo-apps/apps/a/values.yaml"]) + (
+            "diff --git a/.gitea/workflows/x.yaml b/argo-apps/apps/a/x.yaml\n"
+            "rename from .gitea/workflows/x.yaml\nrename to argo-apps/apps/a/x.yaml\n"
+        )
+        self.assertEqual(level(body, ["argo-apps/apps/a/values.yaml"], diff=diff), "high")
+
+    def test_bootstrap_and_appsets_floor_high(self):
+        body = table("| a | patch | `1.0.0` → `1.0.1` |")
+        boot = "argo-apps/bootstrap/a.yaml"
+        self.assertEqual(level(body, [boot]), "high")
+        appset = "argo-apps/appsets/a.yaml"
+        tr = (
+            f"diff --git a/{appset} b/{appset}\n--- a/{appset}\n+++ b/{appset}\n@@ -1,3 +1,3 @@\n"
+            "           chart: a\n-          targetRevision: 1.0.0\n+          targetRevision: 1.0.1\n"
+        )
+        # chart bump only: rated per dependency
+        self.assertEqual(level(body, [appset], diff=tr), "low")
+        # anything else in an appset is high
+        self.assertEqual(level(body, [appset], diff=tr + "+          path: x\n"), "high")
+
+    def test_rbac_crd_networkpolicy_at_least_medium(self):
+        path = "argo-apps/apps/a/values.yaml"
+        body = table("| a | patch | `1.0.0` → `1.0.1` |")
+        version = ("  version: 1.0.0", "  version: 1.0.1")
+        for name, extra in {
+            "role added": "+kind: ClusterRole\n",
+            "binding": "+kind: RoleBinding\n",
+            "crd": "+kind: CustomResourceDefinition\n",
+            "netpol": "+kind: CiliumNetworkPolicy\n",
+            "rbac values": "-  rbac: false\n+  rbac: true\n",
+            "verbs": "+    verbs: [\"*\"]\n",
+        }.items():
+            with self.subTest(name):
+                r = rating(body, [path], diff=diff_of(path, version) + extra)
+                self.assertGreaterEqual(r.level, rr.MEDIUM)
+                self.assertTrue(any("RBAC" in x for x in r.reasons))
+        # version-only bump inside a CRD manifest: kind on a context line
+        diff = (f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -1,3 +1,3 @@\n"
+                " kind: CustomResourceDefinition\n-  version: 1.0.0\n+  version: 1.0.1\n")
+        self.assertEqual(level(body, [path], diff=diff), "medium")
+
+    def test_cr_and_line_separator_hide_keys(self):
+        # Use an image line that would rate low if splitlines() hid the keys
+        # after a CR or U+2028 as context.
+        hidden = "    image: velero/velero:v1.18.4\r  pullPolicy: Always\r  replicas: 3"
+        hidden_new = hidden.replace("v1.18.4", "v1.18.5")
+        diff = diff_of(self.VELERO, (hidden, hidden_new))
+        changes, _ = rr.parse_diff(diff)
+        self.assertEqual(len(changes), 1)
+        self.assertIn("\r", changes[0].old or "")
+        self.assertIn("replicas", changes[0].old or "")
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=diff), "medium")
+        sep, sep_new = hidden.replace("\r", "\u2028"), hidden_new.replace("\r", "\u2028")
+        sep_diff = diff_of(self.VELERO, (sep, sep_new))
+        self.assertIn("\u2028", rr.parse_diff(sep_diff)[0][0].old or "")
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=sep_diff), "medium")
+        # The same keys on their own lines, after a real newline, are still medium.
+        raw = (
+            f"diff --git a/{self.VELERO} b/{self.VELERO}\n--- a/{self.VELERO}\n+++ b/{self.VELERO}\n"
+            "@@ -1,3 +1,3 @@\n"
+            "-    tag: v1.18.4\n+    tag: v1.18.5\n"
+            "+  pullPolicy: Always\n+  replicas: 3\n"
+        )
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=raw), "medium")
+
+    def test_ipv4_and_unallowlisted_keys_are_medium(self):
+        cases = {
+            "loadBalancerIP": ("  loadBalancerIP: 10.0.40.5", "  loadBalancerIP: 10.0.40.66"),
+            "nip.io": ("  host: 10.0.0.5.nip.io", "  host: 10.0.0.66.nip.io"),
+            "replicas like version": ("  replicas: 1.2.3", "  replicas: 1.2.4"),
+        }
+        for name, pair in cases.items():
+            with self.subTest(name):
+                body = table(f"| velero/velero | patch | `{pair[0].split()[-1]}` → `{pair[1].split()[-1]}` |")
+                self.assertEqual(level(body, [self.VELERO], diff=diff_of(self.VELERO, pair)), "medium")
+        # Allowlisted keys with IPv4 tokens must still be medium (the octet reject).
+        octets = {
+            "version IPv4": ("    image: velero/velero:10.0.40.5", "    image: velero/velero:10.0.40.66"),
+            "nip.io tag": ("    image: velero/velero:10.0.0.5.nip.io", "    image: velero/velero:10.0.0.66.nip.io"),
+        }
+        for name, pair in octets.items():
+            with self.subTest(name):
+                body = table(f"| velero/velero | patch | `{pair[0].rsplit(':', 1)[-1]}` → `{pair[1].rsplit(':', 1)[-1]}` |")
+                self.assertEqual(level(body, [self.VELERO], diff=diff_of(self.VELERO, pair)), "medium")
+        # allowlisted keys still rate from the version, if the package is named
+        tag = (
+            f"diff --git a/{self.VELERO} b/{self.VELERO}\n--- a/{self.VELERO}\n+++ b/{self.VELERO}\n"
+            "@@ -1,3 +1,3 @@\n    name: velero/velero\n-    tag: v1.18.4\n+    tag: v1.18.5\n"
+        )
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=tag), "low")
+        # # renovate: on the line above allows a custom key
+        path = "hosts/group_vars/all/versions.yaml"
+        body = table("| helm/helm | patch | `3.22.1` → `3.22.2` |")
+        diff = (
+            f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -1,3 +1,3 @@\n"
+            " # renovate: datasource=github-releases depName=helm/helm\n"
+            "-helm_pin: 3.22.1\n+helm_pin: 3.22.2\n"
+        )
+        # versions.yaml pins are medium even when the line is version-only
+        self.assertEqual(level(body, [path], diff=diff), "medium")
+        # appsets: only targetRevision is version-only; an image line is high
+        appset = "argo-apps/appsets/a.yaml"
+        img = diff_of(appset, ("    image: a:1.0.0", "    image: a:1.0.1"))
+        self.assertEqual(level(table("| a | patch | `1.0.0` → `1.0.1` |"), [appset], diff=img), "high")
+        tr = (
+            f"diff --git a/{appset} b/{appset}\n--- a/{appset}\n+++ b/{appset}\n@@ -1,3 +1,3 @@\n"
+            "           chart: a\n-          targetRevision: 1.0.0\n+          targetRevision: 1.0.1\n"
+        )
+        self.assertEqual(level(table("| a | patch | `1.0.0` → `1.0.1` |"), [appset], diff=tr), "low")
+
+    def test_hunkless_headers_are_at_least_medium(self):
+        version = ("    image: velero/velero:v1.18.4", "    image: velero/velero:v1.18.5")
+        hunk = diff_of(self.VELERO, version)
+        # version bump plus a rename and a mode change, no extra hunk lines
+        renamed = (
+            f"diff --git a/{self.VELERO} b/{self.VELERO}.off\n"
+            "old mode 100644\nnew mode 100755\nsimilarity index 90%\n"
+            f"rename from {self.VELERO}\nrename to {self.VELERO}.off\n"
+            f"--- a/{self.VELERO}\n+++ b/{self.VELERO}.off\n@@ -1,3 +1,3 @@\n"
+            " spec:\n-    image: velero/velero:v1.18.4\n+    image: velero/velero:v1.18.5\n"
+        )
+        self.assertNotEqual(level(self.BODY, [self.VELERO], diff=renamed), "low")
+        self.assertGreaterEqual(rating(self.BODY, [self.VELERO], diff=renamed).level, rr.MEDIUM)
+        chmod = hunk.replace("index 1..2 100644\n", "old mode 100644\nnew mode 100755\nindex 1..2 100755\n")
+        self.assertGreaterEqual(rating(self.BODY, [self.VELERO], diff=chmod).level, rr.MEDIUM)
+        empty = f"diff --git a/{self.VELERO} b/{self.VELERO}\nnew file mode 100644\nindex 000..abc\n"
+        self.assertGreaterEqual(rating(self.BODY, [self.VELERO], diff=empty).level, rr.MEDIUM)
+        deleted = f"diff --git a/{self.VELERO} b/{self.VELERO}\ndeleted file mode 100644\n"
+        self.assertGreaterEqual(rating(self.BODY, [self.VELERO], diff=deleted).level, rr.MEDIUM)
+        copied = (
+            f"diff --git a/{self.VELERO} b/argo-apps/apps/velero/copy.yaml\n"
+            "similarity index 100%\ncopy from argo-apps/apps/velero/values.yaml\n"
+            "copy to argo-apps/apps/velero/copy.yaml\n"
+        )
+        self.assertGreaterEqual(rating(self.BODY, [self.VELERO], diff=copied).level, rr.MEDIUM)
+
+    def test_body_match_requires_the_dependency_name(self):
+        # Same versions as the body, but a different package in the diff.
+        diff = diff_of(self.VELERO, ("    image: evil/thing:v1.18.4", "    image: evil/thing:v1.18.5"))
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=diff), "medium")
+        # Allowlisted key, no package name on the line or above.
+        diff = diff_of(self.VELERO, ("    version: v1.18.4", "    version: v1.18.5"))
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=diff), "medium")
+
+    def test_long_lines_are_medium_and_fast(self):
+        import time
+        pad = "a" * 20000
+        pair = (f"    image: velero/velero:v1.18.4 {pad}", f"    image: velero/velero:v1.18.5 {pad}")
+        t0 = time.perf_counter()
+        self.assertEqual(level(self.BODY, [self.VELERO], diff=diff_of(self.VELERO, pair)), "medium")
+        self.assertLess(time.perf_counter() - t0, 0.5)
+
+    def test_real_shapes(self):
+        # PR #42 (versions.yaml, depName comments) and #47 (requirements.yml)
+        diff = (
+            "diff --git a/hosts/group_vars/all/versions.yaml b/hosts/group_vars/all/versions.yaml\n"
+            "--- a/hosts/group_vars/all/versions.yaml\n+++ b/hosts/group_vars/all/versions.yaml\n"
+            "@@ -42,4 +42,4 @@ x\n # renovate: datasource=github-releases depName=kubernetes/kubernetes\n"
+            "-kubernetes_version: 1.36.6\n+kubernetes_version: 1.37.3\n"
+        )
+        body = table("| something | patch | `1.36.6` → `1.37.3` |")
+        r = rating(body, ["hosts/group_vars/all/versions.yaml"], diff=diff)
+        self.assertEqual(rr.LEVELS[r.level], "high")
+
+
 class Comment(unittest.TestCase):
     def test_marker_and_idempotence(self):
-        rating = rr.rate(rr.parse_deps(table("| a | patch | `1.0.0` → `1.0.1` |")), ["argo-apps/a.yaml"], [], set())
-        one = rr.render(SHA, rating, ["argo-apps/a.yaml"], GREEN, SIGNED, "1")
-        two = rr.render(SHA, rating, ["argo-apps/a.yaml"], GREEN, SIGNED, "2")
+        r = rating(table("| a | patch | `1.0.0` → `1.0.1` |"), ["argo-apps/a.yaml"])
+        one = rr.render(SHA, r, ["argo-apps/a.yaml"], GREEN, SIGNED, "1")
+        two = rr.render(SHA, r, ["argo-apps/a.yaml"], GREEN, SIGNED, "2")
         self.assertTrue(one.startswith(f"<!-- grokbot-review sha={SHA} run=1 -->"))
         self.assertTrue(rr.same_review(one, two))
         self.assertIn("### Review: LOW", one)
@@ -210,7 +551,7 @@ class Comment(unittest.TestCase):
     def test_no_mentions_or_links(self):
         body = table("| [@admin https://evil.example/x www.evil.example a@b.example](https://x) | patch | `1.0.0` → `1.0.1` |")
         files = ["argo-apps/a.yaml", "argo-apps/@team/http://x.yaml"]
-        out = rr.render(SHA, rr.rate(rr.parse_deps(body), files, [], set()), files, GREEN, SIGNED, "1")
+        out = rr.render(SHA, rating(body, files), files, GREEN, SIGNED, "1")
         text = out.split("\n", 1)[1]
         for bad in ("@admin", "@team", "@b.example", "://", "www.", "WWW."):
             self.assertNotIn(bad, text)
@@ -268,8 +609,16 @@ class Review(unittest.TestCase):
                 if path.startswith("/commits/"):
                     return {"statuses": GREEN}
                 if path.startswith("/compare/"):
-                    return {"commits": SIGNED}
+                    return {"commits": SIGNED, "total_commits": 1}
+                if path.startswith("/actions/runs?"):
+                    return {"workflow_runs": [RUN]}
+                if path == "/actions/runs/7/jobs":
+                    return {"jobs": JOBS}
                 raise AssertionError(path)
+
+            def text(self, path):
+                self.calls.append(f"TEXT {path}")
+                return diff_of("argo-apps/apps/a/values.yaml", ("  version: 1.0.0", "  version: 1.0.1"))
 
             def pages(self, path):
                 self.calls.append(f"PAGES {path}")
@@ -282,6 +631,9 @@ class Review(unittest.TestCase):
         self.assertEqual(api.calls, [
             f"GET /commits/{SHA}/status",
             f"GET /compare/{BASE}...{SHA}?verification=true&files=true",
+            f"GET /actions/runs?head_sha={SHA}&event=pull_request&limit=50",
+            "GET /actions/runs/7/jobs",
+            f"TEXT /git/commits/{SHA}.diff",
         ])
 
 
